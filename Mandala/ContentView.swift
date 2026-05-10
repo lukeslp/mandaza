@@ -1,27 +1,15 @@
 import SwiftUI
 import UIKit
+import WidgetKit
 
 struct ContentView: View {
 
-    // MARK: - Persisted settings
+    // Shared, App Group-backed settings (single source of truth for app + widgets).
+    @State private var settings = MandalaSettings.shared
 
-    @AppStorage("paletteId")     private var paletteId: String  = Palette.all.first?.id ?? "aurora"
-    @AppStorage("drawSpeed")     private var drawSpeed: Double  = 0.707
-    @AppStorage("lineWidth")     private var lineWidth: Double  = 1.2
-    @AppStorage("glow")          private var glow: Bool         = true
-
-    @AppStorage("zenMode")             private var zenMode: Bool         = false
-    @AppStorage("zenShowClock")        private var zenShowClock: Bool    = true
-    @AppStorage("zenShowSeconds")      private var zenShowSeconds: Bool  = false
-    @AppStorage("zenShowDate")         private var zenShowDate: Bool     = true
-    @AppStorage("zenAutoRegenerate")   private var zenAutoRegen: Bool    = true
-    @AppStorage("zenAutoRegenSeconds") private var zenAutoRegenSeconds: Double = 6
-
-    // MARK: - Ephemeral state
-
-    @State private var seed = UUID()
+    // Ephemeral state — purely view-local.
+    @State private var seed = UUID().uuidString
     @State private var canvasSize: CGSize = .zero
-    @State private var displayScale: CGFloat = 3   // updated from environment
     @State private var showSettings = false
     @State private var exportInProgress = false
     @State private var exportAlert: ExportAlert? = nil
@@ -34,37 +22,24 @@ struct ContentView: View {
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.displayScale) private var envDisplayScale
-
-    private var engineConfig: EngineConfig {
-        var c = EngineConfig()
-        c.drawSpeed = drawSpeed
-        c.lineWidth = lineWidth
-        c.glow = glow
-        return c
-    }
+    @Environment(\.displayScale) private var displayScale
 
     // MARK: - Body
 
     var body: some View {
         ZStack {
-            // Layer 1 — edge-to-edge canvas. Inner GeometryReader ignores safe
-            // area so `geo.size` matches the frame the engine renders into.
+            // Layer 1 — edge-to-edge canvas.
             GeometryReader { geo in
                 ZStack {
                     Color.black
                     MandalaCanvas(size: geo.size,
-                                  seed: seed,
-                                  paletteId: paletteId,
-                                  config: engineConfig,
+                                  seed: UUID(uuidString: seed) ?? UUID(),
+                                  paletteId: settings.paletteId,
+                                  config: settings.engineConfig(),
                                   onIdleChange: handleIdleChange(_:))
                 }
-                .onAppear {
-                    canvasSize = geo.size
-                    displayScale = envDisplayScale
-                }
+                .onAppear { canvasSize = geo.size }
                 .onChange(of: geo.size) { _, new in canvasSize = new }
-                .onChange(of: envDisplayScale) { _, new in displayScale = new }
             }
             .ignoresSafeArea()
             .contentShape(Rectangle())
@@ -74,15 +49,15 @@ struct ContentView: View {
             .accessibilityHint("Double tap to generate a new pattern")
             .accessibilityAddTraits(.isButton)
 
-            // Layer 2 — clock overlay, centered within safe area.
-            if zenMode, zenShowClock {
-                ZenClockOverlay(showSeconds: zenShowSeconds,
-                                showDate: zenShowDate)
+            // Layer 2 — clock overlay.
+            if settings.zenMode, settings.zenShowClock {
+                ZenClockOverlay(showSeconds: settings.zenShowSeconds,
+                                showDate: settings.zenShowDate)
                     .allowsHitTesting(false)
                     .transition(.opacity)
             }
 
-            // Layer 3 — floating control bar.
+            // Layer 3 — control bar.
             VStack {
                 Spacer()
                 if controlsVisible {
@@ -107,17 +82,9 @@ struct ContentView: View {
                     .transition(.opacity)
             }
         }
-        .sheet(isPresented: $showSettings, onDismiss: { revealControls() }) {
-            SettingsSheet(paletteId: $paletteId,
-                          drawSpeed: $drawSpeed,
-                          lineWidth: $lineWidth,
-                          glow: $glow,
-                          zenMode: $zenMode,
-                          zenShowClock: $zenShowClock,
-                          zenShowSeconds: $zenShowSeconds,
-                          zenShowDate: $zenShowDate,
-                          zenAutoRegen: $zenAutoRegen,
-                          zenAutoRegenSeconds: $zenAutoRegenSeconds)
+        .sheet(isPresented: $showSettings, onDismiss: revealControls) {
+            SettingsSheet(settings: settings,
+                          loadFavorite: loadFavorite(_:))
         }
         .alert(item: $exportAlert) { alert in
             switch alert.kind {
@@ -126,45 +93,42 @@ struct ContentView: View {
                     title: Text("Photos Access Needed"),
                     message: Text("Mandala needs permission to add this image to your Photo Library."),
                     primaryButton: .default(Text("Open Settings"), action: openAppSettings),
-                    secondaryButton: .cancel()
-                )
+                    secondaryButton: .cancel())
             case .renderFailed:
                 return Alert(
                     title: Text("Couldn't Save"),
                     message: Text("The image couldn't be rendered. Try a smaller resolution."),
-                    primaryButton: .default(Text("Try Smaller"), action: { exportFallback() }),
-                    secondaryButton: .cancel()
-                )
+                    primaryButton: .default(Text("Try Smaller"), action: exportFallback),
+                    secondaryButton: .cancel())
             case .saveFailed(let message):
                 return Alert(
                     title: Text("Couldn't Save"),
                     message: Text(message),
-                    dismissButton: .default(Text("OK"))
-                )
+                    dismissButton: .default(Text("OK")))
             }
         }
         .onAppear { scheduleHideControls() }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
+        .onOpenURL { handleIncomingURL($0) }
     }
 
     // MARK: - Control bar
 
     private var controlBar: some View {
-        HStack(spacing: 24) {
+        HStack(spacing: 22) {
             controlButton(system: "arrow.triangle.2.circlepath", label: "Regenerate") {
                 regenerate()
+            }
+            controlButton(system: favoriteIcon, label: "Favorite") {
+                toggleFavorite()
             }
             controlButton(system: "slider.horizontal.3", label: "Settings") {
                 showSettings = true
             }
-            Button {
-                exportFullScreen()
-            } label: {
-                controlIcon(system: "square.and.arrow.down.fill")
-            }
-            .accessibilityLabel("Save")
-            .disabled(exportInProgress)
-            .opacity(exportInProgress ? 0.4 : 1)
+            Button { exportFullScreen() } label: { controlIcon(system: "square.and.arrow.down.fill") }
+                .accessibilityLabel("Save")
+                .disabled(exportInProgress)
+                .opacity(exportInProgress ? 0.4 : 1)
 
             Menu {
                 ForEach(ExportService.presets, id: \.label) { preset in
@@ -179,7 +143,7 @@ struct ContentView: View {
             .accessibilityLabel("Export resolution")
             .disabled(exportInProgress)
         }
-        .padding(.horizontal, 28)
+        .padding(.horizontal, 24)
         .padding(.vertical, 14)
         .background(.ultraThinMaterial, in: Capsule())
         .padding(.bottom, 28)
@@ -201,6 +165,10 @@ struct ContentView: View {
             .contentShape(Rectangle())
     }
 
+    private var favoriteIcon: String {
+        settings.isFavorite(seed: seed) ? "heart.fill" : "heart"
+    }
+
     // MARK: - Tap + reveal
 
     private func canvasTapped() {
@@ -209,9 +177,11 @@ struct ContentView: View {
     }
 
     private func regenerate() {
-        seed = UUID()
-        paletteId = Palette.all.filter { $0.id != paletteId }.randomElement()?.id ?? paletteId
+        seed = UUID().uuidString
+        settings.paletteId = Palette.all.filter { $0.id != settings.paletteId }
+            .randomElement()?.id ?? settings.paletteId
         UISelectionFeedbackGenerator().selectionChanged()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     private func revealControls() {
@@ -227,13 +197,30 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Auto-regenerate (zen mode)
+    // MARK: - Favorites
+
+    private func toggleFavorite() {
+        let now = settings.toggleFavorite(seed: seed,
+                                          paletteId: settings.paletteId,
+                                          config: settings.engineConfig())
+        showToast(now ? "Saved to Favorites" : "Removed from Favorites")
+        WidgetCenter.shared.reloadAllTimelines()
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    private func loadFavorite(_ snapshot: MandalaSnapshot) {
+        seed = snapshot.seed
+        settings.paletteId = snapshot.paletteId
+        revealControls()
+    }
+
+    // MARK: - Zen / scenePhase
 
     private func handleIdleChange(_ idle: Bool) {
         lastIdle = idle
         autoRegenTask?.cancel()
-        guard idle, zenMode, zenAutoRegen, !reduceMotion else { return }
-        let wait = zenAutoRegenSeconds
+        guard idle, settings.zenMode, settings.zenAutoRegen, !reduceMotion else { return }
+        let wait = settings.zenAutoRegenSeconds
         autoRegenTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(wait))
             if !Task.isCancelled { regenerate() }
@@ -243,14 +230,23 @@ struct ContentView: View {
     private func handleScenePhase(_ phase: ScenePhase) {
         switch phase {
         case .active:
-            // Resuming: re-arm auto-regen if we're sitting idle in Zen mode.
-            if lastIdle, zenMode, zenAutoRegen, !reduceMotion {
+            if lastIdle, settings.zenMode, settings.zenAutoRegen, !reduceMotion {
                 handleIdleChange(true)
             }
         case .background, .inactive:
             autoRegenTask?.cancel()
         @unknown default:
             break
+        }
+    }
+
+    private func handleIncomingURL(_ url: URL) {
+        guard url.scheme == "mandala" else { return }
+        // mandala://seed/<UUID>
+        let parts = url.pathComponents.filter { $0 != "/" }
+        if url.host == "seed", let uuidString = parts.first {
+            seed = uuidString
+            revealControls()
         }
     }
 
@@ -264,28 +260,22 @@ struct ContentView: View {
     }
 
     private func exportFallback() {
-        // Step down to the next-smaller preset.
-        let presets = ExportService.presets
-        let smallest = presets.last { $0.size.width <= 1290 }?.size
-            ?? CGSize(width: 1170, height: 2532)
-        exportAt(size: smallest)
+        exportAt(size: CGSize(width: 1170, height: 2532))
     }
 
     private func exportAt(size: CGSize) {
         guard !exportInProgress else { return }
         exportInProgress = true
-        let s = seed.uuidString
-        let pid = paletteId
-        let cfg = engineConfig
+        let s = seed
+        let pid = settings.paletteId
+        let cfg = settings.engineConfig()
 
         Task.detached(priority: .userInitiated) {
             let image = MandalaEngine.renderImage(seed: s,
                                                   paletteId: pid,
                                                   config: cfg,
                                                   size: size)
-            await MainActor.run {
-                handleRenderedImage(image)
-            }
+            await MainActor.run { handleRenderedImage(image) }
         }
     }
 
@@ -338,7 +328,6 @@ private enum ExportAlertKind {
 private struct ExportAlert: Identifiable {
     let id = UUID()
     let kind: ExportAlertKind
-
     static let permissionDenied = ExportAlert(kind: .permissionDenied)
     static let renderFailed     = ExportAlert(kind: .renderFailed)
     static func saveFailed(message: String) -> ExportAlert {
@@ -349,17 +338,8 @@ private struct ExportAlert: Identifiable {
 // MARK: - Settings sheet
 
 private struct SettingsSheet: View {
-    @Binding var paletteId: String
-    @Binding var drawSpeed: Double
-    @Binding var lineWidth: Double
-    @Binding var glow: Bool
-    @Binding var zenMode: Bool
-    @Binding var zenShowClock: Bool
-    @Binding var zenShowSeconds: Bool
-    @Binding var zenShowDate: Bool
-    @Binding var zenAutoRegen: Bool
-    @Binding var zenAutoRegenSeconds: Double
-
+    @Bindable var settings: MandalaSettings
+    let loadFavorite: (MandalaSnapshot) -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -367,57 +347,80 @@ private struct SettingsSheet: View {
             Form {
                 Section("Look") {
                     NavigationLink {
-                        PalettePicker(selected: $paletteId)
+                        PalettePicker(selected: $settings.paletteId)
                     } label: {
                         HStack {
                             Text("Palette")
                             Spacer()
-                            LinearGradient(colors: Palette.by(id: paletteId).stops,
+                            LinearGradient(colors: Palette.by(id: settings.paletteId).stops,
                                            startPoint: .leading,
                                            endPoint: .trailing)
                                 .frame(width: 96, height: 18)
                                 .clipShape(Capsule())
-                            Text(Palette.by(id: paletteId).name)
+                            Text(Palette.by(id: settings.paletteId).name)
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    Toggle("Glow", isOn: $glow)
+                    Toggle("Glow", isOn: $settings.glow)
                     LabeledSlider(title: "Line Width",
-                                  value: $lineWidth,
+                                  value: $settings.lineWidth,
                                   range: 0.5 ... 3.0,
                                   format: { String(format: "%.1f×", $0) })
                 }
 
+                Section("Pattern") {
+                    LabeledSlider(title: "Density",
+                                  value: $settings.density,
+                                  range: 0.0 ... 1.0,
+                                  format: { densityLabel(for: $0) })
+                    Picker("Geometry", selection: $settings.geometryPreset) {
+                        Text("Auto").tag("auto")
+                        Text("Sparse").tag("sparse")
+                        Text("Medium").tag("medium")
+                        Text("Dense").tag("dense")
+                        Text("Busy").tag("busy")
+                    }
+                    .pickerStyle(.menu)
+                }
+
                 Section("Motion") {
                     LabeledSlider(title: "Speed",
-                                  value: $drawSpeed,
+                                  value: $settings.drawSpeed,
                                   range: 0.1 ... 1.0,
                                   format: { speedLabel(for: $0) })
                 }
 
                 Section {
-                    Toggle("Zen Mode", isOn: $zenMode.animation())
+                    Toggle("Zen Mode", isOn: $settings.zenMode.animation())
                 } footer: {
                     Text("Show a clock over the mandala and loop new patterns continuously.")
                 }
 
-                if zenMode {
+                if settings.zenMode {
                     Section("Clock") {
-                        Toggle("Show Clock", isOn: $zenShowClock)
-                        Toggle("Show Seconds", isOn: $zenShowSeconds)
-                            .disabled(!zenShowClock)
-                        Toggle("Show Date", isOn: $zenShowDate)
-                            .disabled(!zenShowClock)
+                        Toggle("Show Clock", isOn: $settings.zenShowClock)
+                        Toggle("Show Seconds", isOn: $settings.zenShowSeconds)
+                            .disabled(!settings.zenShowClock)
+                        Toggle("Show Date", isOn: $settings.zenShowDate)
+                            .disabled(!settings.zenShowClock)
                     }
 
                     Section("Auto-Regenerate") {
-                        Toggle("Loop New Patterns", isOn: $zenAutoRegen)
-                        if zenAutoRegen {
+                        Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
+                        if settings.zenAutoRegen {
                             LabeledSlider(title: "Wait",
-                                          value: $zenAutoRegenSeconds,
+                                          value: $settings.zenAutoRegenSeconds,
                                           range: 2 ... 30,
                                           step: 1,
                                           format: { "\(Int($0))s" })
+                        }
+                    }
+                }
+
+                if !settings.favorites.isEmpty {
+                    Section("Favorites (\(settings.favorites.count))") {
+                        NavigationLink("All Favorites") {
+                            FavoritesGrid(settings: settings, loadFavorite: loadFavorite)
                         }
                     }
                 }
@@ -442,6 +445,55 @@ private struct SettingsSheet: View {
         case ..<0.85: return "Lively"
         default:      return "Rapid"
         }
+    }
+
+    private func densityLabel(for v: Double) -> String {
+        switch v {
+        case ..<0.25: return "Spacious"
+        case ..<0.5:  return "Loose"
+        case ..<0.75: return "Tight"
+        default:      return "Packed"
+        }
+    }
+}
+
+// MARK: - Favorites grid
+
+private struct FavoritesGrid: View {
+    @Bindable var settings: MandalaSettings
+    let loadFavorite: (MandalaSnapshot) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 12)],
+                      spacing: 12) {
+                ForEach(settings.favorites) { snap in
+                    Button {
+                        loadFavorite(snap)
+                        dismiss()
+                    } label: {
+                        MandalaImageView(snapshot: snap,
+                                         size: CGSize(width: 140, height: 220),
+                                         scale: 2)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            settings.favorites.removeAll { $0.id == snap.id }
+                        } label: { Label("Remove", systemImage: "trash") }
+                    }
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("Favorites")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -496,7 +548,7 @@ private struct AboutScreen: View {
     }
 }
 
-// MARK: - Reusable slider with descriptive value label
+// MARK: - Reusable slider
 
 private struct LabeledSlider: View {
     let title: String

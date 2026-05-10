@@ -3,24 +3,27 @@ import CoreGraphics
 
 // MARK: - Configuration
 
-struct EngineConfig: Equatable {
-    var cellSizeRandom: Bool = true
+public struct EngineConfig: Equatable, Codable, Hashable, Sendable {
+    public var cellSizeRandom: Bool = true
     /// 0…1 — only used when cellSizeRandom == false. Smaller = bigger cells.
-    var cellSize: Double = 0.8
-    var randomPattern: Bool = true
-    /// 0…6 — only used when randomPattern == false. Selects entry in `tbRelProbaNbPoints`.
-    var geometry: Int = 6
-    var withMargin: Bool = true
-    var concentric: Bool = true
-    var centered: Bool = true
+    public var cellSize: Double = 0.8
+    public var randomPattern: Bool = true
+    /// 0…6 — only used when randomPattern == false. Selects entry in the
+    /// probability table inside the engine.
+    public var geometry: Int = 6
+    public var withMargin: Bool = true
+    public var concentric: Bool = true
+    public var centered: Bool = true
     /// 0…100 — clamps internally to [0,5] then scales above 5.
-    var regularity: Double = 5
+    public var regularity: Double = 5
     /// 0…1 — drawing speed coefficient.
-    var drawSpeed: Double = 0.707
-    var glow: Bool = true
-    var idlePulse: Bool = true
-    var lineWidth: Double = 1.2
-    var autoRegenIdleMs: Double = 22000
+    public var drawSpeed: Double = 0.707
+    public var glow: Bool = true
+    public var idlePulse: Bool = true
+    public var lineWidth: Double = 1.2
+    public var autoRegenIdleMs: Double = 22000
+
+    public init() {}
 }
 
 // MARK: - Geometry constants (mirrors Cell.xs / Cell.ys / Cell.xperp / Cell.yperp)
