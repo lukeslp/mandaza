@@ -42,3 +42,6 @@ Package.resolved
 
 # Plist user data
 *.plist.user
+
+# Claude Code runtime artifacts
+.claude/
