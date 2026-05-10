@@ -77,10 +77,17 @@ struct ContentView: View {
 
             // Layer 4 — export progress dim.
             if exportInProgress {
-                Color.black.opacity(0.3).ignoresSafeArea()
-                ProgressView("Saving…")
-                    .padding(24)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                Color.black.opacity(0.5).ignoresSafeArea()
+                ProgressView {
+                    BLCaption("saving", tint: BL.accent(for: settings.paletteId))
+                }
+                .tint(BL.accent(for: settings.paletteId))
+                .padding(24)
+                .background {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(BL.deep)
+                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(BL.rule, lineWidth: 1))
+                }
             }
         }
         .safeAreaInset(edge: .top) {
@@ -364,14 +371,17 @@ private struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        let accent = BL.accent(for: settings.paletteId)
+        return NavigationStack {
             Form {
-                Section("Look") {
+                Section {
                     NavigationLink {
                         PalettePicker(selected: $settings.paletteId)
                     } label: {
                         HStack {
                             Text("Palette")
+                                .font(.bl(15))
+                                .foregroundStyle(BL.paper)
                             Spacer()
                             LinearGradient(colors: Palette.by(id: settings.paletteId).stops,
                                            startPoint: .leading,
@@ -379,20 +389,26 @@ private struct SettingsSheet: View {
                                 .frame(width: 96, height: 18)
                                 .clipShape(Capsule())
                             Text(Palette.by(id: settings.paletteId).name)
-                                .foregroundStyle(.secondary)
+                                .font(.blMono(12))
+                                .foregroundStyle(BL.muted)
                         }
                     }
                     Toggle("Glow", isOn: $settings.glow)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
                     LabeledSlider(title: "Line Width",
                                   value: $settings.lineWidth,
                                   range: 0.5 ... 3.0,
+                                  accent: accent,
                                   format: { String(format: "%.1f×", $0) })
-                }
+                } header: { blHeader("Look", accent: accent) }
+                .listRowBackground(BL.deep)
 
-                Section("Pattern") {
+                Section {
                     LabeledSlider(title: "Density",
                                   value: $settings.density,
                                   range: 0.0 ... 1.0,
+                                  accent: accent,
                                   format: { densityLabel(for: $0) })
                     Picker("Geometry", selection: $settings.geometryPreset) {
                         Text("Auto").tag("auto")
@@ -402,61 +418,103 @@ private struct SettingsSheet: View {
                         Text("Busy").tag("busy")
                     }
                     .pickerStyle(.menu)
-                }
+                    .font(.bl(15))
+                    .foregroundStyle(BL.paper)
+                } header: { blHeader("Pattern", accent: accent) }
+                .listRowBackground(BL.deep)
 
-                Section("Motion") {
+                Section {
                     LabeledSlider(title: "Speed",
                                   value: $settings.drawSpeed,
                                   range: 0.1 ... 1.0,
+                                  accent: accent,
                                   format: { speedLabel(for: $0) })
-                }
+                } header: { blHeader("Motion", accent: accent) }
+                .listRowBackground(BL.deep)
 
                 Section {
                     Toggle("Zen Mode", isOn: $settings.zenMode.animation())
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+                } header: {
+                    blHeader("Zen Mode", accent: accent)
                 } footer: {
                     Text("Show a clock over the mandala and loop new patterns continuously.")
+                        .font(.bl(12))
+                        .foregroundStyle(BL.muted)
                 }
+                .listRowBackground(BL.deep)
 
                 if settings.zenMode {
-                    Section("Clock") {
+                    Section {
                         Toggle("Show Clock", isOn: $settings.zenShowClock)
                         Toggle("Show Seconds", isOn: $settings.zenShowSeconds)
                             .disabled(!settings.zenShowClock)
                         Toggle("Show Date", isOn: $settings.zenShowDate)
                             .disabled(!settings.zenShowClock)
-                    }
+                    } header: { blHeader("Clock", accent: accent) }
+                    .listRowBackground(BL.deep)
+                    .font(.bl(15))
+                    .foregroundStyle(BL.paper)
 
-                    Section("Auto-Regenerate") {
+                    Section {
                         Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
+                            .font(.bl(15))
+                            .foregroundStyle(BL.paper)
                         if settings.zenAutoRegen {
                             LabeledSlider(title: "Wait",
                                           value: $settings.zenAutoRegenSeconds,
                                           range: 2 ... 30,
                                           step: 1,
+                                          accent: accent,
                                           format: { "\(Int($0))s" })
                         }
-                    }
+                    } header: { blHeader("Auto-Regenerate", accent: accent) }
+                    .listRowBackground(BL.deep)
                 }
 
                 if !settings.favorites.isEmpty {
-                    Section("Favorites (\(settings.favorites.count))") {
+                    Section {
                         NavigationLink("All Favorites") {
                             FavoritesGrid(settings: settings, loadFavorite: loadFavorite)
                         }
-                    }
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+                    } header: { blHeader("Favorites · \(settings.favorites.count)", accent: BL.pink) }
+                    .listRowBackground(BL.deep)
                 }
 
                 Section {
                     NavigationLink("About Mandala") { AboutScreen() }
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
                 }
+                .listRowBackground(BL.deep)
             }
+            .scrollContentBackground(.hidden)
+            .background(BL.void.ignoresSafeArea())
+            .tint(accent)
             .navigationTitle("Settings")
+            .toolbarBackground(BL.void, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .preferredColorScheme(.dark)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .tint(accent)
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func blHeader(_ label: String, accent: Color) -> some View {
+        HStack(spacing: 6) {
+            BLDot(color: accent, size: 6)
+            BLCaption(label)
+        }
+        .padding(.top, 4)
     }
 
     private func speedLabel(for v: Double) -> String {
@@ -500,7 +558,7 @@ private struct FavoritesGrid: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+                                    .strokeBorder(BL.rule, lineWidth: 1)
                             )
                     }
                     .buttonStyle(.plain)
@@ -513,8 +571,13 @@ private struct FavoritesGrid: View {
             }
             .padding()
         }
+        .scrollContentBackground(.hidden)
+        .background(BL.void.ignoresSafeArea())
         .navigationTitle("Favorites")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(BL.void, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 
@@ -608,21 +671,27 @@ private struct LabeledSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     var step: Double? = nil
+    var accent: Color = BL.cyan
     let format: (Double) -> String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(title)
+                    .font(.bl(15))
+                    .foregroundStyle(BL.paper)
                 Spacer()
                 Text(format(value))
-                    .foregroundStyle(.secondary)
+                    .font(.blMono(12))
+                    .foregroundStyle(BL.muted)
                     .monospacedDigit()
             }
             if let step {
                 Slider(value: $value, in: range, step: step)
+                    .tint(accent)
             } else {
                 Slider(value: $value, in: range)
+                    .tint(accent)
             }
         }
         .accessibilityElement(children: .combine)
@@ -649,7 +718,12 @@ private struct PalettePicker: View {
             }
             .padding()
         }
+        .scrollContentBackground(.hidden)
+        .background(BL.void.ignoresSafeArea())
         .navigationTitle("Palette")
+        .toolbarBackground(BL.void, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 
@@ -668,21 +742,22 @@ private struct PaletteSwatch: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(selected ? Color.accentColor : Color.white.opacity(0.1),
-                                          lineWidth: selected ? 3 : 1)
+                            .strokeBorder(selected ? BL.accent(for: palette.id) : BL.rule,
+                                          lineWidth: selected ? 2 : 1)
                     )
                     .overlay(alignment: .topTrailing) {
                         if selected {
                             Image(systemName: "checkmark.circle.fill")
                                 .symbolRenderingMode(.palette)
-                                .foregroundStyle(.white, Color.accentColor)
+                                .foregroundStyle(BL.void, BL.accent(for: palette.id))
                                 .padding(6)
-                                .shadow(radius: 2)
+                                .shadow(color: BL.accent(for: palette.id).opacity(0.6),
+                                        radius: 6)
                         }
                     }
                 Text(palette.name)
-                    .font(.callout.weight(.medium))
-                    .foregroundStyle(.primary)
+                    .font(.bl(15, weight: .medium))
+                    .foregroundStyle(BL.paper)
             }
         }
         .buttonStyle(.plain)
