@@ -15,10 +15,19 @@ struct ContentView: View {
     @State private var exportAlert: ExportAlert? = nil
     @State private var toastMessage: String? = nil
     @State private var toastClearTask: Task<Void, Never>? = nil
-    @State private var controlsVisible = true
-    @State private var hideControlsTask: Task<Void, Never>? = nil
+    /// Controls are never fully hidden — they fade between bright (1.0) and an
+    /// ambient baseline (~0.18) so the bar always remains discoverable. Triggered
+    /// by every tap; auto-dims after 1.5s with a gentle 0.8s easeInOut.
+    @State private var controlsBright = true
+    @State private var dimControlsTask: Task<Void, Never>? = nil
     @State private var autoRegenTask: Task<Void, Never>? = nil
     @State private var lastIdle: Bool = false
+
+    private let dwellSeconds: TimeInterval = 1.5
+    private let fadeSeconds: Double = 0.8
+    /// Baseline opacity when controls are at rest. Soft enough to recede,
+    /// strong enough to remain discoverable. Modeled on BL.muted (0.55).
+    private let ambientOpacity: Double = 0.35
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -49,23 +58,22 @@ struct ContentView: View {
             .accessibilityHint("Double tap to generate a new pattern")
             .accessibilityAddTraits(.isButton)
 
-            // Layer 2 — clock overlay.
+            // Layer 2 — clock overlay (tinted by current palette's phylum accent).
             if settings.zenMode, settings.zenShowClock {
                 ZenClockOverlay(showSeconds: settings.zenShowSeconds,
-                                showDate: settings.zenShowDate)
+                                showDate: settings.zenShowDate,
+                                accent: BL.accent(for: settings.paletteId))
                     .allowsHitTesting(false)
                     .transition(.opacity)
             }
 
-            // Layer 3 — control bar.
+            // Layer 3 — ambient control bar. Always present; opacity breathes.
             VStack {
                 Spacer()
-                if controlsVisible {
-                    controlBar
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
+                controlBar
+                    .opacity(controlsBright ? 1.0 : ambientOpacity)
+                    .animation(.easeInOut(duration: fadeSeconds), value: controlsBright)
             }
-            .animation(.easeInOut(duration: 0.25), value: controlsVisible)
 
             // Layer 4 — export progress dim.
             if exportInProgress {
@@ -77,12 +85,12 @@ struct ContentView: View {
         }
         .safeAreaInset(edge: .top) {
             if let message = toastMessage {
-                Toast(text: message)
+                Toast(text: message, accent: BL.accent(for: settings.paletteId))
                     .padding(.top, 4)
                     .transition(.opacity)
             }
         }
-        .sheet(isPresented: $showSettings, onDismiss: revealControls) {
+        .sheet(isPresented: $showSettings, onDismiss: brightenControls) {
             SettingsSheet(settings: settings,
                           loadFavorite: loadFavorite(_:))
         }
@@ -107,7 +115,7 @@ struct ContentView: View {
                     dismissButton: .default(Text("OK")))
             }
         }
-        .onAppear { scheduleHideControls() }
+        .onAppear { scheduleDimControls() }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
         .onOpenURL { handleIncomingURL($0) }
     }
@@ -115,21 +123,22 @@ struct ContentView: View {
     // MARK: - Control bar
 
     private var controlBar: some View {
-        HStack(spacing: 22) {
-            controlButton(system: "arrow.triangle.2.circlepath", label: "Regenerate") {
+        let accent = BL.accent(for: settings.paletteId)
+        return HStack(spacing: 20) {
+            controlButton(system: "arrow.triangle.2.circlepath", label: "Regenerate", glow: accent) {
                 regenerate()
             }
-            controlButton(system: favoriteIcon, label: "Favorite") {
+            controlButton(system: favoriteIcon, label: "Favorite",
+                          glow: settings.isFavorite(seed: seed) ? BL.pink : accent) {
                 toggleFavorite()
             }
-            controlButton(system: "slider.horizontal.3", label: "Settings") {
+            controlButton(system: "slider.horizontal.3", label: "Settings", glow: accent) {
                 showSettings = true
             }
-            Button { exportFullScreen() } label: { controlIcon(system: "square.and.arrow.down.fill") }
-                .accessibilityLabel("Save")
-                .disabled(exportInProgress)
-                .opacity(exportInProgress ? 0.4 : 1)
-
+            controlButton(system: "square.and.arrow.down.fill", label: "Save", glow: accent,
+                          enabled: !exportInProgress) {
+                exportFullScreen()
+            }
             Menu {
                 ForEach(ExportService.presets, id: \.label) { preset in
                     Button("\(preset.label)  •  \(Int(preset.size.width))×\(Int(preset.size.height))") {
@@ -137,30 +146,41 @@ struct ContentView: View {
                     }
                 }
             } label: {
-                controlIcon(system: "rectangle.portrait.and.arrow.right.fill")
+                controlIcon(system: "rectangle.portrait.and.arrow.right.fill", glow: accent)
                     .opacity(exportInProgress ? 0.4 : 1)
             }
             .accessibilityLabel("Export resolution")
             .disabled(exportInProgress)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 14)
-        .background(.ultraThinMaterial, in: Capsule())
+        .padding(.horizontal, 22)
+        .padding(.vertical, 12)
+        .background {
+            Capsule()
+                .fill(BL.deep.opacity(0.7))
+                .overlay(Capsule().strokeBorder(BL.rule, lineWidth: 1))
+                .background(.ultraThinMaterial, in: Capsule())
+        }
         .padding(.bottom, 28)
     }
 
-    private func controlButton(system: String, label: String, action: @escaping () -> Void) -> some View {
+    private func controlButton(system: String,
+                               label: String,
+                               glow: Color,
+                               enabled: Bool = true,
+                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            controlIcon(system: system)
+            controlIcon(system: system, glow: glow)
+                .opacity(enabled ? 1 : 0.35)
         }
         .accessibilityLabel(label)
+        .disabled(!enabled)
     }
 
-    private func controlIcon(system: String) -> some View {
+    private func controlIcon(system: String, glow: Color) -> some View {
         Image(systemName: system)
-            .font(.title2.weight(.medium))
-            .symbolRenderingMode(.hierarchical)
-            .foregroundStyle(.white)
+            .font(.system(size: 19, weight: .light))
+            .foregroundStyle(BL.highlight)
+            .shadow(color: controlsBright ? glow.opacity(0.55) : .clear, radius: 8)
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
     }
@@ -173,7 +193,7 @@ struct ContentView: View {
 
     private func canvasTapped() {
         regenerate()
-        revealControls()
+        brightenControls()
     }
 
     private func regenerate() {
@@ -184,16 +204,17 @@ struct ContentView: View {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    private func revealControls() {
-        controlsVisible = true
-        scheduleHideControls()
+    /// Bring controls back to full brightness, then schedule the gentle dim.
+    private func brightenControls() {
+        controlsBright = true
+        scheduleDimControls()
     }
 
-    private func scheduleHideControls() {
-        hideControlsTask?.cancel()
-        hideControlsTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(4))
-            if !Task.isCancelled { controlsVisible = false }
+    private func scheduleDimControls() {
+        dimControlsTask?.cancel()
+        dimControlsTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(dwellSeconds))
+            if !Task.isCancelled { controlsBright = false }
         }
     }
 
@@ -211,7 +232,7 @@ struct ContentView: View {
     private func loadFavorite(_ snapshot: MandalaSnapshot) {
         seed = snapshot.seed
         settings.paletteId = snapshot.paletteId
-        revealControls()
+        brightenControls()
     }
 
     // MARK: - Zen / scenePhase
@@ -246,7 +267,7 @@ struct ContentView: View {
         let parts = url.pathComponents.filter { $0 != "/" }
         if url.host == "seed", let uuidString = parts.first {
             seed = uuidString
-            revealControls()
+            brightenControls()
         }
     }
 
@@ -507,44 +528,76 @@ private struct AboutScreen: View {
     }
 
     var body: some View {
-        Form {
-            Section {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Mandala")
-                        .font(.title.weight(.semibold))
-                    Text("Version \(version)")
-                        .foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 36) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 10) {
+                        BLDot(color: BL.cyan, size: 8)
+                        BLCaption("mandala · v\(version)", tint: BL.muted)
+                    }
+                    Text("small luminous things,\nmapped where they were found.")
+                        .font(.system(size: 36, weight: .light, design: .default))
+                        .tracking(-0.5)
+                        .lineSpacing(2)
+                        .foregroundStyle(BL.highlight)
                 }
-                .padding(.vertical, 6)
-            }
 
-            Section("Attribution") {
-                Text("The hexagonal-loop algorithm is adapted from Charlotte Dann's *Hexagonal Generative Art* CodePen, building on David Siaw's Hexlife. Truchet tile mathematics is public domain (Sébastien Truchet, 1704).")
-                    .font(.callout)
-                Link("Charlotte Dann — original CodePen",
-                     destination: URL(string: "https://codepen.io/pouretrebelle/pen/ZBNJmd")!)
-                Link("Hexagonal Generative Art — write-up",
-                     destination: URL(string: "https://codepen.io/pouretrebelle/post/hexagons")!)
-            }
+                section(label: "attribution", accent: BL.cyan) {
+                    Text("The hexagonal-loop algorithm is adapted from Charlotte Dann's *Hexagonal Generative Art* CodePen, building on David Siaw's Hexlife. Truchet tile mathematics is public domain (Sébastien Truchet, 1704).")
+                        .font(.bl(14))
+                        .lineSpacing(4)
+                        .foregroundStyle(BL.paper)
+                    Link("Charlotte Dann — original CodePen",
+                         destination: URL(string: "https://codepen.io/pouretrebelle/pen/ZBNJmd")!)
+                        .font(.bl(13)).tint(BL.cyan)
+                    Link("Hexagonal Generative Art — write-up",
+                         destination: URL(string: "https://codepen.io/pouretrebelle/post/hexagons")!)
+                        .font(.bl(13)).tint(BL.cyan)
+                }
 
-            Section("Privacy") {
-                Text("Mandala collects no data. No analytics, no network requests, no account. The only system permission requested is one-time write access to Photos when you tap Save.")
-                    .font(.callout)
-            }
+                section(label: "privacy", accent: BL.green) {
+                    Text("Mandala collects no data. No analytics, no network requests, no account. The only system permission requested is one-time write access to Photos when you tap Save.")
+                        .font(.bl(14))
+                        .lineSpacing(4)
+                        .foregroundStyle(BL.paper)
+                }
 
-            Section("Feedback") {
-                Link("Email the developer",
-                     destination: URL(string: "mailto:luke@lukesteuber.com?subject=Mandala%20feedback")!)
-            }
+                section(label: "feedback", accent: BL.violet) {
+                    Link("Email the developer",
+                         destination: URL(string: "mailto:luke@lukesteuber.com?subject=Mandala%20feedback")!)
+                        .font(.bl(13)).tint(BL.violet)
+                }
 
-            Section {
-                Text("Built by Luke Steuber.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                HStack {
+                    BLCaption("built by luke steuber", tint: BL.muted)
+                    Spacer()
+                    BLCaption("2026", tint: BL.muted)
+                }
+                .padding(.top, 12)
             }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 32)
         }
+        .background(BL.void.ignoresSafeArea())
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarBackground(BL.deep, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+    }
+
+    @ViewBuilder
+    private func section<Content: View>(
+        label: String, accent: Color, @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                BLDot(color: accent, size: 6)
+                BLCaption(label, tint: accent.opacity(0.9))
+            }
+            VStack(alignment: .leading, spacing: 8) { content() }
+                .padding(.leading, 2)
+        }
     }
 }
 
@@ -643,23 +696,30 @@ private struct PaletteSwatch: View {
 private struct ZenClockOverlay: View {
     let showSeconds: Bool
     let showDate: Bool
+    var accent: Color = BL.cyan
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: showSeconds ? 1 : 30)) { ctx in
             let now = ctx.date
-            VStack(spacing: 8) {
+            VStack(spacing: 12) {
                 Text(timeString(now))
-                    .font(.system(size: 96, weight: .ultraLight, design: .rounded))
+                    .font(.system(size: 96, weight: .ultraLight, design: .default))
+                    .tracking(-2)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.4)
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.75), radius: 18)
+                    .foregroundStyle(BL.highlight)
+                    // Two-layer shadow: dark drop for legibility over the
+                    // mandala, plus a subtle phylum bloom.
+                    .shadow(color: .black.opacity(0.7), radius: 16)
+                    .shadow(color: accent.opacity(0.3), radius: 28)
                 if showDate {
                     Text(now, format: .dateTime.weekday(.wide).month(.wide).day())
-                        .font(.title3.weight(.light))
-                        .foregroundStyle(.white.opacity(0.75))
-                        .shadow(color: .black.opacity(0.75), radius: 8)
+                        .font(.bl(14, weight: .light))
+                        .tracking(1.2)
+                        .textCase(.uppercase)
+                        .foregroundStyle(BL.paper.opacity(0.7))
+                        .shadow(color: .black.opacity(0.7), radius: 6)
                 }
             }
             .padding(.horizontal, 32)
@@ -680,15 +740,24 @@ private struct ZenClockOverlay: View {
 
 private struct Toast: View {
     let text: String
+    var accent: Color = BL.green
 
     var body: some View {
-        Text(text)
-            .font(.callout.weight(.medium))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial, in: Capsule())
-            .foregroundStyle(.white)
-            .accessibilityAddTraits(.isStaticText)
+        HStack(spacing: 10) {
+            BLDot(color: accent, size: 6)
+            Text(text)
+                .font(.bl(13, weight: .regular))
+                .tracking(0.2)
+                .foregroundStyle(BL.highlight)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background {
+            Capsule()
+                .fill(BL.deep.opacity(0.85))
+                .overlay(Capsule().strokeBorder(BL.rule, lineWidth: 1))
+        }
+        .accessibilityAddTraits(.isStaticText)
     }
 }
 
