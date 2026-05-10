@@ -1,0 +1,32 @@
+import XCTest
+@testable import Mandala
+
+final class SnapshotTests: XCTestCase {
+
+    func testSnapshotCodableRoundTrip() throws {
+        let original = MandalaSnapshot(
+            seed: "fixed-seed-123",
+            paletteId: "aurora",
+            config: EngineConfig(),
+            date: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(MandalaSnapshot.self, from: data)
+        XCTAssertEqual(decoded, original)
+    }
+
+    func testSnapshotIDEqualsSeed() {
+        let snap = MandalaSnapshot(seed: "abc", paletteId: "ember", config: EngineConfig())
+        XCTAssertEqual(snap.id, "abc")
+    }
+
+    func testEngineConfigCodableRoundTrip() throws {
+        var cfg = EngineConfig()
+        cfg.drawSpeed = 0.42
+        cfg.glow = false
+        cfg.lineWidth = 2.1
+        let data = try JSONEncoder().encode(cfg)
+        let decoded = try JSONDecoder().decode(EngineConfig.self, from: data)
+        XCTAssertEqual(decoded, cfg)
+    }
+}
