@@ -18,10 +18,12 @@ struct ContentView: View {
     @State private var autoRegenTask: Task<Void, Never>? = nil
     @State private var lastIdle: Bool = false
 
-    /// In Zen Mode only: a single tap on the canvas hides the bar for
-    /// ambient/full-bleed display. Tap again to bring it back. Outside Zen
-    /// the bar stays grounded at the bottom safe area at full opacity.
-    @State private var barHiddenInZen = false
+    /// The bottom shelf fades after a short idle period. Once faded, the next
+    /// screen tap only restores the controls; while visible, a canvas tap
+    /// cycles the visualization.
+    @State private var controlsFaded = false
+    @State private var controlsFadeTask: Task<Void, Never>? = nil
+    private let controlsFadeDelay: Duration = .seconds(2.8)
 
     /// Ring buffer of the last 5 mandalas the user generated but didn't save.
     /// Recoverable via long-press on the Regenerate button. Transient — not
@@ -75,21 +77,30 @@ struct ContentView: View {
                     .transition(.opacity)
             }
 
-            // Layer 3 — grounded controls. In Zen Mode, a single tap on the
-            // canvas can hide them for ambient full-bleed display.
+            // Layer 3 — grounded controls. The shelf remains a continuous
+            // bottom surface and fades down after idle time.
             VStack(spacing: 8) {
                 Spacer()
                 if showRecents, !recents.isEmpty {
                     recentsStrip
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
-                if !(settings.zenMode && barHiddenInZen) {
-                    controlBar
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
-                }
+                controlBar
             }
-            .animation(.easeInOut(duration: 0.35), value: barHiddenInZen)
+            .opacity(controlsFaded ? 0 : 1)
+            .allowsHitTesting(!controlsFaded)
+            .animation(.easeInOut(duration: 0.45), value: controlsFaded)
             .animation(.easeInOut(duration: 0.25), value: showRecents)
+
+            if controlsFaded {
+                Color.clear
+                    .ignoresSafeArea()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        restoreControls()
+                    }
+                    .accessibilityLabel("Show controls")
+            }
 
             // Layer 4 — export progress dim.
             if exportInProgress {
@@ -139,18 +150,26 @@ struct ContentView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
+        .onChange(of: showSettings) { _, isPresented in
+            if !isPresented { noteInteraction() }
+        }
+        .onChange(of: exportInProgress) { _, inProgress in
+            if !inProgress { noteInteraction() }
+        }
         .onOpenURL { handleIncomingURL($0) }
+        .onAppear { scheduleControlsFade() }
+        .onDisappear { controlsFadeTask?.cancel() }
     }
 
     // MARK: - Canvas accessibility
 
     private var canvasA11yHint: String {
-        if settings.zenMode {
-            return "Double tap to toggle the controls."
+        if controlsFaded {
+            return "Double tap to show the controls."
         } else if longPressEnabled {
-            return "Press and hold to generate a new pattern."
+            return "Double tap to generate a new pattern. Press and hold also generates a new pattern."
         } else {
-            return "Use the Regenerate button below to generate a new pattern."
+            return "Double tap to generate a new pattern."
         }
     }
 
@@ -170,59 +189,70 @@ struct ContentView: View {
 
     private var controlBar: some View {
         let accent = BL.accent(for: settings.paletteId)
-        return HStack(spacing: 8) {
-            Button {
-                regenerate()
-            } label: {
-                controlItem(system: "arrow.triangle.2.circlepath",
-                            label: "New",
-                            accent: accent,
-                            prominent: true)
+        return HStack(alignment: .center, spacing: 10) {
+            dockButton(system: recents.isEmpty ? "clock" : "clock.arrow.circlepath",
+                       label: "Previous",
+                       accent: accent,
+                       enabled: !recents.isEmpty) {
+                noteInteraction()
+                toggleRecents()
             }
-            .accessibilityLabel("Regenerate")
-            .accessibilityHint(recents.isEmpty ? "" : "Press and hold to see recent patterns.")
-            .simultaneousGesture(
-                LongPressGesture(minimumDuration: 0.4)
-                    .onEnded { _ in
-                        guard !recents.isEmpty else { return }
-                        showRecents = true
-                        UISelectionFeedbackGenerator().selectionChanged()
-                    }
-            )
 
-            controlButton(system: favoriteIcon, label: "Favorite",
-                          accent: settings.isFavorite(seed: seed) ? BL.pink : accent) {
-                toggleFavorite()
-            }
-            controlButton(system: "slider.horizontal.3", label: "Settings", accent: accent) {
+            dockButton(system: "slider.horizontal.3",
+                       label: "Tune",
+                       accent: accent) {
+                noteInteraction()
                 showSettings = true
             }
-            controlButton(system: "square.and.arrow.down.fill", label: "Save", accent: accent,
-                          enabled: !exportInProgress) {
-                exportFullScreen()
+
+            Button {
+                noteInteraction()
+                regenerate()
+            } label: {
+                newPatternButton(accent: accent)
             }
+            .accessibilityLabel("New pattern")
+            .accessibilityHint("Generates a new Mandaza and keeps the current one in Previous.")
+            .buttonStyle(.plain)
+
+            dockButton(system: favoriteIcon,
+                       label: settings.isFavorite(seed: seed) ? "Saved" : "Favorite",
+                       accent: settings.isFavorite(seed: seed) ? BL.pink : accent) {
+                noteInteraction()
+                toggleFavorite()
+            }
+
             Menu {
-                ForEach(ExportService.presets, id: \.label) { preset in
-                    Button("\(preset.label)  •  \(Int(preset.size.width))×\(Int(preset.size.height))") {
-                        exportAt(size: preset.size)
+                Button("Save Screen Size") {
+                    noteInteraction()
+                    exportFullScreen()
+                }
+
+                Section("Export Size") {
+                    ForEach(ExportService.presets, id: \.label) { preset in
+                        Button("\(preset.label)  •  \(Int(preset.size.width))×\(Int(preset.size.height))") {
+                            noteInteraction()
+                            exportAt(size: preset.size)
+                        }
                     }
                 }
             } label: {
-                controlItem(system: "rectangle.portrait.and.arrow.right.fill",
-                            label: "Size",
-                            accent: accent)
-                    .opacity(exportInProgress ? 0.4 : 1)
+                dockItem(system: "square.and.arrow.down",
+                         label: "Save",
+                         accent: accent)
+                    .opacity(exportInProgress ? 0.35 : 1)
             }
-            .accessibilityLabel("Export resolution")
+            .accessibilityLabel("Save")
             .disabled(exportInProgress)
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 12)
-        .padding(.top, 10)
-        .padding(.bottom, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
         .frame(maxWidth: .infinity)
         .background {
             Rectangle()
-                .fill(BL.void.opacity(0.96))
+                .fill(BL.void.opacity(0.92))
                 .overlay(alignment: .top) {
                     Rectangle()
                         .fill(BL.rule)
@@ -235,22 +265,41 @@ struct ContentView: View {
 
     private var recentsStrip: some View {
         let accent = BL.accent(for: settings.paletteId)
-        return HStack(spacing: 8) {
-            ForEach(recents) { snap in
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                BLCaption("previous", tint: accent.opacity(0.85))
+                Spacer()
                 Button {
-                    loadRecent(snap)
+                    noteInteraction()
+                    showRecents = false
                 } label: {
-                    MandazaImageView(snapshot: snap,
-                                     size: CGSize(width: 48, height: 64),
-                                     scale: 2)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .strokeBorder(BL.rule, lineWidth: 1)
-                        )
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(BL.muted)
+                        .frame(width: 32, height: 28)
+                        .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Recent pattern")
+                .accessibilityLabel("Hide previous patterns")
+            }
+
+            HStack(spacing: 10) {
+                ForEach(recents) { snap in
+                    Button {
+                        noteInteraction()
+                        loadRecent(snap)
+                    } label: {
+                        MandazaImageView(snapshot: snap,
+                                         size: CGSize(width: 54, height: 72),
+                                         scale: 2)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .strokeBorder(BL.rule, lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Load previous pattern")
+                }
             }
         }
         .padding(.horizontal, 12)
@@ -267,45 +316,58 @@ struct ContentView: View {
         }
     }
 
-    private func controlButton(system: String,
-                               label: String,
-                               accent: Color,
-                               enabled: Bool = true,
-                               action: @escaping () -> Void) -> some View {
+    private func dockButton(system: String,
+                            label: String,
+                            accent: Color,
+                            enabled: Bool = true,
+                            action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            controlItem(system: system, label: label, accent: accent)
+            dockItem(system: system, label: label, accent: accent)
                 .opacity(enabled ? 1 : 0.35)
         }
         .accessibilityLabel(label)
         .disabled(!enabled)
+        .buttonStyle(.plain)
     }
 
-    private func controlItem(system: String,
-                             label: String,
-                             accent: Color,
-                             prominent: Bool = false) -> some View {
-        VStack(spacing: 4) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 7)
-                    .fill(prominent ? accent.opacity(0.18) : Color.white.opacity(0.045))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 7)
-                            .strokeBorder(prominent ? accent.opacity(0.45) : BL.rule,
-                                          lineWidth: 1)
-                    )
-                Image(systemName: system)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(prominent ? accent : BL.highlight)
-            }
-            .frame(width: 44, height: 38)
+    private func dockItem(system: String,
+                          label: String,
+                          accent: Color) -> some View {
+        VStack(spacing: 5) {
+            Image(systemName: system)
+                .font(.system(size: 20, weight: .regular))
+                .foregroundStyle(BL.highlight)
+                .frame(height: 26)
 
             Text(label)
                 .font(.blMono(10, weight: .medium))
                 .foregroundStyle(BL.muted)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.75)
         }
-        .frame(maxWidth: .infinity, minHeight: 58)
+        .frame(maxWidth: .infinity, minHeight: 48)
+        .contentShape(Rectangle())
+    }
+
+    private func newPatternButton(accent: Color) -> some View {
+        VStack(spacing: 5) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(accent)
+                .frame(height: 28)
+                .shadow(color: accent.opacity(0.55), radius: 10)
+            Text("New")
+                .font(.blMono(10, weight: .semibold))
+                .foregroundStyle(BL.highlight)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, minHeight: 52)
+        .background(alignment: .top) {
+            Capsule()
+                .fill(accent.opacity(0.10))
+                .overlay(Capsule().strokeBorder(accent.opacity(0.35), lineWidth: 1))
+                .frame(height: 50)
+        }
         .contentShape(Rectangle())
     }
 
@@ -313,16 +375,25 @@ struct ContentView: View {
         settings.isFavorite(seed: seed) ? "heart.fill" : "heart"
     }
 
+    private func toggleRecents() {
+        guard !recents.isEmpty else { return }
+        showRecents.toggle()
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
     // MARK: - Canvas gestures
 
-    /// Single tap. Inert in normal mode (deliberate — protects the current
-    /// image from being overwritten by an errant touch). In Zen Mode, toggles
-    /// the bar's visibility for full-bleed ambient display (Photos pattern).
+    /// A canvas tap is the primary cycle gesture while controls are visible.
+    /// Once the shelf has faded, the transparent tap catcher above handles
+    /// the first tap so the artwork is not accidentally replaced.
     private func canvasTapped() {
-        // Dismiss the Recents strip on any tap.
-        if showRecents { showRecents = false; return }
-        guard settings.zenMode else { return }
-        barHiddenInZen.toggle()
+        guard !controlsFaded else {
+            restoreControls()
+            return
+        }
+        showRecents = false
+        noteInteraction()
+        regenerate()
     }
 
     /// 700ms long-press = regenerate. Opt-in power gesture, automatically
@@ -330,8 +401,29 @@ struct ContentView: View {
     /// only the explicit Regenerate button.
     private func canvasLongPressed() {
         guard longPressEnabled else { return }
+        noteInteraction()
         regenerate()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    }
+
+    private func noteInteraction() {
+        controlsFaded = false
+        scheduleControlsFade()
+    }
+
+    private func restoreControls() {
+        showRecents = false
+        noteInteraction()
+    }
+
+    private func scheduleControlsFade() {
+        controlsFadeTask?.cancel()
+        controlsFadeTask = Task { @MainActor in
+            try? await Task.sleep(for: controlsFadeDelay)
+            guard !Task.isCancelled, !showSettings, exportAlert == nil, !exportInProgress else { return }
+            showRecents = false
+            controlsFaded = true
+        }
     }
 
     private func regenerate() {
