@@ -1,6 +1,8 @@
 import SwiftUI
 import UIKit
+#if canImport(WidgetKit)
 import WidgetKit
+#endif
 
 struct ContentView: View {
 
@@ -378,7 +380,7 @@ struct ContentView: View {
     private func toggleRecents() {
         guard !recents.isEmpty else { return }
         showRecents.toggle()
-        UISelectionFeedbackGenerator().selectionChanged()
+        selectionFeedback()
     }
 
     // MARK: - Canvas gestures
@@ -403,7 +405,7 @@ struct ContentView: View {
         guard longPressEnabled else { return }
         noteInteraction()
         regenerate()
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        mediumImpactFeedback()
     }
 
     private func noteInteraction() {
@@ -434,8 +436,8 @@ struct ContentView: View {
         seed = UUID().uuidString
         settings.paletteId = Palette.all.filter { $0.id != settings.paletteId }
             .randomElement()?.id ?? settings.paletteId
-        UISelectionFeedbackGenerator().selectionChanged()
-        WidgetCenter.shared.reloadAllTimelines()
+        selectionFeedback()
+        reloadWidgetTimelines()
     }
 
     // MARK: - Recents ring buffer
@@ -456,7 +458,7 @@ struct ContentView: View {
         seed = snap.seed
         settings.paletteId = snap.paletteId
         showRecents = false
-        UISelectionFeedbackGenerator().selectionChanged()
+        selectionFeedback()
     }
 
     // MARK: - Favorites
@@ -466,13 +468,31 @@ struct ContentView: View {
                                           paletteId: settings.paletteId,
                                           config: settings.engineConfig())
         showToast(now ? "Saved to Favorites" : "Removed from Favorites")
-        WidgetCenter.shared.reloadAllTimelines()
-        UISelectionFeedbackGenerator().selectionChanged()
+        reloadWidgetTimelines()
+        selectionFeedback()
     }
 
     private func loadFavorite(_ snapshot: MandazaSnapshot) {
         seed = snapshot.seed
         settings.paletteId = snapshot.paletteId
+    }
+
+    private func selectionFeedback() {
+        #if os(iOS)
+        UISelectionFeedbackGenerator().selectionChanged()
+        #endif
+    }
+
+    private func mediumImpactFeedback() {
+        #if os(iOS)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        #endif
+    }
+
+    private func reloadWidgetTimelines() {
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 
     // MARK: - Zen / scenePhase
@@ -723,7 +743,7 @@ private struct SettingsSheet: View {
                 }
                 .listRowBackground(BL.deep)
             }
-            .scrollContentBackground(.hidden)
+            .mandazaScrollContentBackgroundHidden()
             .background(BL.void.ignoresSafeArea())
             .tint(accent)
             .navigationTitle("Settings")
@@ -803,10 +823,10 @@ private struct FavoritesGrid: View {
             }
             .padding()
         }
-        .scrollContentBackground(.hidden)
+        .mandazaScrollContentBackgroundHidden()
         .background(BL.void.ignoresSafeArea())
         .navigationTitle("Favorites")
-        .navigationBarTitleDisplayMode(.inline)
+        .mandazaNavigationBarTitleDisplayModeInline()
         .toolbarBackground(BL.void, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
@@ -875,7 +895,7 @@ private struct AboutScreen: View {
         }
         .background(BL.void.ignoresSafeArea())
         .navigationTitle("About")
-        .navigationBarTitleDisplayMode(.inline)
+        .mandazaNavigationBarTitleDisplayModeInline()
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbarBackground(BL.deep, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -918,6 +938,23 @@ private struct LabeledSlider: View {
                     .foregroundStyle(BL.muted)
                     .monospacedDigit()
             }
+            #if os(tvOS)
+            HStack(spacing: 12) {
+                Button {
+                    adjustValue(by: -(step ?? (range.upperBound - range.lowerBound) / 20))
+                } label: {
+                    Image(systemName: "minus")
+                }
+                .tint(accent)
+
+                Button {
+                    adjustValue(by: step ?? (range.upperBound - range.lowerBound) / 20)
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .tint(accent)
+            }
+            #else
             if let step {
                 Slider(value: $value, in: range, step: step)
                     .tint(accent)
@@ -925,8 +962,13 @@ private struct LabeledSlider: View {
                 Slider(value: $value, in: range)
                     .tint(accent)
             }
+            #endif
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private func adjustValue(by delta: Double) {
+        value = min(max(value + delta, range.lowerBound), range.upperBound)
     }
 }
 
@@ -950,7 +992,7 @@ private struct PalettePicker: View {
             }
             .padding()
         }
-        .scrollContentBackground(.hidden)
+        .mandazaScrollContentBackgroundHidden()
         .background(BL.void.ignoresSafeArea())
         .navigationTitle("Palette")
         .toolbarBackground(BL.void, for: .navigationBar)
@@ -1065,6 +1107,26 @@ private struct Toast: View {
                 .overlay(Capsule().strokeBorder(BL.rule, lineWidth: 1))
         }
         .accessibilityAddTraits(.isStaticText)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func mandazaScrollContentBackgroundHidden() -> some View {
+        #if os(tvOS)
+        self
+        #else
+        self.scrollContentBackground(.hidden)
+        #endif
+    }
+
+    @ViewBuilder
+    func mandazaNavigationBarTitleDisplayModeInline() -> some View {
+        #if os(tvOS)
+        self
+        #else
+        self.navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }
 
