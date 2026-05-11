@@ -15,19 +15,20 @@ struct ContentView: View {
     @State private var exportAlert: ExportAlert? = nil
     @State private var toastMessage: String? = nil
     @State private var toastClearTask: Task<Void, Never>? = nil
-    /// Controls are never fully hidden — they fade between bright (1.0) and an
-    /// ambient baseline (~0.18) so the bar always remains discoverable. Triggered
-    /// by every tap; auto-dims after 1.5s with a gentle 0.8s easeInOut.
-    @State private var controlsBright = true
-    @State private var dimControlsTask: Task<Void, Never>? = nil
     @State private var autoRegenTask: Task<Void, Never>? = nil
     @State private var lastIdle: Bool = false
 
-    private let dwellSeconds: TimeInterval = 1.5
-    private let fadeSeconds: Double = 0.8
-    /// Baseline opacity when controls are at rest. Soft enough to recede,
-    /// strong enough to remain discoverable. Modeled on BL.muted (0.55).
-    private let ambientOpacity: Double = 0.35
+    /// In Zen Mode only: a single tap on the canvas hides the bar for
+    /// ambient/full-bleed display. Tap again to bring it back. Outside Zen
+    /// the bar stays grounded at the bottom safe area at full opacity.
+    @State private var barHiddenInZen = false
+
+    /// Ring buffer of the last 5 mandalas the user generated but didn't save.
+    /// Recoverable via long-press on the Regenerate button. Transient — not
+    /// persisted across launches (favorites is the durable affordance).
+    @State private var recents: [MandalaSnapshot] = []
+    @State private var showRecents = false
+    private let recentsCap = 5
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -52,11 +53,18 @@ struct ContentView: View {
             }
             .ignoresSafeArea()
             .contentShape(Rectangle())
-            .onTapGesture { canvasTapped() }
+            .gesture(
+                LongPressGesture(minimumDuration: 0.7)
+                    .onEnded { _ in canvasLongPressed() }
+            )
+            .simultaneousGesture(
+                TapGesture()
+                    .onEnded { canvasTapped() }
+            )
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Mandala canvas")
-            .accessibilityHint("Double tap to generate a new pattern")
-            .accessibilityAddTraits(.isButton)
+            .accessibilityHint(canvasA11yHint)
+            .accessibilityAddTraits(canvasA11yTraits)
 
             // Layer 2 — clock overlay (tinted by current palette's phylum accent).
             if settings.zenMode, settings.zenShowClock {
@@ -67,13 +75,22 @@ struct ContentView: View {
                     .transition(.opacity)
             }
 
-            // Layer 3 — ambient control bar. Always present; opacity breathes.
-            VStack {
+            // Layer 3 — grounded control bar. Full opacity, anchored to bottom
+            // safe area. In Zen Mode, a single tap on the canvas can hide it
+            // for ambient full-bleed display.
+            VStack(spacing: 8) {
                 Spacer()
-                controlBar
-                    .opacity(controlsBright ? 1.0 : ambientOpacity)
-                    .animation(.easeInOut(duration: fadeSeconds), value: controlsBright)
+                if showRecents, !recents.isEmpty {
+                    recentsStrip
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
+                if !(settings.zenMode && barHiddenInZen) {
+                    controlBar
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
             }
+            .animation(.easeInOut(duration: 0.35), value: barHiddenInZen)
+            .animation(.easeInOut(duration: 0.25), value: showRecents)
 
             // Layer 4 — export progress dim.
             if exportInProgress {
@@ -97,7 +114,7 @@ struct ContentView: View {
                     .transition(.opacity)
             }
         }
-        .sheet(isPresented: $showSettings, onDismiss: brightenControls) {
+        .sheet(isPresented: $showSettings) {
             SettingsSheet(settings: settings,
                           loadFavorite: loadFavorite(_:))
         }
@@ -122,9 +139,32 @@ struct ContentView: View {
                     dismissButton: .default(Text("OK")))
             }
         }
-        .onAppear { scheduleDimControls() }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
         .onOpenURL { handleIncomingURL($0) }
+    }
+
+    // MARK: - Canvas accessibility
+
+    private var canvasA11yHint: String {
+        if settings.zenMode {
+            return "Double tap to toggle the controls."
+        } else if longPressEnabled {
+            return "Press and hold to generate a new pattern."
+        } else {
+            return "Use the Regenerate button below to generate a new pattern."
+        }
+    }
+
+    private var canvasA11yTraits: AccessibilityTraits {
+        // When AT is on, the canvas is not a button — it's a decorative image.
+        // Don't promise gestures we won't honor.
+        longPressEnabled ? .isButton : .isImage
+    }
+
+    /// Long-press regenerate is disabled whenever VoiceOver or Switch Control
+    /// is active — assistive tech users get the explicit button instead.
+    private var longPressEnabled: Bool {
+        !UIAccessibility.isVoiceOverRunning && !UIAccessibility.isSwitchControlRunning
     }
 
     // MARK: - Control bar
@@ -132,9 +172,22 @@ struct ContentView: View {
     private var controlBar: some View {
         let accent = BL.accent(for: settings.paletteId)
         return HStack(spacing: 20) {
-            controlButton(system: "arrow.triangle.2.circlepath", label: "Regenerate", glow: accent) {
+            Button {
                 regenerate()
+            } label: {
+                controlIcon(system: "arrow.triangle.2.circlepath", glow: accent)
             }
+            .accessibilityLabel("Regenerate")
+            .accessibilityHint(recents.isEmpty ? "" : "Press and hold to see recent patterns.")
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: 0.4)
+                    .onEnded { _ in
+                        guard !recents.isEmpty else { return }
+                        showRecents = true
+                        UISelectionFeedbackGenerator().selectionChanged()
+                    }
+            )
+
             controlButton(system: favoriteIcon, label: "Favorite",
                           glow: settings.isFavorite(seed: seed) ? BL.pink : accent) {
                 toggleFavorite()
@@ -163,11 +216,43 @@ struct ContentView: View {
         .padding(.vertical, 12)
         .background {
             Capsule()
-                .fill(BL.deep.opacity(0.7))
+                .fill(BL.deep.opacity(0.85))
                 .overlay(Capsule().strokeBorder(BL.rule, lineWidth: 1))
                 .background(.ultraThinMaterial, in: Capsule())
         }
-        .padding(.bottom, 28)
+        .padding(.bottom, 18)
+    }
+
+    // MARK: - Recents strip
+
+    private var recentsStrip: some View {
+        let accent = BL.accent(for: settings.paletteId)
+        return HStack(spacing: 8) {
+            ForEach(recents) { snap in
+                Button {
+                    loadRecent(snap)
+                } label: {
+                    MandalaImageView(snapshot: snap,
+                                     size: CGSize(width: 48, height: 64),
+                                     scale: 2)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .strokeBorder(BL.rule, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Recent pattern")
+            }
+        }
+        .padding(8)
+        .background {
+            Capsule(style: .continuous)
+                .fill(BL.deep.opacity(0.85))
+                .overlay(Capsule(style: .continuous).strokeBorder(accent.opacity(0.3), lineWidth: 1))
+                .background(.ultraThinMaterial, in: Capsule(style: .continuous))
+        }
+        .padding(.horizontal, 18)
     }
 
     private func controlButton(system: String,
@@ -187,7 +272,7 @@ struct ContentView: View {
         Image(systemName: system)
             .font(.system(size: 19, weight: .light))
             .foregroundStyle(BL.highlight)
-            .shadow(color: controlsBright ? glow.opacity(0.55) : .clear, radius: 8)
+            .shadow(color: glow.opacity(0.55), radius: 8)
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
     }
@@ -196,14 +281,32 @@ struct ContentView: View {
         settings.isFavorite(seed: seed) ? "heart.fill" : "heart"
     }
 
-    // MARK: - Tap + reveal
+    // MARK: - Canvas gestures
 
+    /// Single tap. Inert in normal mode (deliberate — protects the current
+    /// image from being overwritten by an errant touch). In Zen Mode, toggles
+    /// the bar's visibility for full-bleed ambient display (Photos pattern).
     private func canvasTapped() {
+        // Dismiss the Recents strip on any tap.
+        if showRecents { showRecents = false; return }
+        guard settings.zenMode else { return }
+        barHiddenInZen.toggle()
+    }
+
+    /// 700ms long-press = regenerate. Opt-in power gesture, automatically
+    /// disabled when VoiceOver or Switch Control is active so AT users get
+    /// only the explicit Regenerate button.
+    private func canvasLongPressed() {
+        guard longPressEnabled else { return }
         regenerate()
-        brightenControls()
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
     private func regenerate() {
+        // Push the current snapshot into the Recents ring buffer BEFORE the
+        // seed changes — so the artwork the user is about to overwrite is
+        // recoverable.
+        pushCurrentToRecents()
         seed = UUID().uuidString
         settings.paletteId = Palette.all.filter { $0.id != settings.paletteId }
             .randomElement()?.id ?? settings.paletteId
@@ -211,18 +314,25 @@ struct ContentView: View {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
-    /// Bring controls back to full brightness, then schedule the gentle dim.
-    private func brightenControls() {
-        controlsBright = true
-        scheduleDimControls()
+    // MARK: - Recents ring buffer
+
+    private func pushCurrentToRecents() {
+        let snap = MandalaSnapshot(seed: seed,
+                                   paletteId: settings.paletteId,
+                                   config: settings.engineConfig())
+        // De-dupe: if user oscillates back to a recent seed, don't re-record it.
+        recents.removeAll { $0.seed == snap.seed }
+        recents.insert(snap, at: 0)
+        if recents.count > recentsCap { recents = Array(recents.prefix(recentsCap)) }
     }
 
-    private func scheduleDimControls() {
-        dimControlsTask?.cancel()
-        dimControlsTask = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(dwellSeconds))
-            if !Task.isCancelled { controlsBright = false }
-        }
+    private func loadRecent(_ snap: MandalaSnapshot) {
+        // Loading a recent should NOT push the current into recents (it's
+        // already there if it was just-generated).
+        seed = snap.seed
+        settings.paletteId = snap.paletteId
+        showRecents = false
+        UISelectionFeedbackGenerator().selectionChanged()
     }
 
     // MARK: - Favorites
@@ -239,7 +349,6 @@ struct ContentView: View {
     private func loadFavorite(_ snapshot: MandalaSnapshot) {
         seed = snapshot.seed
         settings.paletteId = snapshot.paletteId
-        brightenControls()
     }
 
     // MARK: - Zen / scenePhase
@@ -274,7 +383,6 @@ struct ContentView: View {
         let parts = url.pathComponents.filter { $0 != "/" }
         if url.host == "seed", let uuidString = parts.first {
             seed = uuidString
-            brightenControls()
         }
     }
 
