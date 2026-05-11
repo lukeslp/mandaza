@@ -192,7 +192,7 @@ private func cubicLengthEstimate(_ c: [CGPoint]) -> Double {
 // MARK: - Engine
 
 /// Single in-flight mandala. Owns grid, loops, animation state.
-final class MandalaEngine {
+final class MandazaEngine {
 
     // Inputs
     var config: EngineConfig
@@ -718,7 +718,7 @@ final class MandalaEngine {
 
 import UIKit
 
-extension MandalaEngine {
+extension MandazaEngine {
 
     /// Renders a finished mandala straight to a CGContext, bypassing SwiftUI. Safe
     /// to call from any thread — `UIGraphicsImageRenderer` is documented thread-safe
@@ -739,7 +739,7 @@ extension MandalaEngine {
             ctx.setFillColor(UIColor.black.cgColor)
             ctx.fill(CGRect(origin: .zero, size: size))
 
-            let engine = MandalaEngine(config: config, paletteId: paletteId)
+            let engine = MandazaEngine(config: config, paletteId: paletteId)
             guard engine.regenerate(width: Double(size.width),
                                     height: Double(size.height),
                                     seed: seed) else { return }

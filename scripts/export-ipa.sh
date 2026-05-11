@@ -4,12 +4,12 @@
 #   scripts/export-ipa.sh
 #
 # Requires: scripts/archive.sh to have run first.
-# Output: build/export/Mandala.ipa
+# Output: build/export/Mandaza.ipa
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ARCHIVE="build/Mandala.xcarchive"
+ARCHIVE="build/Mandaza.xcarchive"
 EXPORT_DIR="build/export"
 OPTIONS="scripts/ExportOptions.plist"
 

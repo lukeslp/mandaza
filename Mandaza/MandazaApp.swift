@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct MandalaApp: App {
+struct MandazaApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

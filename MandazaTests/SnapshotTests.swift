@@ -1,22 +1,22 @@
 import XCTest
-@testable import Mandala
+@testable import Mandaza
 
 final class SnapshotTests: XCTestCase {
 
     func testSnapshotCodableRoundTrip() throws {
-        let original = MandalaSnapshot(
+        let original = MandazaSnapshot(
             seed: "fixed-seed-123",
             paletteId: "aurora",
             config: EngineConfig(),
             date: Date(timeIntervalSince1970: 1_700_000_000)
         )
         let data = try JSONEncoder().encode(original)
-        let decoded = try JSONDecoder().decode(MandalaSnapshot.self, from: data)
+        let decoded = try JSONDecoder().decode(MandazaSnapshot.self, from: data)
         XCTAssertEqual(decoded, original)
     }
 
     func testSnapshotIDEqualsSeed() {
-        let snap = MandalaSnapshot(seed: "abc", paletteId: "ember", config: EngineConfig())
+        let snap = MandazaSnapshot(seed: "abc", paletteId: "ember", config: EngineConfig())
         XCTAssertEqual(snap.id, "abc")
     }
 

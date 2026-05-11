@@ -8,10 +8,10 @@ import Observation
 /// macro tracks every read site (SwiftUI re-renders when a property changes).
 @MainActor
 @Observable
-public final class MandalaSettings {
+public final class MandazaSettings {
 
-    public static let suiteName = "group.com.lukesteuber.mandala"
-    public static let shared = MandalaSettings()
+    public static let suiteName = "group.com.lukesteuber.mandaza"
+    public static let shared = MandazaSettings()
 
     @ObservationIgnored
     private let defaults: UserDefaults
@@ -42,7 +42,7 @@ public final class MandalaSettings {
 
     // MARK: - Favorites
 
-    public var favorites: [MandalaSnapshot] { didSet { writeJSON(favorites, .favorites) } }
+    public var favorites: [MandazaSnapshot] { didSet { writeJSON(favorites, .favorites) } }
 
     // MARK: - Widget rotation
 
@@ -80,7 +80,7 @@ public final class MandalaSettings {
         self.widgetRotationMinutes = Self.readInt(suite, .widgetRotationMinutes, default: 60)
 
         if let data = suite.data(forKey: Key.favorites.rawValue),
-           let list = try? JSONDecoder().decode([MandalaSnapshot].self, from: data) {
+           let list = try? JSONDecoder().decode([MandazaSnapshot].self, from: data) {
             self.favorites = list
         } else {
             self.favorites = []
@@ -119,7 +119,7 @@ public final class MandalaSettings {
             favorites.remove(at: i)
             return false
         }
-        let snap = MandalaSnapshot(seed: seed, paletteId: paletteId, config: config)
+        let snap = MandazaSnapshot(seed: seed, paletteId: paletteId, config: config)
         favorites.insert(snap, at: 0)
         // Cap at 50 to bound App Group plist size.
         if favorites.count > 50 { favorites = Array(favorites.prefix(50)) }

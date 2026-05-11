@@ -1,11 +1,11 @@
 import XCTest
-@testable import Mandala
+@testable import Mandaza
 
 @MainActor
 final class SettingsTests: XCTestCase {
 
     func testEngineConfigReflectsLookValues() {
-        let s = MandalaSettings.shared
+        let s = MandazaSettings.shared
         s.drawSpeed = 0.8
         s.lineWidth = 2.5
         s.glow = false
@@ -16,7 +16,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testEngineConfigMapsDensityToCellSize() {
-        let s = MandalaSettings.shared
+        let s = MandazaSettings.shared
         s.density = 0.0
         XCTAssertEqual(s.engineConfig().cellSize, 1.0, accuracy: 0.0001)
         s.density = 1.0
@@ -26,7 +26,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testEngineConfigGeometryPresets() {
-        let s = MandalaSettings.shared
+        let s = MandazaSettings.shared
         s.geometryPreset = "auto"
         XCTAssertTrue(s.engineConfig().randomPattern)
         s.geometryPreset = "sparse"
@@ -37,7 +37,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testFavoritesToggleAddsAndRemoves() {
-        let s = MandalaSettings.shared
+        let s = MandazaSettings.shared
         s.favorites = []   // clean slate
 
         let added = s.toggleFavorite(seed: "test-favorite-1",
@@ -56,7 +56,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testFavoritesCappedAt50() {
-        let s = MandalaSettings.shared
+        let s = MandazaSettings.shared
         s.favorites = []
         for i in 0..<60 {
             s.toggleFavorite(seed: "seed-\(i)",

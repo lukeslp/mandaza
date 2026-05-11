@@ -8,7 +8,7 @@ import CoreGraphics
 ///
 /// Stable across launches when the same engine + palette + seed combine —
 /// the engine is deterministic on `seed`.
-public struct MandalaSnapshot: Codable, Hashable, Identifiable, Sendable {
+public struct MandazaSnapshot: Codable, Hashable, Identifiable, Sendable {
     public var id: String { seed }
     public let seed: String
     public let paletteId: String

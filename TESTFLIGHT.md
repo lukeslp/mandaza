@@ -9,9 +9,9 @@ Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.
 | Step | Status |
 |---|---|
 | App Icon (1024×1024) | ✅ Generated programmatically (`scripts/render-icon.swift`) |
-| Bundle IDs | ✅ `com.lukesteuber.mandala`, `com.lukesteuber.mandala.widgets` |
+| Bundle IDs | ✅ `com.lukesteuber.mandaza`, `com.lukesteuber.mandaza.widgets` |
 | Team ID | ✅ `596T7J7FB6` |
-| App Group entitlement | ✅ `group.com.lukesteuber.mandala` |
+| App Group entitlement | ✅ `group.com.lukesteuber.mandaza` |
 | Photos permission usage string | ✅ |
 | Export compliance flag | ✅ `ITSAppUsesNonExemptEncryption = false` |
 | Privacy nutrition label | ⏳ Needs setting in App Store Connect (we collect nothing) |
@@ -27,12 +27,12 @@ Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.
 → https://developer.apple.com/account/resources/identifiers/list
 
 For **each** of these two App IDs:
-- `com.lukesteuber.mandala`
-- `com.lukesteuber.mandala.widgets`
+- `com.lukesteuber.mandaza`
+- `com.lukesteuber.mandaza.widgets`
 
 Either confirm it exists (Xcode likely auto-registered during dev signing) or
 click `+` → App IDs → App → fill in:
-- **Description**: "Mandala" / "Mandala Widgets"
+- **Description**: "Mandaza" / "Mandaza Widgets"
 - **Bundle ID**: explicit value above
 - **Capabilities**: tick **App Groups**
 
@@ -41,12 +41,12 @@ click `+` → App IDs → App → fill in:
 → https://developer.apple.com/account/resources/identifiers/list/applicationGroup
 
 Click `+` → App Groups → fill in:
-- **Description**: "Mandala App Group"
-- **Identifier**: `group.com.lukesteuber.mandala`
+- **Description**: "Mandaza App Group"
+- **Identifier**: `group.com.lukesteuber.mandaza`
 
-Then for **each** App ID (Mandala and MandalaWidgets) go back to its detail
+Then for **each** App ID (Mandaza and MandazaWidgets) go back to its detail
 page → Capabilities → App Groups → **Configure** → tick
-`group.com.lukesteuber.mandala`.
+`group.com.lukesteuber.mandaza`.
 
 ### 3. Create the app in App Store Connect
 
@@ -54,10 +54,10 @@ page → Capabilities → App Groups → **Configure** → tick
 
 Click `+` → New App → fill in:
 - **Platforms**: iOS
-- **Name**: Mandala
+- **Name**: Mandaza
 - **Primary Language**: English (U.S.)
-- **Bundle ID**: `com.lukesteuber.mandala` (should appear in the dropdown after step 1)
-- **SKU**: `mandala-001` (any unique identifier; not user-visible)
+- **Bundle ID**: `com.lukesteuber.mandaza` (should appear in the dropdown after step 1)
+- **SKU**: `mandaza-001` (any unique identifier; not user-visible)
 - **User Access**: Full Access
 
 After creation, in the new app's left sidebar:
@@ -67,26 +67,26 @@ After creation, in the new app's left sidebar:
   - **Category**: Graphics & Design (primary), Lifestyle (secondary)
   - **Content Rights**: Tick "Does not contain, show, or access third-party content"
 - **Privacy** → **App Privacy** → **Get Started**:
-  - **Data Types Collected**: select **None**. (Mandala collects zero data.)
+  - **Data Types Collected**: select **None**. (Mandaza collects zero data.)
   - **Privacy Policy URL**: required. Quickest: enable GitHub Pages on the
-    `lukeslp/mandala` repo and host `PRIVACY.md` (see step 4).
+    `lukeslp/mandaza` repo and host `PRIVACY.md` (see step 4).
 
 ### 4. Privacy policy (one file in the repo)
 
-Mandala collects no data. A two-paragraph policy is sufficient. From the
+Mandaza collects no data. A two-paragraph policy is sufficient. From the
 repo root:
 
 ```bash
 mkdir -p docs
 cat > docs/index.md <<'EOF'
-# Mandala — Privacy Policy
+# Mandaza — Privacy Policy
 
-Mandala does not collect, store, or transmit any personal data. The app
+Mandaza does not collect, store, or transmit any personal data. The app
 runs entirely on your device. It makes no network requests, includes no
 analytics SDKs, and does not create an account.
 
-The only system permission Mandala requests is one-time write access to
-your Photo Library, used solely to save the mandala image you tap "Save"
+The only system permission Mandaza requests is one-time write access to
+your Photo Library, used solely to save the image you tap "Save"
 on. No image data is sent off-device.
 
 For questions: luke@lukesteuber.com
@@ -95,7 +95,7 @@ EOF
 
 Then on GitHub:
 - Repo Settings → Pages → Source: deploy from branch → `main` / `/docs`
-- Wait ~30s. Privacy URL: `https://lukeslp.github.io/mandala/`
+- Wait ~30s. Privacy URL: `https://lukeslp.github.io/mandaza/`
 
 Paste that URL into App Store Connect → App Privacy → Privacy Policy URL.
 
@@ -104,7 +104,7 @@ Paste that URL into App Store Connect → App Privacy → Privacy Policy URL.
 → https://appstoreconnect.apple.com/access/integrations/api
 
 Click `+` (next to "Active") → fill in:
-- **Name**: "Mandala uploads" (or any descriptive name)
+- **Name**: "Mandaza uploads" (or any descriptive name)
 - **Access**: **App Manager** is sufficient
 
 Click **Generate**, then **Download** the `.p8` file. **You can only download it
@@ -135,7 +135,7 @@ scripts/upload-testflight.sh # ~5 minutes (Apple is doing notarization + scannin
 
 Apple emails you when the build finishes processing (~10-30 min). Once it does:
 
-- App Store Connect → My Apps → Mandala → TestFlight → confirm the build appears
+- App Store Connect → My Apps → Mandaza → TestFlight → confirm the build appears
 - Fill in TestFlight metadata: **Test Information** (what to test, demo notes, contact email)
 - **Export Compliance**: confirm "No encryption" (matches `ITSAppUsesNonExemptEncryption=false` in Info.plist)
 - Submit for **Beta App Review** (Apple reviews TestFlight builds before public links go live; this is usually faster than App Store review — hours, not days)
@@ -144,7 +144,7 @@ Apple emails you when the build finishes processing (~10-30 min). Once it does:
 
 After Beta App Review approves the build:
 
-App Store Connect → Mandala → TestFlight → **Public Link** → toggle on.
+App Store Connect → Mandaza → TestFlight → **Public Link** → toggle on.
 Apple generates a `https://testflight.apple.com/join/<code>` URL. Anyone with
 the link can install the beta.
 
@@ -165,7 +165,7 @@ scripts/archive.sh && scripts/export-ipa.sh && scripts/upload-testflight.sh
 
 ## Troubleshooting
 
-**Export fails with "No profiles for 'com.lukesteuber.mandala' were found"**
+**Export fails with "No profiles for 'com.lukesteuber.mandaza' were found"**
 → The App Store Connect record doesn't exist yet (step 3) or Xcode hasn't
 synced provisioning yet. Open Xcode → Settings → Accounts → select your
 team → Download Manual Profiles, or just retry after step 3 is complete.
@@ -179,7 +179,7 @@ again.
 "Does not use non-exempt encryption" → Save.
 
 **Beta App Review rejects with "App crashes on launch"**
-→ The App Group `group.com.lukesteuber.mandala` may not be registered for
+→ The App Group `group.com.lukesteuber.mandaza` may not be registered for
 the distribution profile. Re-do step 2, regenerate the distribution
 provisioning profile from developer.apple.com → Profiles, download it,
 and re-archive.
@@ -195,7 +195,7 @@ canonical way to advance.
 - App Store Marketing assets (screenshots, description, keywords) — for full
   App Store release, not TestFlight. TestFlight only requires the metadata
   fields listed above.
-- StoreKit / IAP — Mandala has no paid tier yet.
+- StoreKit / IAP — Mandaza has no paid tier yet.
 - Custom symbols / SF Pro overrides — system fonts only.
 - CI automation (GitHub Actions / Xcode Cloud) — `scripts/*.sh` are
   shell-only; wrap them with whatever CI you prefer when ready.

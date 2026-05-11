@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// SwiftUI Canvas + TimelineView host for the live, animated mandala.
+/// SwiftUI Canvas + TimelineView host for the live, animated mandaza.
 /// Owns one engine instance and an animation clock. Re-creates the engine
 /// when its size or seed changes.
-struct MandalaCanvas: View {
+struct MandazaCanvas: View {
     let size: CGSize
     let seed: UUID
     let paletteId: String
@@ -13,7 +13,7 @@ struct MandalaCanvas: View {
     /// starts. Parents use this to schedule auto-regenerate in Zen mode.
     var onIdleChange: ((Bool) -> Void)? = nil
 
-    @State private var engine = MandalaEngine()
+    @State private var engine = MandazaEngine()
     @State private var built = false
     @State private var firstTimestamp: Date? = nil
     @State private var wasIdle: Bool? = nil

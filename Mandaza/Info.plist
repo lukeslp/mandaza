@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mandala</string>
+	<string>Mandaza</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIconName</key>
@@ -24,10 +24,10 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.lukesteuber.mandala</string>
+			<string>com.lukesteuber.mandaza</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>mandala</string>
+				<string>mandaza</string>
 			</array>
 		</dict>
 	</array>
@@ -36,7 +36,7 @@
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Mandala saves your generated artwork to Photos so you can use it as a wallpaper.</string>
+	<string>Mandaza saves your generated artwork to Photos so you can use it as a wallpaper.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

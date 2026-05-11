@@ -1,29 +1,29 @@
 import XCTest
-@testable import Mandala
+@testable import Mandaza
 
 final class EngineTests: XCTestCase {
 
     func testRegenerateProducesLoops() {
-        let engine = MandalaEngine()
+        let engine = MandazaEngine()
         XCTAssertTrue(engine.regenerate(width: 414, height: 896, seed: "fixed-seed"))
         XCTAssertFalse(engine.loops.isEmpty)
     }
 
     func testCompleteAllPathsTerminates() {
-        let engine = MandalaEngine()
+        let engine = MandazaEngine()
         XCTAssertTrue(engine.regenerate(width: 414, height: 896, seed: "fixed-seed"))
         engine.completeAllPaths()
         XCTAssertTrue(engine.allDrawn)
     }
 
     func testDeterministicWithSameSeed() {
-        let a = MandalaEngine(); _ = a.regenerate(width: 800, height: 600, seed: "abc")
-        let b = MandalaEngine(); _ = b.regenerate(width: 800, height: 600, seed: "abc")
+        let a = MandazaEngine(); _ = a.regenerate(width: 800, height: 600, seed: "abc")
+        let b = MandazaEngine(); _ = b.regenerate(width: 800, height: 600, seed: "abc")
         XCTAssertEqual(a.loops.count, b.loops.count)
     }
 
     func testTinyCanvasFails() {
-        let engine = MandalaEngine()
+        let engine = MandazaEngine()
         XCTAssertFalse(engine.regenerate(width: 1, height: 1, seed: "tiny"))
     }
 
@@ -42,7 +42,7 @@ final class EngineTests: XCTestCase {
     }
 
     func testRenderImageProducesNonEmptyOutput() {
-        let image = MandalaEngine.renderImage(
+        let image = MandazaEngine.renderImage(
             seed: "fixed-seed",
             paletteId: "aurora",
             config: EngineConfig(),
@@ -54,7 +54,7 @@ final class EngineTests: XCTestCase {
     }
 
     func testRenderImageRejectsDegenerateSizes() {
-        let none = MandalaEngine.renderImage(
+        let none = MandazaEngine.renderImage(
             seed: "fixed-seed",
             paletteId: "aurora",
             config: EngineConfig(),

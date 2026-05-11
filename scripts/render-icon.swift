@@ -1,11 +1,11 @@
 #!/usr/bin/env swift
 
-// Standalone macOS Swift script: renders a 1024x1024 PNG app icon for Mandala
+// Standalone macOS Swift script: renders a 1024x1024 PNG app icon for Mandaza
 // using pure CoreGraphics + ImageIO (no UIKit, no asset catalog, no Xcode).
 //
 //   swift scripts/render-icon.swift
 //
-// Output: Mandala/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+// Output: Mandaza/Assets.xcassets/AppIcon.appiconset/icon-1024.png
 
 import Foundation
 import CoreGraphics
@@ -147,7 +147,7 @@ guard let img = ctx.makeImage() else { fatalError("makeImage") }
 let scriptURL = URL(fileURLWithPath: CommandLine.arguments[0]).standardized
 let repoRoot  = scriptURL.deletingLastPathComponent().deletingLastPathComponent()
 let outURL    = repoRoot
-    .appendingPathComponent("Mandala")
+    .appendingPathComponent("Mandaza")
     .appendingPathComponent("Assets.xcassets")
     .appendingPathComponent("AppIcon.appiconset")
     .appendingPathComponent("icon-1024.png")

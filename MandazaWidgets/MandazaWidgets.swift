@@ -3,29 +3,29 @@ import WidgetKit
 
 // MARK: - StandBy (and large Home Screen)
 
-struct StandByMandalaWidget: Widget {
-    let kind: String = "StandByMandala"
+struct StandByMandazaWidget: Widget {
+    let kind: String = "StandByMandaza"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind,
-                               intent: MandalaWidgetIntent.self,
-                               provider: MandalaProvider()) { entry in
-            StandByMandalaView(entry: entry)
+                               intent: MandazaWidgetIntent.self,
+                               provider: MandazaProvider()) { entry in
+            StandByMandazaView(entry: entry)
                 .containerBackground(.black, for: .widget)
         }
         .supportedFamilies([.systemLarge, .systemExtraLarge])
-        .configurationDisplayName("StandBy Mandala")
-        .description("Ambient mandala for your nightstand StandBy or Home Screen.")
+        .configurationDisplayName("StandBy Mandaza")
+        .description("Ambient mandaza for your nightstand StandBy or Home Screen.")
     }
 }
 
-private struct StandByMandalaView: View {
-    let entry: MandalaEntry
+private struct StandByMandazaView: View {
+    let entry: MandazaEntry
 
     var body: some View {
         ZStack {
             GeometryReader { geo in
-                MandalaImageView(snapshot: entry.snapshot,
+                MandazaImageView(snapshot: entry.snapshot,
                                  size: geo.size,
                                  scale: 2)
             }
@@ -47,49 +47,49 @@ private struct StandByMandalaView: View {
                 .padding()
             }
         }
-        .widgetURL(URL(string: "mandala://seed/\(entry.snapshot.seed)"))
+        .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
     }
 }
 
 // MARK: - Lock Screen
 
-struct LockMandalaWidget: Widget {
-    let kind: String = "LockMandala"
+struct LockMandazaWidget: Widget {
+    let kind: String = "LockMandaza"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind,
-                               intent: MandalaWidgetIntent.self,
-                               provider: MandalaProvider()) { entry in
-            LockMandalaView(entry: entry)
+                               intent: MandazaWidgetIntent.self,
+                               provider: MandazaProvider()) { entry in
+            LockMandazaView(entry: entry)
                 .containerBackground(.black, for: .widget)
         }
         .supportedFamilies([.accessoryRectangular, .accessoryCircular, .accessoryInline])
-        .configurationDisplayName("Mandala — Lock")
-        .description("A glimpse of a generative mandala on your Lock Screen.")
+        .configurationDisplayName("Mandaza — Lock")
+        .description("A glimpse of a generative mandaza on your Lock Screen.")
     }
 }
 
-private struct LockMandalaView: View {
+private struct LockMandazaView: View {
     @Environment(\.widgetFamily) private var family
-    let entry: MandalaEntry
+    let entry: MandazaEntry
 
     var body: some View {
         switch family {
         case .accessoryInline:
-            Text("✦ Mandala")
+            Text("✦ Mandaza")
         case .accessoryCircular:
             GeometryReader { geo in
-                MandalaImageView(snapshot: entry.snapshot,
+                MandazaImageView(snapshot: entry.snapshot,
                                  size: geo.size,
                                  scale: 2)
                     .clipShape(Circle())
             }
-            .widgetURL(URL(string: "mandala://seed/\(entry.snapshot.seed)"))
+            .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
         default:
             // Rectangular
             HStack(spacing: 8) {
                 GeometryReader { geo in
-                    MandalaImageView(snapshot: entry.snapshot,
+                    MandazaImageView(snapshot: entry.snapshot,
                                      size: geo.size,
                                      scale: 2)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -99,44 +99,44 @@ private struct LockMandalaView: View {
                     Text(entry.date, style: .time)
                         .font(.headline)
                         .monospacedDigit()
-                    Text("Mandala")
+                    Text("Mandaza")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
             }
-            .widgetURL(URL(string: "mandala://seed/\(entry.snapshot.seed)"))
+            .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
         }
     }
 }
 
 // MARK: - Home Screen (small / medium)
 
-struct HomeMandalaWidget: Widget {
-    let kind: String = "HomeMandala"
+struct HomeMandazaWidget: Widget {
+    let kind: String = "HomeMandaza"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind,
-                               intent: MandalaWidgetIntent.self,
-                               provider: MandalaProvider()) { entry in
-            HomeMandalaView(entry: entry)
+                               intent: MandazaWidgetIntent.self,
+                               provider: MandazaProvider()) { entry in
+            HomeMandazaView(entry: entry)
                 .containerBackground(.black, for: .widget)
         }
         .supportedFamilies([.systemSmall, .systemMedium])
-        .configurationDisplayName("Mandala")
-        .description("A generative mandala that rotates on its own schedule.")
+        .configurationDisplayName("Mandaza")
+        .description("A generative mandaza that rotates on its own schedule.")
     }
 }
 
-private struct HomeMandalaView: View {
-    let entry: MandalaEntry
+private struct HomeMandazaView: View {
+    let entry: MandazaEntry
 
     var body: some View {
         GeometryReader { geo in
-            MandalaImageView(snapshot: entry.snapshot,
+            MandazaImageView(snapshot: entry.snapshot,
                              size: geo.size,
                              scale: 2)
         }
-        .widgetURL(URL(string: "mandala://seed/\(entry.snapshot.seed)"))
+        .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
     }
 }

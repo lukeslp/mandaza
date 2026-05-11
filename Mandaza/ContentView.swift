@@ -5,7 +5,7 @@ import WidgetKit
 struct ContentView: View {
 
     // Shared, App Group-backed settings (single source of truth for app + widgets).
-    @State private var settings = MandalaSettings.shared
+    @State private var settings = MandazaSettings.shared
 
     // Ephemeral state — purely view-local.
     @State private var seed = UUID().uuidString
@@ -26,7 +26,7 @@ struct ContentView: View {
     /// Ring buffer of the last 5 mandalas the user generated but didn't save.
     /// Recoverable via long-press on the Regenerate button. Transient — not
     /// persisted across launches (favorites is the durable affordance).
-    @State private var recents: [MandalaSnapshot] = []
+    @State private var recents: [MandazaSnapshot] = []
     @State private var showRecents = false
     private let recentsCap = 5
 
@@ -42,7 +42,7 @@ struct ContentView: View {
             GeometryReader { geo in
                 ZStack {
                     Color.black
-                    MandalaCanvas(size: geo.size,
+                    MandazaCanvas(size: geo.size,
                                   seed: UUID(uuidString: seed) ?? UUID(),
                                   paletteId: settings.paletteId,
                                   config: settings.engineConfig(),
@@ -62,7 +62,7 @@ struct ContentView: View {
                     .onEnded { canvasTapped() }
             )
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Mandala canvas")
+            .accessibilityLabel("Mandaza canvas")
             .accessibilityHint(canvasA11yHint)
             .accessibilityAddTraits(canvasA11yTraits)
 
@@ -123,7 +123,7 @@ struct ContentView: View {
             case .permissionDenied:
                 return Alert(
                     title: Text("Photos Access Needed"),
-                    message: Text("Mandala needs permission to add this image to your Photo Library."),
+                    message: Text("Mandaza needs permission to add this image to your Photo Library."),
                     primaryButton: .default(Text("Open Settings"), action: openAppSettings),
                     secondaryButton: .cancel())
             case .renderFailed:
@@ -232,7 +232,7 @@ struct ContentView: View {
                 Button {
                     loadRecent(snap)
                 } label: {
-                    MandalaImageView(snapshot: snap,
+                    MandazaImageView(snapshot: snap,
                                      size: CGSize(width: 48, height: 64),
                                      scale: 2)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
@@ -317,7 +317,7 @@ struct ContentView: View {
     // MARK: - Recents ring buffer
 
     private func pushCurrentToRecents() {
-        let snap = MandalaSnapshot(seed: seed,
+        let snap = MandazaSnapshot(seed: seed,
                                    paletteId: settings.paletteId,
                                    config: settings.engineConfig())
         // De-dupe: if user oscillates back to a recent seed, don't re-record it.
@@ -326,7 +326,7 @@ struct ContentView: View {
         if recents.count > recentsCap { recents = Array(recents.prefix(recentsCap)) }
     }
 
-    private func loadRecent(_ snap: MandalaSnapshot) {
+    private func loadRecent(_ snap: MandazaSnapshot) {
         // Loading a recent should NOT push the current into recents (it's
         // already there if it was just-generated).
         seed = snap.seed
@@ -346,7 +346,7 @@ struct ContentView: View {
         UISelectionFeedbackGenerator().selectionChanged()
     }
 
-    private func loadFavorite(_ snapshot: MandalaSnapshot) {
+    private func loadFavorite(_ snapshot: MandazaSnapshot) {
         seed = snapshot.seed
         settings.paletteId = snapshot.paletteId
     }
@@ -378,8 +378,8 @@ struct ContentView: View {
     }
 
     private func handleIncomingURL(_ url: URL) {
-        guard url.scheme == "mandala" else { return }
-        // mandala://seed/<UUID>
+        guard url.scheme == "mandaza" else { return }
+        // mandaza://seed/<UUID>
         let parts = url.pathComponents.filter { $0 != "/" }
         if url.host == "seed", let uuidString = parts.first {
             seed = uuidString
@@ -407,7 +407,7 @@ struct ContentView: View {
         let cfg = settings.engineConfig()
 
         Task.detached(priority: .userInitiated) {
-            let image = MandalaEngine.renderImage(seed: s,
+            let image = MandazaEngine.renderImage(seed: s,
                                                   paletteId: pid,
                                                   config: cfg,
                                                   size: size)
@@ -474,8 +474,8 @@ private struct ExportAlert: Identifiable {
 // MARK: - Settings sheet
 
 private struct SettingsSheet: View {
-    @Bindable var settings: MandalaSettings
-    let loadFavorite: (MandalaSnapshot) -> Void
+    @Bindable var settings: MandazaSettings
+    let loadFavorite: (MandazaSnapshot) -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -593,7 +593,7 @@ private struct SettingsSheet: View {
                 }
 
                 Section {
-                    NavigationLink("About Mandala") { AboutScreen() }
+                    NavigationLink("About Mandaza") { AboutScreen() }
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
                 }
@@ -647,8 +647,8 @@ private struct SettingsSheet: View {
 // MARK: - Favorites grid
 
 private struct FavoritesGrid: View {
-    @Bindable var settings: MandalaSettings
-    let loadFavorite: (MandalaSnapshot) -> Void
+    @Bindable var settings: MandazaSettings
+    let loadFavorite: (MandazaSnapshot) -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -660,7 +660,7 @@ private struct FavoritesGrid: View {
                         loadFavorite(snap)
                         dismiss()
                     } label: {
-                        MandalaImageView(snapshot: snap,
+                        MandazaImageView(snapshot: snap,
                                          size: CGSize(width: 140, height: 220),
                                          scale: 2)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -704,7 +704,7 @@ private struct AboutScreen: View {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 10) {
                         BLDot(color: BL.cyan, size: 8)
-                        BLCaption("mandala · v\(version)", tint: BL.muted)
+                        BLCaption("mandaza · v\(version)", tint: BL.muted)
                     }
                     Text("small luminous things,\nmapped where they were found.")
                         .font(.system(size: 36, weight: .light, design: .default))
@@ -727,7 +727,7 @@ private struct AboutScreen: View {
                 }
 
                 section(label: "privacy", accent: BL.green) {
-                    Text("Mandala collects no data. No analytics, no network requests, no account. The only system permission requested is one-time write access to Photos when you tap Save.")
+                    Text("Mandaza collects no data. No analytics, no network requests, no account. The only system permission requested is one-time write access to Photos when you tap Save.")
                         .font(.bl(14))
                         .lineSpacing(4)
                         .foregroundStyle(BL.paper)
@@ -735,7 +735,7 @@ private struct AboutScreen: View {
 
                 section(label: "feedback", accent: BL.violet) {
                     Link("Email the developer",
-                         destination: URL(string: "mailto:luke@lukesteuber.com?subject=Mandala%20feedback")!)
+                         destination: URL(string: "mailto:luke@lukesteuber.com?subject=Mandaza%20feedback")!)
                         .font(.bl(13)).tint(BL.violet)
                 }
 

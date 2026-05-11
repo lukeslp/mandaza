@@ -3,8 +3,8 @@ import WidgetKit
 
 /// Configuration intent surfaced by long-pressing → Edit Widget. Lets users
 /// pin a specific palette per widget instance and toggle the time overlay.
-struct MandalaWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Mandala Widget"
+struct MandazaWidgetIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "Mandaza Widget"
     static var description = IntentDescription("Pick a palette and rotation cadence for this widget.")
 
     @Parameter(title: "Palette", default: .followsApp)
@@ -46,7 +46,7 @@ enum PaletteOption: String, AppEnum {
     @MainActor
     func resolved() -> String {
         switch self {
-        case .followsApp: return MandalaSettings.shared.paletteId
+        case .followsApp: return MandazaSettings.shared.paletteId
         default:          return rawValue
         }
     }
