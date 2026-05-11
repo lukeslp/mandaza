@@ -1,8 +1,10 @@
 # Mandaza
 
-A native iOS app that draws animated hexagonal-loop mandalas in real time,
-ships them as Lock Screen / StandBy / Home Screen widgets, and exports them
-as wallpaper-resolution images.
+A native iOS and tvOS app that draws animated hexagonal-loop mandalas in
+real time. On iPhone and iPad it ships Lock Screen / StandBy / Home Screen
+widgets and exports wallpaper-resolution images. On Apple TV it runs as a
+fullscreen ambient experience with on-screen “widget-style” controls (Apple
+TV has no third-party WidgetKit surface).
 
 100% on-device. No network. No analytics. No account.
 
@@ -57,6 +59,19 @@ xcodebuild -scheme Mandaza \
   test
 ```
 
+### Apple TV (tvOS)
+
+```sh
+xcodegen
+xcodebuild -scheme MandazaTV \
+  -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
+  build
+```
+
+Play/Pause generates a new pattern; Menu toggles the control panel. The tvOS
+target shares `MandazaCore` and `Mandaza/MandazaCanvas.swift` only (no Photos,
+no WidgetKit). Bundle id: `com.lukesteuber.mandaza.tv`.
+
 ## Project layout
 
 ```
@@ -86,6 +101,13 @@ MandazaTests/                 Unit tests
   EngineTests.swift           8 tests on engine determinism + renderImage + palette
   SettingsTests.swift         5 tests on settings → engine-config mapping + favorites
   SnapshotTests.swift         3 tests on MandazaSnapshot + EngineConfig Codable round-trip
+
+MandazaTV/                    tvOS app (ambient / screensaver-style while open)
+  MandazaTVApp.swift          App entry
+  TVContentView.swift         Fullscreen canvas + panels + Zen clock
+  Assets.xcassets/            AppIcon (tv), AccentColor
+  Info.plist
+  MandazaTV.entitlements      Same App Group as iOS (per-device storage)
 
 project.yml                   xcodegen spec (authoritative project source)
 ```

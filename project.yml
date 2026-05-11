@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: com.lukesteuber.mandaza
   deploymentTarget:
     iOS: "17.0"
+    tvOS: "17.0"
   developmentLanguage: en
   createIntermediateGroups: true
   groupSortPosition: top
@@ -14,11 +15,6 @@ settings:
     SWIFT_VERSION: "5.9"
     ENABLE_BITCODE: NO
     CODE_SIGN_STYLE: Automatic
-    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-    TARGETED_DEVICE_FAMILY: "1,2"
-    SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
-    SUPPORTS_MACCATALYST: NO
-    SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 
 targets:
@@ -64,8 +60,43 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UIRequiresFullScreen: NO
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
     dependencies:
       - target: MandazaWidgets
+
+  MandazaTV:
+    type: application
+    platform: tvOS
+    sources:
+      - path: MandazaTV
+      - path: MandazaCore
+      - path: Mandaza/MandazaCanvas.swift
+    info:
+      path: MandazaTV/Info.plist
+      properties:
+        CFBundleDisplayName: Mandaza
+        CFBundleIconName: AppIcon
+        CFBundleShortVersionString: "0.2.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        ITSAppUsesNonExemptEncryption: false
+        CFBundleURLTypes:
+          - CFBundleURLName: com.lukesteuber.mandaza
+            CFBundleURLSchemes:
+              - mandaza
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.tv
+        CODE_SIGN_ENTITLEMENTS: MandazaTV/MandazaTV.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TVOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "3"
+        SUPPORTED_PLATFORMS: "appletvos appletvsimulator"
 
   MandazaWidgets:
     type: app-extension
@@ -86,6 +117,11 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.widgets
         CODE_SIGN_ENTITLEMENTS: MandazaWidgets/MandazaWidgets.entitlements
         SKIP_INSTALL: YES
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
 
   MandazaTests:
     type: bundle.unit-test
@@ -99,6 +135,9 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         BUNDLE_LOADER: "$(TEST_HOST)"
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Mandaza.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Mandaza"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
     dependencies:
       - target: Mandaza
 
@@ -111,6 +150,15 @@ schemes:
     test:
       targets:
         - MandazaTests
+    run:
+      config: Debug
+    archive:
+      config: Release
+
+  MandazaTV:
+    build:
+      targets:
+        MandazaTV: all
     run:
       config: Debug
     archive:
