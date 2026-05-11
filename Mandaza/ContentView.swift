@@ -75,9 +75,8 @@ struct ContentView: View {
                     .transition(.opacity)
             }
 
-            // Layer 3 — grounded control bar. Full opacity, anchored to bottom
-            // safe area. In Zen Mode, a single tap on the canvas can hide it
-            // for ambient full-bleed display.
+            // Layer 3 — grounded controls. In Zen Mode, a single tap on the
+            // canvas can hide them for ambient full-bleed display.
             VStack(spacing: 8) {
                 Spacer()
                 if showRecents, !recents.isEmpty {
@@ -171,11 +170,14 @@ struct ContentView: View {
 
     private var controlBar: some View {
         let accent = BL.accent(for: settings.paletteId)
-        return HStack(spacing: 20) {
+        return HStack(spacing: 8) {
             Button {
                 regenerate()
             } label: {
-                controlIcon(system: "arrow.triangle.2.circlepath", glow: accent)
+                controlItem(system: "arrow.triangle.2.circlepath",
+                            label: "New",
+                            accent: accent,
+                            prominent: true)
             }
             .accessibilityLabel("Regenerate")
             .accessibilityHint(recents.isEmpty ? "" : "Press and hold to see recent patterns.")
@@ -189,13 +191,13 @@ struct ContentView: View {
             )
 
             controlButton(system: favoriteIcon, label: "Favorite",
-                          glow: settings.isFavorite(seed: seed) ? BL.pink : accent) {
+                          accent: settings.isFavorite(seed: seed) ? BL.pink : accent) {
                 toggleFavorite()
             }
-            controlButton(system: "slider.horizontal.3", label: "Settings", glow: accent) {
+            controlButton(system: "slider.horizontal.3", label: "Settings", accent: accent) {
                 showSettings = true
             }
-            controlButton(system: "square.and.arrow.down.fill", label: "Save", glow: accent,
+            controlButton(system: "square.and.arrow.down.fill", label: "Save", accent: accent,
                           enabled: !exportInProgress) {
                 exportFullScreen()
             }
@@ -206,21 +208,27 @@ struct ContentView: View {
                     }
                 }
             } label: {
-                controlIcon(system: "rectangle.portrait.and.arrow.right.fill", glow: accent)
+                controlItem(system: "rectangle.portrait.and.arrow.right.fill",
+                            label: "Size",
+                            accent: accent)
                     .opacity(exportInProgress ? 0.4 : 1)
             }
             .accessibilityLabel("Export resolution")
             .disabled(exportInProgress)
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity)
         .background {
-            Capsule()
-                .fill(BL.deep.opacity(0.85))
-                .overlay(Capsule().strokeBorder(BL.rule, lineWidth: 1))
-                .background(.ultraThinMaterial, in: Capsule())
+            Rectangle()
+                .fill(BL.void.opacity(0.96))
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(BL.rule)
+                        .frame(height: 1)
+                }
         }
-        .padding(.bottom, 18)
     }
 
     // MARK: - Recents strip
@@ -245,36 +253,60 @@ struct ContentView: View {
                 .accessibilityLabel("Recent pattern")
             }
         }
-        .padding(8)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
         .background {
-            Capsule(style: .continuous)
-                .fill(BL.deep.opacity(0.85))
-                .overlay(Capsule(style: .continuous).strokeBorder(accent.opacity(0.3), lineWidth: 1))
-                .background(.ultraThinMaterial, in: Capsule(style: .continuous))
+            Rectangle()
+                .fill(BL.void.opacity(0.96))
+                .overlay(alignment: .top) {
+                    Rectangle()
+                        .fill(accent.opacity(0.22))
+                        .frame(height: 1)
+                }
         }
-        .padding(.horizontal, 18)
     }
 
     private func controlButton(system: String,
                                label: String,
-                               glow: Color,
+                               accent: Color,
                                enabled: Bool = true,
                                action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            controlIcon(system: system, glow: glow)
+            controlItem(system: system, label: label, accent: accent)
                 .opacity(enabled ? 1 : 0.35)
         }
         .accessibilityLabel(label)
         .disabled(!enabled)
     }
 
-    private func controlIcon(system: String, glow: Color) -> some View {
-        Image(systemName: system)
-            .font(.system(size: 19, weight: .light))
-            .foregroundStyle(BL.highlight)
-            .shadow(color: glow.opacity(0.55), radius: 8)
-            .frame(minWidth: 44, minHeight: 44)
-            .contentShape(Rectangle())
+    private func controlItem(system: String,
+                             label: String,
+                             accent: Color,
+                             prominent: Bool = false) -> some View {
+        VStack(spacing: 4) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(prominent ? accent.opacity(0.18) : Color.white.opacity(0.045))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7)
+                            .strokeBorder(prominent ? accent.opacity(0.45) : BL.rule,
+                                          lineWidth: 1)
+                    )
+                Image(systemName: system)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(prominent ? accent : BL.highlight)
+            }
+            .frame(width: 44, height: 38)
+
+            Text(label)
+                .font(.blMono(10, weight: .medium))
+                .foregroundStyle(BL.muted)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, minHeight: 58)
+        .contentShape(Rectangle())
     }
 
     private var favoriteIcon: String {
