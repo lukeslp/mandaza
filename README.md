@@ -68,9 +68,13 @@ xcodebuild -scheme MandazaTV \
   build
 ```
 
-Play/Pause generates a new pattern; Menu toggles the control panel. The tvOS
-target shares `MandazaCore` and `Mandaza/MandazaCanvas.swift` only (no Photos,
-no WidgetKit). Bundle id: `com.lukesteuber.mandaza.tv`.
+**Remote:** Play/Pause creates a new pattern. Menu shows or hides the control
+dock. The dock also hides on its own after a short idle period (press Menu to
+bring it back). **Ambient options** (Zen, clock, loop interval, and more) live
+in a full-screen style sheet from the dock.
+
+The tvOS target shares `MandazaCore` and `Mandaza/MandazaCanvas.swift` only (no
+Photos, no WidgetKit). Bundle id: `com.lukesteuber.mandaza.tv`.
 
 ## Project layout
 

@@ -3,8 +3,9 @@
  widget-style overlay panels, Zen clock, and App Group–backed settings.
 
  Primary Components:
- - `TVContentView` — canvas host, idle suppressor, panels, deep links.
+ - `TVContentView` — canvas host, idle suppressor, dock, Zen sheet, deep links.
  - `TVZenClockOverlay` — large clock/date overlay (Zen aesthetic).
+ - `TVZenOptionsSheet` — Zen / loop / interval tuning for 10-foot UI.
 
  Inputs / Outputs:
  - Inputs: Siri Remote (Play/Pause, Menu), `mandaza://` URLs, shared settings.
@@ -19,12 +20,22 @@ struct TVContentView: View {
     @State private var settings = MandazaSettings.shared
     @State private var seed = UUID().uuidString
     @State private var canvasSize: CGSize = .zero
-    @State private var showPanels = true
+
+    /// Menu toggles dock visibility (explicit chrome vs ambient-only).
+    @State private var showDock = true
+    @State private var showZenSheet = false
+
     @State private var autoRegenTask: Task<Void, Never>? = nil
+    @State private var dockIdleTask: Task<Void, Never>? = nil
     @State private var lastIdle: Bool = false
+
+    @FocusState private var dockFocus: TVDockFocus?
 
     /// First-run defaults tuned for Apple TV ambient viewing (local UserDefaults only).
     private static let tvDefaultsAppliedKey = "MandazaTV.appliedAmbientDefaults.v1"
+
+    /// Hide dock after idle while expanded (living-room ambient).
+    private let dockAutoHideDelay: Duration = .seconds(18)
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -46,6 +57,10 @@ struct TVContentView: View {
                 .onChange(of: geo.size) { _, new in canvasSize = new }
             }
             .ignoresSafeArea()
+            .accessibilitySortPriority(1)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Mandala canvas")
+            .accessibilityHint("Shows animated patterns. Press Play Pause on the Siri Remote for a new pattern. Press Menu to show or hide controls.")
 
             if settings.zenMode && settings.zenShowClock {
                 TVZenClockOverlay(
@@ -54,138 +69,269 @@ struct TVContentView: View {
                     accent: BL.accent(for: settings.paletteId)
                 )
                 .allowsHitTesting(false)
-                .transition(.opacity)
+                .accessibilitySortPriority(2)
+                .transition(ambientTransition())
             }
 
-            VStack {
-                if !showPanels {
-                    Text("Press Menu on the Siri Remote for controls")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 48)
-                        .shadow(color: .black.opacity(0.85), radius: 8)
-                    Spacer()
+            VStack(spacing: 0) {
+                if !showDock {
+                    ambientHintChrome
+                        .accessibilitySortPriority(4)
+                    Spacer(minLength: 0)
                 } else {
-                    Spacer()
-                    tvControlPanels
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    Spacer(minLength: 0)
+                    tvControlDock
+                        .accessibilitySortPriority(3)
+                        .transition(dockTransition())
                 }
             }
-            .animation(.easeInOut(duration: 0.35), value: showPanels)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: showDock)
         }
         .onAppear {
             applyTVAmbientDefaultsIfNeeded()
             UIApplication.shared.isIdleTimerDisabled = true
+            if showDock {
+                dockFocus = .newPattern
+                scheduleDockAutoHide()
+            }
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
             autoRegenTask?.cancel()
+            dockIdleTask?.cancel()
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
         .onOpenURL { handleIncomingURL($0) }
         .onPlayPauseCommand {
+            noteUserInteraction()
             regenerate()
         }
         .onExitCommand {
-            showPanels.toggle()
+            noteUserInteraction()
+            showDock.toggle()
+            if showDock {
+                dockFocus = .newPattern
+                scheduleDockAutoHide()
+            } else {
+                dockIdleTask?.cancel()
+                dockFocus = nil
+            }
+        }
+        .sheet(isPresented: $showZenSheet) {
+            TVZenOptionsSheet(settings: settings)
+                .presentationBackground(BL.void)
+        }
+        .onChange(of: showZenSheet) { _, open in
+            if open {
+                dockIdleTask?.cancel()
+            } else if showDock {
+                scheduleDockAutoHide()
+            }
+        }
+        .onChange(of: showDock) { _, expanded in
+            if expanded {
+                dockFocus = .newPattern
+                scheduleDockAutoHide()
+            } else {
+                dockIdleTask?.cancel()
+                dockFocus = nil
+            }
         }
     }
 
-    // MARK: - Panels (widget-style chrome)
+    // MARK: - Ambient hint (panels hidden)
 
-    private var tvControlPanels: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(spacing: 16) {
-                BLDot(color: BL.accent(for: settings.paletteId), size: 10)
+    private var ambientHintChrome: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "rectangle.compress.vertical")
+                .font(.system(size: 44, weight: .light))
+                .foregroundStyle(BL.paper.opacity(0.9))
+                .shadow(color: .black.opacity(0.85), radius: 12)
+            Text("Controls hidden")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(BL.highlight)
+                .shadow(color: .black.opacity(0.85), radius: 10)
+            Text("Press the Menu button on the Siri Remote to bring back palettes and settings.")
+                .font(.body.weight(.medium))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(BL.paper.opacity(0.92))
+                .shadow(color: .black.opacity(0.9), radius: 8)
+                .frame(maxWidth: 820)
+            Text("Play Pause still creates a new pattern.")
+                .font(.callout)
+                .foregroundStyle(BL.muted)
+                .shadow(color: .black.opacity(0.85), radius: 6)
+        }
+        .padding(.horizontal, 48)
+        .padding(.top, 56)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Controls hidden. Press Menu on the Siri Remote to show palettes and settings. Play Pause creates a new pattern.")
+    }
+
+    // MARK: - Dock
+
+    private var tvControlDock: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            HStack(alignment: .firstTextBaseline, spacing: 16) {
+                BLDot(color: BL.accent(for: settings.paletteId), size: 12)
                 Text("Mandaza")
-                    .font(.bl(20, weight: .semibold))
+                    .font(.bl(28, weight: .semibold))
                     .foregroundStyle(BL.highlight)
-                Spacer()
+                Spacer(minLength: 0)
                 Text(seedPrefix)
-                    .font(.blMono(14))
+                    .font(.blMono(18))
                     .foregroundStyle(BL.muted)
             }
 
-            HStack(spacing: 12) {
-                Button("New Pattern") {
-                    regenerate()
-                }
-
-                Toggle("Zen", isOn: $settings.zenMode)
-                Toggle("Clock", isOn: $settings.zenShowClock)
-                    .disabled(!settings.zenMode)
-                Toggle("Glow", isOn: $settings.glow)
+            Button {
+                noteUserInteraction()
+                regenerate()
+            } label: {
+                Label("New pattern", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.title3.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
             }
+            .buttonStyle(.borderedProminent)
+            .tint(BL.accent(for: settings.paletteId))
+            .focused($dockFocus, equals: .newPattern)
+            .accessibilityHint("Generates a new random mandala.")
 
-            HStack(spacing: 12) {
-                Toggle("Loop patterns", isOn: $settings.zenAutoRegen)
-                    .disabled(!settings.zenMode)
-                if settings.zenAutoRegen && settings.zenMode {
-                    Text("Every \(Int(settings.zenAutoRegenSeconds))s")
-                        .font(.bl(14))
-                        .foregroundStyle(BL.muted)
+            HStack(spacing: 20) {
+                glowToggleButton
+
+                Button {
+                    noteUserInteraction()
+                    showZenSheet = true
+                } label: {
+                    Label("Ambient options", systemImage: "moon.stars")
+                        .font(.body.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 10)
                 }
+                .buttonStyle(.bordered)
+                .accessibilityHint("Zen mode, clock, and automatic new patterns.")
+
+                Spacer(minLength: 0)
             }
 
             paletteCarousel
 
-            Text("Play/Pause — new pattern   ·   Menu — hide/show panels")
-                .font(.blMono(12))
-                .foregroundStyle(BL.muted)
+            remoteLegend
         }
-        .padding(28)
+        .padding(36)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(BL.void.opacity(0.92))
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(BL.void.opacity(0.94))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    RoundedRectangle(cornerRadius: 32, style: .continuous)
                         .strokeBorder(BL.rule, lineWidth: 1)
                 )
         }
-        .padding(.horizontal, 80)
-        .padding(.bottom, 56)
+        .padding(.horizontal, 48)
+        .padding(.bottom, 48)
+        .safeAreaPadding(.horizontal, 12)
         .focusSection()
+        .defaultFocus($dockFocus, .newPattern)
+        .onChange(of: dockFocus) { _, _ in
+            noteUserInteraction()
+        }
+    }
+
+    private var glowToggleButton: some View {
+        Button {
+            noteUserInteraction()
+            settings.glow.toggle()
+        } label: {
+            Label(
+                settings.glow ? "Glow on" : "Glow off",
+                systemImage: settings.glow ? "sparkles" : "sparkles.slash"
+            )
+            .font(.body.weight(.semibold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.bordered)
+        .accessibilityHint("Adds a soft glow around strokes. Uses more GPU when on.")
+    }
+
+    private var remoteLegend: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            legendRow(symbol: "playpause.fill", title: "Play Pause", subtitle: "New pattern")
+            legendRow(symbol: "rectangle.portrait.and.arrow.right", title: "Menu", subtitle: showDock ? "Hide controls" : "Show controls")
+            Text("Dock hides automatically after a pause — use Menu anytime.")
+                .font(.callout.weight(.medium))
+                .foregroundStyle(BL.muted)
+        }
+        .padding(.top, 4)
+    }
+
+    private func legendRow(symbol: String, title: String, subtitle: String) -> some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image(systemName: symbol)
+                .font(.title3)
+                .foregroundStyle(BL.accent(for: settings.paletteId))
+                .frame(width: 36)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(BL.paper)
+                Text(subtitle)
+                    .font(.callout)
+                    .foregroundStyle(BL.muted)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(subtitle)")
     }
 
     private var paletteCarousel: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 18) {
-                ForEach(Palette.all) { palette in
-                    Button {
-                        settings.paletteId = palette.id
-                    } label: {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(palette.name)
-                                .font(.bl(16, weight: .medium))
-                                .foregroundStyle(BL.paper)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.75)
-                            paletteSwatch(for: palette)
-                                .frame(height: 6)
-                                .clipShape(Capsule())
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Palettes")
+                .font(.bl(18, weight: .semibold))
+                .foregroundStyle(BL.highlight)
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 22) {
+                    ForEach(Palette.all) { palette in
+                        let selected = settings.paletteId == palette.id
+                        Button {
+                            noteUserInteraction()
+                            settings.paletteId = palette.id
+                        } label: {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(palette.name)
+                                    .font(.bl(20, weight: .medium))
+                                    .foregroundStyle(BL.paper)
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.8)
+                                paletteSwatch(for: palette)
+                                    .frame(height: 12)
+                                    .clipShape(Capsule())
+                            }
+                            .padding(.horizontal, 22)
+                            .padding(.vertical, 18)
+                            .frame(minWidth: 220, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .fill(selected ? BL.deep : BL.void.opacity(0.65))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                            .strokeBorder(
+                                                selected ? BL.accent(for: palette.id) : BL.rule,
+                                                lineWidth: selected ? 3 : 1
+                                            )
+                                    )
+                            )
                         }
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 14)
-                        .frame(minWidth: 160, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .fill(settings.paletteId == palette.id ? BL.deep : BL.void.opacity(0.6))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .strokeBorder(
-                                            settings.paletteId == palette.id
-                                                ? BL.accent(for: palette.id)
-                                                : BL.rule,
-                                            lineWidth: settings.paletteId == palette.id ? 2 : 1
-                                        )
-                                )
-                        )
+                        .buttonStyle(.card)
+                        .accessibilityLabel("\(palette.name) palette\(selected ? ", selected" : "")")
+                        .accessibilityHint("Applies this color palette to new patterns.")
                     }
-                    .buttonStyle(.card)
                 }
+                .padding(.vertical, 6)
             }
-            .padding(.vertical, 4)
         }
     }
 
@@ -201,9 +347,41 @@ struct TVContentView: View {
         String(seed.prefix(8))
     }
 
+    // MARK: - Transitions
+
+    private func ambientTransition() -> AnyTransition {
+        reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.98))
+    }
+
+    private func dockTransition() -> AnyTransition {
+        reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity)
+    }
+
+    // MARK: - Dock idle hide
+
+    private func noteUserInteraction() {
+        dockIdleTask?.cancel()
+        if showDock {
+            scheduleDockAutoHide()
+        }
+    }
+
+    private func scheduleDockAutoHide() {
+        dockIdleTask?.cancel()
+        dockIdleTask = Task { @MainActor in
+            try? await Task.sleep(for: dockAutoHideDelay)
+            guard !Task.isCancelled else { return }
+            if showDock && !showZenSheet {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
+                    showDock = false
+                }
+                dockFocus = nil
+            }
+        }
+    }
+
     // MARK: - Engine config
 
-    /// Uses shared density/geometry; glow follows `settings.glow` (tv defaults apply on first launch).
     private func engineConfigForTV() -> EngineConfig {
         settings.engineConfig()
     }
@@ -244,6 +422,7 @@ struct TVContentView: View {
         case .background, .inactive:
             UIApplication.shared.isIdleTimerDisabled = false
             autoRegenTask?.cancel()
+            dockIdleTask?.cancel()
         @unknown default:
             break
         }
@@ -254,7 +433,111 @@ struct TVContentView: View {
         let parts = url.pathComponents.filter { $0 != "/" }
         if url.host == "seed", let uuidString = parts.first {
             seed = uuidString
+            noteUserInteraction()
         }
+    }
+}
+
+// MARK: - Focus
+
+private enum TVDockFocus: Hashable {
+    case newPattern
+}
+
+// MARK: - Zen options sheet
+
+private struct TVZenOptionsSheet: View {
+
+    @Bindable var settings: MandazaSettings
+    @Environment(\.dismiss) private var dismiss
+
+    /// Preset seconds for loop interval (matches living-room tuning).
+    private static let intervalPresets: [Double] = [6, 15, 30, 60, 120]
+
+    @State private var intervalIndex: Int = 0
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Toggle("Zen mode", isOn: $settings.zenMode)
+                        .accessibilityHint("Ambient clock and optional automatic new patterns.")
+                    Toggle("Show clock", isOn: $settings.zenShowClock)
+                        .disabled(!settings.zenMode)
+                    Toggle("Show seconds", isOn: $settings.zenShowSeconds)
+                        .disabled(!settings.zenMode || !settings.zenShowClock)
+                    Toggle("Show date", isOn: $settings.zenShowDate)
+                        .disabled(!settings.zenMode || !settings.zenShowClock)
+                } header: {
+                    Text("Zen")
+                }
+
+                Section {
+                    Toggle("Loop new patterns", isOn: $settings.zenAutoRegen)
+                        .disabled(!settings.zenMode)
+                    if settings.zenAutoRegen && settings.zenMode {
+                        Picker("Loop interval", selection: $intervalIndex) {
+                            ForEach(Self.intervalPresets.indices, id: \.self) { i in
+                                Text(intervalLabel(Self.intervalPresets[i]))
+                                    .tag(i)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .accessibilityHint("How long to wait after a pattern finishes before generating another.")
+                        .onChange(of: intervalIndex) { _, i in
+                            settings.zenAutoRegenSeconds = Self.intervalPresets[i]
+                        }
+                    }
+                } header: {
+                    Text("Automatic patterns")
+                }
+            }
+            .background(BL.void.ignoresSafeArea())
+            .navigationTitle("Ambient options")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .onAppear {
+            syncIntervalIndex()
+        }
+        .onChange(of: settings.zenAutoRegenSeconds) { _, _ in
+            syncIntervalIndex()
+        }
+    }
+
+    private func syncIntervalIndex() {
+        let v = settings.zenAutoRegenSeconds
+        if let exact = Self.intervalPresets.firstIndex(where: { abs($0 - v) < 0.01 }) {
+            intervalIndex = exact
+        } else {
+            intervalIndex = nearestPresetIndex(to: v)
+            settings.zenAutoRegenSeconds = Self.intervalPresets[intervalIndex]
+        }
+    }
+
+    private func nearestPresetIndex(to value: Double) -> Int {
+        var best = 0
+        var bestDist = Double.greatestFiniteMagnitude
+        for (i, p) in Self.intervalPresets.enumerated() {
+            let d = abs(p - value)
+            if d < bestDist {
+                bestDist = d
+                best = i
+            }
+        }
+        return best
+    }
+
+    private func intervalLabel(_ seconds: Double) -> String {
+        let s = Int(seconds)
+        if s >= 60 {
+            let m = s / 60
+            return m == 1 ? "1 minute" : "\(m) minutes"
+        }
+        return "\(s) seconds"
     }
 }
 
@@ -290,7 +573,7 @@ private struct TVZenClockOverlay: View {
             .padding(.horizontal, 80)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Clock")
+        .accessibilityLabel(clockAccessibilityLabel())
     }
 
     private func timeString(_ date: Date) -> String {
@@ -298,6 +581,17 @@ private struct TVZenClockOverlay: View {
             ? .dateTime.hour().minute().second()
             : .dateTime.hour().minute()
         return date.formatted(style)
+    }
+
+    private func clockAccessibilityLabel() -> String {
+        var parts = ["Clock"]
+        if showDate {
+            parts.append("with date")
+        }
+        if showSeconds {
+            parts.append("with seconds")
+        }
+        return parts.joined(separator: ", ")
     }
 }
 
