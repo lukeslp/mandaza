@@ -1,12 +1,6 @@
 {
   "images" : [
-    {
-      "filename" : "AppIcon-1280.png",
-      "idiom" : "tv",
-      "role" : "primary-app-icon",
-      "scale" : "1x",
-      "size" : "1280x768"
-    }
+
   ],
   "info" : {
     "author" : "xcode",
