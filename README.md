@@ -76,6 +76,8 @@ in a full-screen style sheet from the dock.
 The tvOS target shares `MandazaCore` and `Mandaza/MandazaCanvas.swift` only (no
 Photos, no WidgetKit). Bundle id: `com.lukesteuber.mandaza.tv`.
 
+**Physical Apple TV:** Xcode needs a **registered device** and matching **App ID** (with App Groups). Step-by-step: [PROVISIONING.md](PROVISIONING.md).
+
 ## Project layout
 
 ```

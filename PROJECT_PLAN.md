@@ -18,6 +18,7 @@
 ## Outstanding (suggested)
 
 - App Store / marketing assets and license file (README still “TBD”).
+- **Device signing:** follow [PROVISIONING.md](PROVISIONING.md) to register Apple TV + App ID (`com.lukesteuber.mandaza.tv`) with App Groups for on-device tvOS runs.
 - Optional: Apple TV **Top Shelf** extension (still images + deep link) for home-screen presence.
 - Refine **tvOS Brand Assets** in Xcode if actool warns about App Icon / Top Shelf collections (cosmetic; build can succeed with a primary tv icon).
 
