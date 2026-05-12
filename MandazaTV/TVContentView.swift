@@ -26,12 +26,16 @@ struct TVContentView: View {
     @State private var showZenSheet = false
 
     @State private var autoRegenTask: Task<Void, Never>? = nil
+    @State private var dockIdleTask: Task<Void, Never>? = nil
     @State private var lastIdle: Bool = false
 
     @FocusState private var dockFocus: TVDockFocus?
 
     /// First-run defaults tuned for Apple TV ambient viewing (local UserDefaults only).
     private static let tvDefaultsAppliedKey = "MandazaTV.appliedAmbientDefaults.v1"
+
+    /// Hide dock after focus idle while expanded (living-room ambient).
+    private let dockAutoHideDelay: Duration = .seconds(18)
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -59,11 +63,16 @@ struct TVContentView: View {
             .accessibilityHint("Shows animated patterns. Press Play Pause on the Siri Remote for a new pattern. Press Menu to show or hide controls.")
 
             if settings.zenMode && settings.zenShowClock {
-                TVZenClockOverlay(
-                    showSeconds: settings.zenShowSeconds,
-                    showDate: settings.zenShowDate,
-                    accent: BL.accent(for: settings.paletteId)
-                )
+                VStack(spacing: 0) {
+                    TVZenClockOverlay(
+                        showSeconds: settings.zenShowSeconds,
+                        showDate: settings.zenShowDate,
+                        accent: BL.accent(for: settings.paletteId)
+                    )
+                    .padding(.top, 56)
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .allowsHitTesting(false)
                 .accessibilitySortPriority(2)
                 .transition(ambientTransition())
@@ -89,20 +98,26 @@ struct TVContentView: View {
             UIApplication.shared.isIdleTimerDisabled = true
             if showDock {
                 dockFocus = .newPattern
+                resetDockIdleTimerIfNeeded()
             }
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
             autoRegenTask?.cancel()
+            dockIdleTask?.cancel()
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
         .onOpenURL { handleIncomingURL($0) }
         .onPlayPauseCommand {
+            if showDock { resetDockIdleTimerIfNeeded() }
             regenerate()
         }
         .onExitCommand {
+            dockIdleTask?.cancel()
             if showDock {
-                showDock = false
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
+                    showDock = false
+                }
                 dockFocus = nil
             } else {
                 showControls()
@@ -117,15 +132,25 @@ struct TVContentView: View {
                 .presentationBackground(BL.void)
         }
         .onChange(of: showZenSheet) { _, open in
-            if !open && showDock {
+            if open {
+                dockIdleTask?.cancel()
+            } else if showDock {
                 dockFocus = .ambientOptions
+                resetDockIdleTimerIfNeeded()
             }
         }
         .onChange(of: showDock) { _, expanded in
             if expanded {
                 dockFocus = .newPattern
+                resetDockIdleTimerIfNeeded()
             } else {
+                dockIdleTask?.cancel()
                 dockFocus = nil
+            }
+        }
+        .onChange(of: dockFocus) { _, _ in
+            if showDock && !showZenSheet {
+                resetDockIdleTimerIfNeeded()
             }
         }
     }
@@ -133,24 +158,30 @@ struct TVContentView: View {
     // MARK: - Ambient hint (panels hidden)
 
     private var ambientHintChrome: some View {
-        HStack {
-            Spacer(minLength: 0)
-            Label("Menu for controls", systemImage: "rectangle.expand.vertical")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(BL.paper.opacity(0.88))
-                .padding(.horizontal, 18)
-                .padding(.vertical, 12)
-                .background {
-                    Capsule()
-                        .fill(BL.void.opacity(0.72))
-                        .overlay(Capsule().strokeBorder(BL.rule, lineWidth: 1))
-                }
-                .shadow(color: .black.opacity(0.8), radius: 12)
+        VStack(spacing: 16) {
+            Image(systemName: "rectangle.compress.vertical")
+                .font(.system(size: 44, weight: .light))
+                .foregroundStyle(BL.paper.opacity(0.9))
+                .shadow(color: .black.opacity(0.85), radius: 12)
+            Text("Controls hidden")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(BL.highlight)
+                .shadow(color: .black.opacity(0.85), radius: 10)
+            Text("Press the Menu button on the Siri Remote to bring back palettes and settings. A directional press also opens controls.")
+                .font(.body.weight(.medium))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(BL.paper.opacity(0.92))
+                .shadow(color: .black.opacity(0.9), radius: 8)
+                .frame(maxWidth: 820)
+            Text("Play Pause still creates a new pattern.")
+                .font(.callout)
+                .foregroundStyle(BL.muted)
+                .shadow(color: .black.opacity(0.85), radius: 6)
         }
         .padding(.horizontal, 48)
         .padding(.top, 56)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Controls hidden. Press Menu or a directional button on the Siri Remote to show controls.")
+        .accessibilityLabel("Controls hidden. Press Menu or a directional button on the Siri Remote to show palettes and settings. Play Pause creates a new pattern.")
     }
 
     // MARK: - Dock
@@ -244,7 +275,7 @@ struct TVContentView: View {
         VStack(alignment: .leading, spacing: 14) {
             legendRow(symbol: "playpause.fill", title: "Play Pause", subtitle: "New pattern")
             legendRow(symbol: "rectangle.portrait.and.arrow.right", title: "Menu", subtitle: showDock ? "Hide controls" : "Show controls")
-            Text("Controls stay put until you hide them.")
+            Text("Dock hides after idle while visible — use Menu or move the focus ring to bring it back.")
                 .font(.callout.weight(.medium))
                 .foregroundStyle(BL.muted)
         }
@@ -339,11 +370,13 @@ struct TVContentView: View {
         reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity)
     }
 
-    // MARK: - Dock visibility
+    // MARK: - Dock visibility & idle hide
 
     private func noteUserInteraction() {
         if !showDock {
             showControls()
+        } else {
+            resetDockIdleTimerIfNeeded()
         }
     }
 
@@ -352,6 +385,20 @@ struct TVContentView: View {
             showDock = true
         }
         dockFocus = focus
+        resetDockIdleTimerIfNeeded()
+    }
+
+    private func resetDockIdleTimerIfNeeded() {
+        dockIdleTask?.cancel()
+        guard showDock, !showZenSheet else { return }
+        dockIdleTask = Task { @MainActor in
+            try? await Task.sleep(for: dockAutoHideDelay)
+            guard !Task.isCancelled, showDock, !showZenSheet else { return }
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
+                showDock = false
+            }
+            dockFocus = nil
+        }
     }
 
     // MARK: - Engine config
@@ -373,6 +420,7 @@ struct TVContentView: View {
 
     private func regenerate() {
         seed = UUID().uuidString
+        if showDock { resetDockIdleTimerIfNeeded() }
     }
 
     private func handleIdleChange(_ idle: Bool) {
@@ -396,6 +444,7 @@ struct TVContentView: View {
         case .background, .inactive:
             UIApplication.shared.isIdleTimerDisabled = false
             autoRegenTask?.cancel()
+            dockIdleTask?.cancel()
         @unknown default:
             break
         }
