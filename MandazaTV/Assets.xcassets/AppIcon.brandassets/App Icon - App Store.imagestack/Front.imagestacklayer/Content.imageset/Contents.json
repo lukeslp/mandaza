@@ -1,9 +1,8 @@
 {
   "images" : [
     {
-      "filename" : "AppIcon-1280.png",
+      "filename" : "front@1x.png",
       "idiom" : "tv",
-      "role" : "primary-app-icon",
       "scale" : "1x",
       "size" : "1280x768"
     }
