@@ -26,16 +26,12 @@ struct TVContentView: View {
     @State private var showZenSheet = false
 
     @State private var autoRegenTask: Task<Void, Never>? = nil
-    @State private var dockIdleTask: Task<Void, Never>? = nil
     @State private var lastIdle: Bool = false
 
     @FocusState private var dockFocus: TVDockFocus?
 
     /// First-run defaults tuned for Apple TV ambient viewing (local UserDefaults only).
     private static let tvDefaultsAppliedKey = "MandazaTV.appliedAmbientDefaults.v1"
-
-    /// Hide dock after idle while expanded (living-room ambient).
-    private let dockAutoHideDelay: Duration = .seconds(18)
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -93,48 +89,42 @@ struct TVContentView: View {
             UIApplication.shared.isIdleTimerDisabled = true
             if showDock {
                 dockFocus = .newPattern
-                scheduleDockAutoHide()
             }
         }
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
             autoRegenTask?.cancel()
-            dockIdleTask?.cancel()
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
         .onOpenURL { handleIncomingURL($0) }
         .onPlayPauseCommand {
-            noteUserInteraction()
             regenerate()
         }
         .onExitCommand {
-            noteUserInteraction()
-            showDock.toggle()
             if showDock {
-                dockFocus = .newPattern
-                scheduleDockAutoHide()
-            } else {
-                dockIdleTask?.cancel()
+                showDock = false
                 dockFocus = nil
+            } else {
+                showControls()
             }
+        }
+        .onMoveCommand { _ in
+            guard !showDock else { return }
+            showControls()
         }
         .sheet(isPresented: $showZenSheet) {
             TVZenOptionsSheet(settings: settings)
                 .presentationBackground(BL.void)
         }
         .onChange(of: showZenSheet) { _, open in
-            if open {
-                dockIdleTask?.cancel()
-            } else if showDock {
-                scheduleDockAutoHide()
+            if !open && showDock {
+                dockFocus = .ambientOptions
             }
         }
         .onChange(of: showDock) { _, expanded in
             if expanded {
                 dockFocus = .newPattern
-                scheduleDockAutoHide()
             } else {
-                dockIdleTask?.cancel()
                 dockFocus = nil
             }
         }
@@ -143,30 +133,24 @@ struct TVContentView: View {
     // MARK: - Ambient hint (panels hidden)
 
     private var ambientHintChrome: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "rectangle.compress.vertical")
-                .font(.system(size: 44, weight: .light))
-                .foregroundStyle(BL.paper.opacity(0.9))
-                .shadow(color: .black.opacity(0.85), radius: 12)
-            Text("Controls hidden")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(BL.highlight)
-                .shadow(color: .black.opacity(0.85), radius: 10)
-            Text("Press the Menu button on the Siri Remote to bring back palettes and settings.")
-                .font(.body.weight(.medium))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(BL.paper.opacity(0.92))
-                .shadow(color: .black.opacity(0.9), radius: 8)
-                .frame(maxWidth: 820)
-            Text("Play Pause still creates a new pattern.")
-                .font(.callout)
-                .foregroundStyle(BL.muted)
-                .shadow(color: .black.opacity(0.85), radius: 6)
+        HStack {
+            Spacer(minLength: 0)
+            Label("Menu for controls", systemImage: "rectangle.expand.vertical")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(BL.paper.opacity(0.88))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 12)
+                .background {
+                    Capsule()
+                        .fill(BL.void.opacity(0.72))
+                        .overlay(Capsule().strokeBorder(BL.rule, lineWidth: 1))
+                }
+                .shadow(color: .black.opacity(0.8), radius: 12)
         }
         .padding(.horizontal, 48)
         .padding(.top, 56)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Controls hidden. Press Menu on the Siri Remote to show palettes and settings. Play Pause creates a new pattern.")
+        .accessibilityLabel("Controls hidden. Press Menu or a directional button on the Siri Remote to show controls.")
     }
 
     // MARK: - Dock
@@ -211,6 +195,7 @@ struct TVContentView: View {
                         .padding(.vertical, 10)
                 }
                 .buttonStyle(.bordered)
+                .focused($dockFocus, equals: .ambientOptions)
                 .accessibilityHint("Zen mode, clock, and automatic new patterns.")
 
                 Spacer(minLength: 0)
@@ -235,9 +220,6 @@ struct TVContentView: View {
         .safeAreaPadding(.horizontal, 12)
         .focusSection()
         .defaultFocus($dockFocus, .newPattern)
-        .onChange(of: dockFocus) { _, _ in
-            noteUserInteraction()
-        }
     }
 
     private var glowToggleButton: some View {
@@ -254,6 +236,7 @@ struct TVContentView: View {
             .padding(.vertical, 10)
         }
         .buttonStyle(.bordered)
+        .focused($dockFocus, equals: .glow)
         .accessibilityHint("Adds a soft glow around strokes. Uses more GPU when on.")
     }
 
@@ -261,7 +244,7 @@ struct TVContentView: View {
         VStack(alignment: .leading, spacing: 14) {
             legendRow(symbol: "playpause.fill", title: "Play Pause", subtitle: "New pattern")
             legendRow(symbol: "rectangle.portrait.and.arrow.right", title: "Menu", subtitle: showDock ? "Hide controls" : "Show controls")
-            Text("Dock hides automatically after a pause — use Menu anytime.")
+            Text("Controls stay put until you hide them.")
                 .font(.callout.weight(.medium))
                 .foregroundStyle(BL.muted)
         }
@@ -292,45 +275,44 @@ struct TVContentView: View {
             Text("Palettes")
                 .font(.bl(18, weight: .semibold))
                 .foregroundStyle(BL.highlight)
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 22) {
-                    ForEach(Palette.all) { palette in
-                        let selected = settings.paletteId == palette.id
-                        Button {
-                            noteUserInteraction()
-                            settings.paletteId = palette.id
-                        } label: {
-                            VStack(alignment: .leading, spacing: 12) {
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 210, maximum: 260), spacing: 18)],
+                alignment: .leading,
+                spacing: 18
+            ) {
+                ForEach(Palette.all) { palette in
+                    let selected = settings.paletteId == palette.id
+                    Button {
+                        noteUserInteraction()
+                        settings.paletteId = palette.id
+                    } label: {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(spacing: 8) {
                                 Text(palette.name)
                                     .font(.bl(20, weight: .medium))
                                     .foregroundStyle(BL.paper)
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.8)
-                                paletteSwatch(for: palette)
-                                    .frame(height: 12)
-                                    .clipShape(Capsule())
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.76)
+                                Spacer(minLength: 0)
+                                if selected {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(BL.accent(for: palette.id))
+                                }
                             }
-                            .padding(.horizontal, 22)
-                            .padding(.vertical, 18)
-                            .frame(minWidth: 220, alignment: .leading)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .fill(selected ? BL.deep : BL.void.opacity(0.65))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                            .strokeBorder(
-                                                selected ? BL.accent(for: palette.id) : BL.rule,
-                                                lineWidth: selected ? 3 : 1
-                                            )
-                                    )
-                            )
+                            paletteSwatch(for: palette)
+                                .frame(height: 12)
+                                .clipShape(Capsule())
                         }
-                        .buttonStyle(.card)
-                        .accessibilityLabel("\(palette.name) palette\(selected ? ", selected" : "")")
-                        .accessibilityHint("Applies this color palette to new patterns.")
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 18)
+                        .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
                     }
+                    .buttonStyle(.card)
+                    .focused($dockFocus, equals: .palette(palette.id))
+                    .accessibilityLabel("\(palette.name) palette\(selected ? ", selected" : "")")
+                    .accessibilityHint("Applies this color palette to new patterns.")
                 }
-                .padding(.vertical, 6)
             }
         }
     }
@@ -357,27 +339,19 @@ struct TVContentView: View {
         reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity)
     }
 
-    // MARK: - Dock idle hide
+    // MARK: - Dock visibility
 
     private func noteUserInteraction() {
-        dockIdleTask?.cancel()
-        if showDock {
-            scheduleDockAutoHide()
+        if !showDock {
+            showControls()
         }
     }
 
-    private func scheduleDockAutoHide() {
-        dockIdleTask?.cancel()
-        dockIdleTask = Task { @MainActor in
-            try? await Task.sleep(for: dockAutoHideDelay)
-            guard !Task.isCancelled else { return }
-            if showDock && !showZenSheet {
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
-                    showDock = false
-                }
-                dockFocus = nil
-            }
+    private func showControls(focus: TVDockFocus = .newPattern) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+            showDock = true
         }
+        dockFocus = focus
     }
 
     // MARK: - Engine config
@@ -422,7 +396,6 @@ struct TVContentView: View {
         case .background, .inactive:
             UIApplication.shared.isIdleTimerDisabled = false
             autoRegenTask?.cancel()
-            dockIdleTask?.cancel()
         @unknown default:
             break
         }
@@ -442,6 +415,9 @@ struct TVContentView: View {
 
 private enum TVDockFocus: Hashable {
     case newPattern
+    case glow
+    case ambientOptions
+    case palette(String)
 }
 
 // MARK: - Zen options sheet
