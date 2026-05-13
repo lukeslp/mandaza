@@ -8,7 +8,8 @@
  - `TVZenOptionsSheet` — Ambient Options form; Zen tuning in a tvOS-safe collapsible section.
 
  Inputs / Outputs:
- - Inputs: Siri Remote (Play/Pause, Menu), `mandaza://` URLs, shared settings.
+ - Inputs: Siri Remote (Play/Pause, Menu, touch surface click, directional swipe),
+   `mandaza://` URLs, shared settings.
  - Outputs: renders live `MandazaCanvas`, persists toggles via `MandazaSettings`.
  */
 
@@ -32,6 +33,9 @@ struct TVContentView: View {
     @State private var showAmbientHint: Bool = false
 
     @FocusState private var dockFocus: TVDockFocus?
+    /// When the dock is hidden, tvOS must still have a focused view or Menu/Select/Play
+    /// never reach SwiftUI and the system sends the user to the Home screen.
+    @FocusState private var ambientSurfaceFocused: Bool
 
     /// First-run defaults tuned for Apple TV ambient viewing (local UserDefaults only).
     private static let tvDefaultsAppliedKey = "MandazaTV.appliedAmbientDefaults.v1"
@@ -62,7 +66,7 @@ struct TVContentView: View {
             .accessibilitySortPriority(1)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Mandaza canvas")
-            .accessibilityHint("Shows animated patterns. Press Play Pause on the Siri Remote for a new pattern. Press Menu to show or hide controls.")
+            .accessibilityHint("Shows animated patterns. Click the touch surface for a new pattern. Press Play Pause for a new pattern. Press Menu to show or hide controls.")
 
             if settings.zenMode && settings.zenShowClock {
                 VStack(spacing: 0) {
@@ -82,6 +86,24 @@ struct TVContentView: View {
                 .allowsHitTesting(false)
                 .accessibilitySortPriority(2)
                 .transition(ambientTransition())
+            }
+
+            // Tiny focus sink when chrome is hidden — keeps remote events in-app without
+            // painting a full-screen focused overlay over the artwork.
+            if !showDock && !showZenSheet {
+                Button {
+                    regenerate()
+                } label: {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                }
+                .buttonStyle(.plain)
+                .focused($ambientSurfaceFocused)
+                .focusEffectDisabled()
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             }
 
             VStack(spacing: 0) {
@@ -160,14 +182,18 @@ struct TVContentView: View {
         }
         .onChange(of: showZenSheet) { _, open in
             if open {
+                ambientSurfaceFocused = false
                 dockIdleTask?.cancel()
             } else if showDock {
                 dockFocus = .ambientOptions
                 resetDockIdleTimerIfNeeded()
+            } else {
+                scheduleAmbientSurfaceFocus()
             }
         }
         .onChange(of: showDock) { _, expanded in
             if expanded {
+                ambientSurfaceFocused = false
                 ambientHintTask?.cancel()
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { showAmbientHint = false }
                 dockFocus = .newPattern
@@ -177,6 +203,7 @@ struct TVContentView: View {
                 dockFocus = nil
                 withAnimation(reduceMotion ? nil : .easeIn(duration: 0.2)) { showAmbientHint = true }
                 scheduleAmbientHintDismiss()
+                scheduleAmbientSurfaceFocus()
             }
         }
         .onChange(of: dockFocus) { _, _ in
@@ -194,7 +221,7 @@ struct TVContentView: View {
             Image(systemName: "rectangle.compress.vertical")
                 .font(.system(size: 20, weight: .medium))
                 .foregroundStyle(BL.paper.opacity(0.95))
-            Text("Menu for controls")
+            Text("Menu or swipe for controls")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(BL.highlight)
         }
@@ -213,7 +240,7 @@ struct TVContentView: View {
         .padding(.top, 28)
         .frame(maxWidth: .infinity, alignment: .top)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Ambient mode. Press Menu or swipe to show controls.")
+        .accessibilityLabel("Ambient mode. Press Menu or swipe on the touch surface to show controls. Click for a new pattern.")
     }
 
     // MARK: - Dock
@@ -392,6 +419,16 @@ struct TVContentView: View {
             try? await Task.sleep(for: .seconds(4))
             guard !Task.isCancelled else { return }
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6)) { showAmbientHint = false }
+        }
+    }
+
+    /// After the dock hides, move focus to the full-screen ambient control so Siri Remote
+    /// Select / Menu / Play Pause / directional swipe reach SwiftUI instead of the system shell.
+    private func scheduleAmbientSurfaceFocus() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(160))
+            guard !showDock, !showZenSheet else { return }
+            ambientSurfaceFocused = true
         }
     }
 

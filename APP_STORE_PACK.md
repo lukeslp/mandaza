@@ -97,10 +97,11 @@ MandazaTV runs on-device and does not require an account.
 #### What to Test (TestFlight)
 
 - Play/Pause generates a new pattern.
-- Menu hides/restores controls deterministically.
-- Dock auto-hides after idle and can be restored with Menu or directional swipe.
-- Quick rail controls (Zen / Loop / Palette) behave without opening deep settings.
-- Ambient Options controls update overlay behavior.
+- **Touch surface click** (Select) on the canvas while the dock is hidden generates a new pattern (invisible focus target; same as iPhone tap-to-new).
+- Menu hides/restores the dock; with the dock hidden, Menu must **not** drop to the TV home screen (regression: missing focus).
+- Dock auto-hides after idle; after hide, **directional swipe** or Menu brings the dock back.
+- Quick rail (New / Zen / Ambient Options / Palettes) behaves without opening deep settings unless intended.
+- Ambient Options sheet: Menu dismisses the sheet; dock focus returns sensibly.
 - General smoothness in long-running ambient mode.
 
 ## Privacy and Compliance Pack
@@ -189,9 +190,9 @@ Use short, legible overlays with one core message per frame.
 ### tvOS Review Notes (paste-ready)
 
 - MandazaTV is an ambient fullscreen procedural art experience.
-- Play/Pause generates a new pattern.
-- Menu shows/hides the control dock.
-- Dock also auto-hides after idle and is restored via Menu.
+- **Siri Remote:** Play/Pause always generates a new pattern. **Menu** toggles the control dock (hidden ↔ visible). When the dock is hidden, a **full-screen focusable surface** captures Select / Menu / Play Pause / directional swipes so the system does not send Menu to the TV home screen.
+- **Touch surface:** Click (Select) while ambient = new pattern; swipe when ambient = show dock (same as Menu when hidden).
+- Dock auto-hides after idle; restore with Menu or swipe.
 - No account, no network backend required for core behavior.
 
 ## Submission Runbook

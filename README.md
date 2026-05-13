@@ -96,11 +96,7 @@ See [TESTFLIGHT.md](TESTFLIGHT.md) (tvOS section) and [PROVISIONING.md](PROVISIO
 
 For paste-ready App Store metadata, review notes, privacy/compliance checklist, asset checklist, and iOS/tvOS upload runbooks, use [APP_STORE_PACK.md](APP_STORE_PACK.md).
 
-**Remote:** Play/Pause creates a new pattern. Menu hides controls while in
-ambient mode and restores them when hidden. A directional swipe also restores
-the dock if it is hidden. The dock auto-hides after idle and now uses a slim
-quick-control rail (New, Zen, Ambient Options, Palettes) with **Ambient Options** as the
-secondary deep-tune sheet. When the dock hides, a small top chip briefly reminds
+**Remote:** Play/Pause creates a new pattern. **Menu** toggles the dock. When the dock is hidden, **click the touch surface** for a new pattern (same idea as tapping the canvas on iPhone), or **swipe** / Menu to bring the dock back. A focused full-screen control receives remote events so Menu does not exit to the TV home screen. When the dock hides, a small top chip briefly reminds
 you that **Menu** restores controls (the art stays primary). Zen clock type is
 scaled for 10-foot viewing.
 
@@ -149,7 +145,7 @@ MandazaTV/                    tvOS app (ambient / screensaver-style while open)
 
 project.yml                   xcodegen spec (authoritative project source)
 scripts/
-  apply-brand-assets.py       Resize supplied icon + splash into iOS/tvOS catalog slots (`--tv-splash` for wide tv-only art)
+  apply-brand-assets.py       Resize supplied icon + splash into iOS/tvOS catalog slots (`--tv-icon` for wide tv icon art, `--tv-splash` for wide tv-only launch/top-shelf art)
   archive.sh / archive-tvos.sh
 ```
 

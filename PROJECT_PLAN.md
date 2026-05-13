@@ -4,7 +4,7 @@
 
 - **iOS / iPadOS:** Ship on-device generative mandalas, WidgetKit surfaces, Photos export, `mandaza://` deep links.
 - **tvOS:** Ship a fullscreen ambient companion app with a quick-control rail, compact “controls hidden” hint, larger Zen clock typography, and a tvOS-safe collapsible Zen section (no `DisclosureGroup`); `UILaunchScreen` uses `LaunchSplash` like iOS.
-- **Shared:** Single `MandazaCore` engine and App Group–backed settings; `project.yml` + XcodeGen as the project source of truth. Brand refreshes: `scripts/apply-brand-assets.py --icon … --splash … [--tv-splash …]` writes iOS icon/splash, tvOS layered icons, top shelf, and tv launch art. **Glow** defaults off; random New may enable a soft bloom with probability under 0.5; manual Glow toggle uses full strength (`glowStrength`).
+- **Shared:** Single `MandazaCore` engine and App Group–backed settings; `project.yml` + XcodeGen as the project source of truth. Brand refreshes: `scripts/apply-brand-assets.py --icon … [--tv-icon …] --splash … [--tv-splash …]` writes iOS icon/splash, tvOS layered icons, top shelf, and tv launch art. **Glow** defaults off; random New may enable a soft bloom with probability under 0.5; manual Glow toggle uses full strength (`glowStrength`).
 
 ## Architecture snapshot
 
@@ -22,7 +22,7 @@
 - iOS settings simplification: About screen removed for now; use website link at bottom of Settings and keep Zen controls prominent.
 - Zen presentation controls now include opacity, container transparency, font style/weight, and position presets across tvOS and iOS (`ZenClockTypography` keeps label vs. glyph weight aligned).
 - tvOS controls are now intentionally two-tier: slim quick rail for frequent actions and Ambient Options for deeper tuning.
-- iOS icon + launch splash and tvOS brand assets derive from `scripts/apply-brand-assets.py` (curated icon + portrait iOS splash; optional `--tv-splash` for wide tv top shelf + tv launch); rerun when refreshing store art.
+- iOS icon + launch splash and tvOS brand assets derive from `scripts/apply-brand-assets.py` (curated iOS icon, optional `--tv-icon` for wide tv icon stacks, portrait iOS splash, optional `--tv-splash` for wide tv top shelf + tv launch); rerun when refreshing store art.
 - **Device signing:** follow [PROVISIONING.md](PROVISIONING.md) to register Apple TV + App ID (`com.lukesteuber.mandaza.tv`) with App Groups for on-device tvOS runs.
 - Optional: Apple TV **Top Shelf** extension (still images + deep link) for home-screen presence.
 - Refine **tvOS Brand Assets** in Xcode if actool warns about App Icon / Top Shelf collections (cosmetic; build can succeed with a primary tv icon).

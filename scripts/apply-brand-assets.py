@@ -8,7 +8,7 @@ Primary Functions:
 - `main` — writes PNGs referenced by this repo's asset catalogs.
 
 Inputs / Outputs:
-- Inputs: CLI paths to square icon PNG, iOS portrait `--splash`, and optional wide `--tv-splash` for tvOS top shelf + tv launch (defaults to `--splash` when omitted).
+- Inputs: CLI paths to square icon PNG, iOS portrait `--splash`, optional `--tv-icon` for tvOS icon stacks, and optional wide `--tv-splash` for tvOS top shelf + tv launch (defaults to `--splash` when omitted).
 - Outputs: Overwrites PNG files under Mandaza/ and MandazaTV/ Assets.xcassets.
 """
 
@@ -60,7 +60,13 @@ def save_png(img: Image.Image, path: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--icon", required=True, type=Path, help="Square-ish app icon source PNG")
+    parser.add_argument("--icon", required=True, type=Path, help="Square-ish app icon source PNG (iOS AppIcon)")
+    parser.add_argument(
+        "--tv-icon",
+        type=Path,
+        default=None,
+        help="Optional wide icon source for tvOS icon stacks only (defaults to --icon)",
+    )
     parser.add_argument("--splash", required=True, type=Path, help="Portrait splash for iOS launch (and tv if no --tv-splash)")
     parser.add_argument(
         "--tv-splash",
@@ -73,13 +79,15 @@ def main() -> int:
 
     root: Path = args.repo_root
     icon_src = args.icon.expanduser().resolve()
+    tv_icon_src = (args.tv_icon.expanduser().resolve() if args.tv_icon else icon_src)
     splash_src = args.splash.expanduser().resolve()
     tv_splash_src = (args.tv_splash.expanduser().resolve() if args.tv_splash else splash_src)
-    if not icon_src.is_file() or not splash_src.is_file() or not tv_splash_src.is_file():
-        print("Icon, splash, and (if set) tv-splash paths must exist.", file=sys.stderr)
+    if not icon_src.is_file() or not tv_icon_src.is_file() or not splash_src.is_file() or not tv_splash_src.is_file():
+        print("Icon, tv-icon (if set), splash, and tv-splash (if set) paths must exist.", file=sys.stderr)
         return 2
 
     icon_rgb = square_icon(icon_src, 1024)
+    tv_icon_img = Image.open(tv_icon_src).convert("RGBA")
     splash_img = Image.open(splash_src).convert("RGBA")
     tv_splash_img = Image.open(tv_splash_src).convert("RGBA")
 
@@ -93,7 +101,7 @@ def main() -> int:
 
     def write_tv_layer(rel: str, w: int, h: int) -> None:
         out = tv_brand / rel
-        save_png(fit_on_canvas(icon_rgb.convert("RGBA"), w, h), out)
+        save_png(fit_on_canvas(tv_icon_img, w, h), out)
 
     # Primary app icon stack (parallax layers share the same artwork for simplicity).
     write_tv_layer("App Icon.imagestack/Front.imagestacklayer/Content.imageset/front@1x.png", 400, 240)

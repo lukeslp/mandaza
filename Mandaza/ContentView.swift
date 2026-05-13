@@ -667,10 +667,74 @@ private struct SettingsSheet: View {
                     Toggle("Zen Mode", isOn: $settings.zenMode.animation())
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
+
+                    if settings.zenMode {
+                        Toggle("Show Clock", isOn: $settings.zenShowClock)
+                            .font(.bl(15))
+                            .foregroundStyle(BL.paper)
+                        Toggle("Show Seconds", isOn: $settings.zenShowSeconds)
+                            .font(.bl(15))
+                            .foregroundStyle(BL.paper)
+                            .disabled(!settings.zenShowClock)
+                        Toggle("Show Date", isOn: $settings.zenShowDate)
+                            .font(.bl(15))
+                            .foregroundStyle(BL.paper)
+                            .disabled(!settings.zenShowClock)
+
+                        LabeledSlider(title: "Clock Opacity",
+                                      value: $settings.zenClockOpacity,
+                                      range: 0.4 ... 1.0,
+                                      accent: accent,
+                                      format: { "\(Int($0 * 100))%" })
+
+                        LabeledSlider(title: "Container",
+                                      value: $settings.zenClockContainerOpacity,
+                                      range: 0.0 ... 0.5,
+                                      accent: accent,
+                                      format: { "\(Int($0 * 100))%" })
+
+                        LabeledSlider(title: "Weight",
+                                      value: $settings.zenClockFontWeight,
+                                      range: 0.1 ... 0.75,
+                                      accent: accent,
+                                      format: { ZenClockTypography.weightLabel(for: $0) })
+
+                        Picker("Font", selection: $settings.zenClockFontStyleRaw) {
+                            Text("System").tag(ZenClockFontStyle.system.rawValue)
+                            Text("Rounded").tag(ZenClockFontStyle.rounded.rawValue)
+                            Text("Monospaced").tag(ZenClockFontStyle.monospaced.rawValue)
+                        }
+                        .pickerStyle(.menu)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+
+                        Picker("Position", selection: $settings.zenClockPositionRaw) {
+                            Text("Top").tag(ZenClockPosition.top.rawValue)
+                            Text("Upper Third").tag(ZenClockPosition.upperThird.rawValue)
+                            Text("Center").tag(ZenClockPosition.center.rawValue)
+                        }
+                        .pickerStyle(.menu)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+
+                        Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
+                            .font(.bl(15))
+                            .foregroundStyle(BL.paper)
+                        if settings.zenAutoRegen {
+                            LabeledSlider(title: "Wait",
+                                          value: $settings.zenAutoRegenSeconds,
+                                          range: 2 ... 30,
+                                          step: 1,
+                                          accent: accent,
+                                          format: { "\(Int($0))s" })
+                        }
+                    }
                 } header: {
                     blHeader("Zen Mode", accent: accent)
                 } footer: {
-                    Text("Show a clock over the Mandaza and loop new patterns continuously.")
+                    Text(settings.zenMode
+                         ? "Clock, style, and optional looping while the canvas is idle."
+                         : "Turn on Zen to show a clock over the mandala and optional auto patterns.")
                         .font(.bl(12))
                         .foregroundStyle(BL.muted)
                 }
@@ -736,73 +800,6 @@ private struct SettingsSheet: View {
                                   format: { speedLabel(for: $0) })
                 } header: { blHeader("Motion", accent: accent) }
                 .listRowBackground(BL.deep)
-
-                if settings.zenMode {
-                    Section {
-                        Toggle("Show Clock", isOn: $settings.zenShowClock)
-                        Toggle("Show Seconds", isOn: $settings.zenShowSeconds)
-                            .disabled(!settings.zenShowClock)
-                        Toggle("Show Date", isOn: $settings.zenShowDate)
-                            .disabled(!settings.zenShowClock)
-                    } header: { blHeader("Clock", accent: accent) }
-                    .listRowBackground(BL.deep)
-                    .font(.bl(15))
-                    .foregroundStyle(BL.paper)
-
-                    Section {
-                        LabeledSlider(title: "Clock Opacity",
-                                      value: $settings.zenClockOpacity,
-                                      range: 0.4 ... 1.0,
-                                      accent: accent,
-                                      format: { "\(Int($0 * 100))%" })
-
-                        LabeledSlider(title: "Container",
-                                      value: $settings.zenClockContainerOpacity,
-                                      range: 0.0 ... 0.5,
-                                      accent: accent,
-                                      format: { "\(Int($0 * 100))%" })
-
-                        LabeledSlider(title: "Weight",
-                                      value: $settings.zenClockFontWeight,
-                                      range: 0.1 ... 0.75,
-                                      accent: accent,
-                                      format: { ZenClockTypography.weightLabel(for: $0) })
-
-                        Picker("Font", selection: $settings.zenClockFontStyleRaw) {
-                            Text("System").tag(ZenClockFontStyle.system.rawValue)
-                            Text("Rounded").tag(ZenClockFontStyle.rounded.rawValue)
-                            Text("Monospaced").tag(ZenClockFontStyle.monospaced.rawValue)
-                        }
-                        .pickerStyle(.menu)
-                        .font(.bl(15))
-                        .foregroundStyle(BL.paper)
-
-                        Picker("Position", selection: $settings.zenClockPositionRaw) {
-                            Text("Top").tag(ZenClockPosition.top.rawValue)
-                            Text("Upper Third").tag(ZenClockPosition.upperThird.rawValue)
-                            Text("Center").tag(ZenClockPosition.center.rawValue)
-                        }
-                        .pickerStyle(.menu)
-                        .font(.bl(15))
-                        .foregroundStyle(BL.paper)
-                    } header: { blHeader("Clock Style", accent: accent) }
-                    .listRowBackground(BL.deep)
-
-                    Section {
-                        Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
-                            .font(.bl(15))
-                            .foregroundStyle(BL.paper)
-                        if settings.zenAutoRegen {
-                            LabeledSlider(title: "Wait",
-                                          value: $settings.zenAutoRegenSeconds,
-                                          range: 2 ... 30,
-                                          step: 1,
-                                          accent: accent,
-                                          format: { "\(Int($0))s" })
-                        }
-                    } header: { blHeader("Auto-Regenerate", accent: accent) }
-                    .listRowBackground(BL.deep)
-                }
 
                 if !settings.favorites.isEmpty {
                     Section {
