@@ -122,6 +122,31 @@ MandazaTV runs on-device and does not require an account.
 - Use: `https://lukeslp.github.io/mandaza/`
 - Confirm URL is public and renders before each submission cycle.
 
+### Apple TV (tvOS) — Privacy Policy in App Store Connect
+
+Apple asks for a **Privacy Policy URL** on the **tvOS** app record the same way
+as on iOS. You do **not** need a different domain for Apple TV if one policy
+covers both apps.
+
+1. In [App Store Connect](https://appstoreconnect.apple.com), open the app
+   whose bundle ID is **`com.lukesteuber.mandaza.tv`** (the tvOS listing, not
+   the iPhone app).
+2. Go to **App Privacy** (left sidebar, under **General** or the app's trust
+   section depending on ASC layout).
+3. Set **Privacy Policy** to the **same public URL** as iOS:
+   `https://lukeslp.github.io/mandaza/`
+4. Complete **App Privacy** answers for the tvOS app (**Data collection: None**,
+   **Tracking: No**) so they match the iOS app and match your
+   `PrivacyInfo.xcprivacy` / nutrition label story.
+
+The hosted policy in [`docs/index.md`](docs/index.md) explicitly includes an
+**Apple TV (tvOS)** section so reviewers see tvOS covered at that URL.
+
+If ASC ever shows a separate “Apple TV Privacy Policy” text field (rare), paste
+the same URL there, or paste the tvOS subsection headings plus body from
+`docs/index.md` as plain text—prefer keeping a **single canonical URL** so you
+only maintain one document.
+
 ## Assets Pack
 
 ### App Icons
@@ -134,7 +159,7 @@ MandazaTV runs on-device and does not require an account.
 ### Launch/Splash
 
 - iOS launch configured via `UILaunchScreen` with `AccentColor` + `LaunchSplash` image.
-- tvOS launch uses standard launch screen configuration (`UILaunchScreen: {}`).
+- tvOS launch uses `UILaunchScreen` with `AccentColor` + `LaunchSplash` (see `project.yml`; regenerated Info.plist mirrors iOS pattern).
 
 ### Screenshot Checklist
 
@@ -211,7 +236,7 @@ scripts/upload-testflight.sh --tvos
 
 - [ ] Metadata pasted (name, subtitle, promo text, description, keywords)
 - [ ] Privacy label completed (None)
-- [ ] Privacy policy URL verified live
+- [ ] Privacy policy URL verified live (iOS **and** tvOS app records in ASC)
 - [ ] Icons verified in ASC preview
 - [ ] Screenshots uploaded for active platform listing
 - [ ] Review notes pasted
