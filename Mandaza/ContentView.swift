@@ -667,8 +667,19 @@ private struct SettingsSheet: View {
                     Toggle("Zen Mode", isOn: $settings.zenMode.animation())
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
+                } header: {
+                    blHeader("Zen Mode", accent: accent)
+                } footer: {
+                    if !settings.zenMode {
+                        Text("Turn on Zen to show a clock over the mandala and optional auto patterns.")
+                            .font(.bl(12))
+                            .foregroundStyle(BL.muted)
+                    }
+                }
+                .listRowBackground(BL.deep)
 
-                    if settings.zenMode {
+                if settings.zenMode {
+                    Section {
                         Toggle("Show Clock", isOn: $settings.zenShowClock)
                             .font(.bl(15))
                             .foregroundStyle(BL.paper)
@@ -728,17 +739,13 @@ private struct SettingsSheet: View {
                                           accent: accent,
                                           format: { "\(Int($0))s" })
                         }
+                    } footer: {
+                        Text("Clock, style, and optional looping while the canvas is idle.")
+                            .font(.bl(12))
+                            .foregroundStyle(BL.muted)
                     }
-                } header: {
-                    blHeader("Zen Mode", accent: accent)
-                } footer: {
-                    Text(settings.zenMode
-                         ? "Clock, style, and optional looping while the canvas is idle."
-                         : "Turn on Zen to show a clock over the mandala and optional auto patterns.")
-                        .font(.bl(12))
-                        .foregroundStyle(BL.muted)
+                    .listRowBackground(BL.deep)
                 }
-                .listRowBackground(BL.deep)
 
                 Section {
                     NavigationLink {

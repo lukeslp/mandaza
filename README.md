@@ -145,7 +145,7 @@ MandazaTV/                    tvOS app (ambient / screensaver-style while open)
 
 project.yml                   xcodegen spec (authoritative project source)
 scripts/
-  apply-brand-assets.py       Resize supplied icon + splash into iOS/tvOS catalog slots (`--tv-icon` for wide tv icon art, `--tv-splash` for wide tv-only launch/top-shelf art)
+  apply-brand-assets.py       Resize supplied icon + splash into iOS/tvOS catalog slots (`--tv-icon` for tv icon art, `--tv-store-backdrop` for App Store depth backdrop, `--tv-splash` for wide tv-only launch/top-shelf art)
   archive.sh / archive-tvos.sh
 ```
 

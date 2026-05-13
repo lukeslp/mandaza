@@ -8,7 +8,7 @@ Primary Functions:
 - `main` — writes PNGs referenced by this repo's asset catalogs.
 
 Inputs / Outputs:
-- Inputs: CLI paths to square icon PNG, iOS portrait `--splash`, optional `--tv-icon` for tvOS icon stacks, and optional wide `--tv-splash` for tvOS top shelf + tv launch (defaults to `--splash` when omitted).
+- Inputs: CLI paths to square icon PNG, iOS portrait `--splash`, optional `--tv-icon` for tvOS icon stacks, optional `--tv-store-backdrop` for tvOS App Store depth layers, and optional wide `--tv-splash` for tvOS top shelf + tv launch (defaults to `--splash` when omitted).
 - Outputs: Overwrites PNG files under Mandaza/ and MandazaTV/ Assets.xcassets.
 """
 
@@ -19,7 +19,7 @@ import json
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 
 def fit_on_canvas(
@@ -69,6 +69,12 @@ def main() -> int:
     )
     parser.add_argument("--splash", required=True, type=Path, help="Portrait splash for iOS launch (and tv if no --tv-splash)")
     parser.add_argument(
+        "--tv-store-backdrop",
+        type=Path,
+        default=None,
+        help="Optional backdrop image for tvOS App Store icon middle/back layers",
+    )
+    parser.add_argument(
         "--tv-splash",
         type=Path,
         default=None,
@@ -80,14 +86,22 @@ def main() -> int:
     root: Path = args.repo_root
     icon_src = args.icon.expanduser().resolve()
     tv_icon_src = (args.tv_icon.expanduser().resolve() if args.tv_icon else icon_src)
+    tv_store_backdrop_src = (args.tv_store_backdrop.expanduser().resolve() if args.tv_store_backdrop else tv_icon_src)
     splash_src = args.splash.expanduser().resolve()
     tv_splash_src = (args.tv_splash.expanduser().resolve() if args.tv_splash else splash_src)
-    if not icon_src.is_file() or not tv_icon_src.is_file() or not splash_src.is_file() or not tv_splash_src.is_file():
-        print("Icon, tv-icon (if set), splash, and tv-splash (if set) paths must exist.", file=sys.stderr)
+    if (
+        not icon_src.is_file()
+        or not tv_icon_src.is_file()
+        or not tv_store_backdrop_src.is_file()
+        or not splash_src.is_file()
+        or not tv_splash_src.is_file()
+    ):
+        print("Icon, tv-icon, tv-store-backdrop, splash, and tv-splash (when set) paths must exist.", file=sys.stderr)
         return 2
 
     icon_rgb = square_icon(icon_src, 1024)
     tv_icon_img = Image.open(tv_icon_src).convert("RGBA")
+    tv_store_backdrop_img = Image.open(tv_store_backdrop_src).convert("RGBA")
     splash_img = Image.open(splash_src).convert("RGBA")
     tv_splash_img = Image.open(tv_splash_src).convert("RGBA")
 
@@ -111,10 +125,18 @@ def main() -> int:
     write_tv_layer("App Icon.imagestack/Back.imagestacklayer/Content.imageset/back@1x.png", 400, 240)
     write_tv_layer("App Icon.imagestack/Back.imagestacklayer/Content.imageset/back@2x.png", 800, 480)
 
-    # App Store marketing icon stack (1280×768).
+    # App Store marketing icon stack (1280×768):
+    # - front: icon artwork
+    # - middle/back: separate backdrop so icon and backdrop are not duplicates
     write_tv_layer("App Icon - App Store.imagestack/Front.imagestacklayer/Content.imageset/front@1x.png", 1280, 768)
-    write_tv_layer("App Icon - App Store.imagestack/Middle.imagestacklayer/Content.imageset/middle@1x.png", 1280, 768)
-    write_tv_layer("App Icon - App Store.imagestack/Back.imagestacklayer/Content.imageset/back@1x.png", 1280, 768)
+    save_png(
+        fit_on_canvas(tv_store_backdrop_img, 1280, 768),
+        tv_brand / "App Icon - App Store.imagestack/Middle.imagestacklayer/Content.imageset/middle@1x.png",
+    )
+    save_png(
+        fit_on_canvas(tv_store_backdrop_img, 1280, 768).filter(ImageFilter.GaussianBlur(radius=6)),
+        tv_brand / "App Icon - App Store.imagestack/Back.imagestacklayer/Content.imageset/back@1x.png",
+    )
 
     # Top shelf + tv launch: prefer wide tv splash when provided.
     save_png(fit_on_canvas(tv_splash_img, 1920, 720), tv_brand / "Top Shelf Image.imageset/top@1x.png")
