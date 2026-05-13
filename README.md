@@ -18,6 +18,8 @@ TV has no third-party WidgetKit surface).
 - **Zen Mode** — large ultra-light digital clock floating over the mandala,
   auto-regenerating patterns at a user-set interval. Calm by default,
   customizable for nightstand or desk display.
+- **Settings streamlined** — Zen Mode toggle is surfaced at the top; settings
+  footer now links directly to `dr.eamer.dev`.
 - **Favorites** — heart any mandala to keep it; favorites cycle into widget
   rotation automatically.
 - **Density + geometry controls** — pattern editability without the curated
@@ -67,6 +69,20 @@ xcodebuild -scheme MandazaTV \
   -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
   build
 ```
+
+**TestFlight / App Store (tvOS)** — separate App Store Connect app for `com.lukesteuber.mandaza.tv`. After the tvOS app record exists and signing is green:
+
+```sh
+scripts/archive-tvos.sh
+scripts/export-ipa-tvos.sh
+scripts/upload-testflight.sh --tvos
+```
+
+See [TESTFLIGHT.md](TESTFLIGHT.md) (tvOS section) and [PROVISIONING.md](PROVISIONING.md).
+
+## Submission Pack
+
+For paste-ready App Store metadata, review notes, privacy/compliance checklist, asset checklist, and iOS/tvOS upload runbooks, use [APP_STORE_PACK.md](APP_STORE_PACK.md).
 
 **Remote:** Play/Pause creates a new pattern. Menu shows or hides the control
 dock. The dock also hides on its own after a short idle period (press Menu to

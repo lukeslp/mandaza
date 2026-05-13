@@ -59,7 +59,7 @@ struct TVContentView: View {
             .ignoresSafeArea()
             .accessibilitySortPriority(1)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Mandala canvas")
+            .accessibilityLabel("Mandaza canvas")
             .accessibilityHint("Shows animated patterns. Press Play Pause on the Siri Remote for a new pattern. Press Menu to show or hide controls.")
 
             if settings.zenMode && settings.zenShowClock {

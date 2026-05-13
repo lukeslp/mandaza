@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Upload the signed .ipa to App Store Connect → TestFlight.
 #
-#   scripts/upload-testflight.sh
+#   scripts/upload-testflight.sh          # iOS Mandaza (build/export/*.ipa)
+#   scripts/upload-testflight.sh --tvos   # tvOS MandazaTV (build/export-tvos/*.ipa)
 #
 # Reads App Store Connect API key from ~/.appstoreconnect/private_keys/.
 # See TESTFLIGHT.md for one-time key setup.
@@ -12,13 +13,26 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-IPA="$(find build/export -name '*.ipa' 2>/dev/null | head -1 || true)"
+ALTOOL_TYPE="ios"
+IPA_DIR="build/export"
+
+if [ "${1:-}" = "--tvos" ]; then
+    ALTOOL_TYPE="appletvos"
+    IPA_DIR="build/export-tvos"
+fi
+
+IPA="$(find "${IPA_DIR}" -name '*.ipa' 2>/dev/null | head -1 || true)"
 if [ -z "${IPA}" ]; then
-    echo "✗ No .ipa found in build/export. Run scripts/export-ipa.sh first." >&2
+    echo "✗ No .ipa found in ${IPA_DIR}." >&2
+    if [ "${ALTOOL_TYPE}" = "appletvos" ]; then
+        echo "    Run: scripts/archive-tvos.sh && scripts/export-ipa-tvos.sh" >&2
+    else
+        echo "    Run: scripts/archive.sh && scripts/export-ipa.sh" >&2
+    fi
     exit 1
 fi
 
-echo "→ Uploading ${IPA}"
+echo "→ Uploading ${IPA} (--type ${ALTOOL_TYPE})"
 
 # Prefer API-key auth (cleaner, no 2FA prompts, scriptable).
 KEY_DIR="${HOME}/.appstoreconnect/private_keys"
@@ -37,13 +51,13 @@ if [ -d "${KEY_DIR}" ] && [ -n "$(ls "${KEY_DIR}" 2>/dev/null)" ]; then
     fi
 
     xcrun altool --upload-app \
-        --type ios \
+        --type "${ALTOOL_TYPE}" \
         --file "${IPA}" \
         --apiKey "${KEY_ID}" \
         --apiIssuer "${ASC_API_ISSUER}"
 elif [ -n "${ASC_APPLE_ID:-}" ] && [ -n "${APP_SPECIFIC_PASSWORD:-}" ]; then
     xcrun altool --upload-app \
-        --type ios \
+        --type "${ALTOOL_TYPE}" \
         --file "${IPA}" \
         --username "${ASC_APPLE_ID}" \
         --password "${APP_SPECIFIC_PASSWORD}"

@@ -627,6 +627,19 @@ private struct SettingsSheet: View {
         return NavigationStack {
             Form {
                 Section {
+                    Toggle("Zen Mode", isOn: $settings.zenMode.animation())
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+                } header: {
+                    blHeader("Zen Mode", accent: accent)
+                } footer: {
+                    Text("Show a clock over the mandaza and loop new patterns continuously.")
+                        .font(.bl(12))
+                        .foregroundStyle(BL.muted)
+                }
+                .listRowBackground(BL.deep)
+
+                Section {
                     NavigationLink {
                         PalettePicker(selected: $settings.paletteId)
                     } label: {
@@ -684,19 +697,6 @@ private struct SettingsSheet: View {
                 } header: { blHeader("Motion", accent: accent) }
                 .listRowBackground(BL.deep)
 
-                Section {
-                    Toggle("Zen Mode", isOn: $settings.zenMode.animation())
-                        .font(.bl(15))
-                        .foregroundStyle(BL.paper)
-                } header: {
-                    blHeader("Zen Mode", accent: accent)
-                } footer: {
-                    Text("Show a clock over the mandala and loop new patterns continuously.")
-                        .font(.bl(12))
-                        .foregroundStyle(BL.muted)
-                }
-                .listRowBackground(BL.deep)
-
                 if settings.zenMode {
                     Section {
                         Toggle("Show Clock", isOn: $settings.zenShowClock)
@@ -737,9 +737,11 @@ private struct SettingsSheet: View {
                 }
 
                 Section {
-                    NavigationLink("About Mandaza") { AboutScreen() }
+                    Link("dr.eamer.dev", destination: URL(string: "https://dr.eamer.dev")!)
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
+                        .accessibilityLabel("Open dr.eamer.dev")
+                        .accessibilityHint("Opens the website in your browser.")
                 }
                 .listRowBackground(BL.deep)
             }
@@ -830,89 +832,6 @@ private struct FavoritesGrid: View {
         .toolbarBackground(BL.void, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
-    }
-}
-
-// MARK: - About / attribution
-
-private struct AboutScreen: View {
-    private var version: String {
-        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
-        let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
-        return "\(v) (\(b))"
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 36) {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 10) {
-                        BLDot(color: BL.cyan, size: 8)
-                        BLCaption("mandaza · v\(version)", tint: BL.muted)
-                    }
-                    Text("small luminous things,\nmapped where they were found.")
-                        .font(.system(size: 36, weight: .light, design: .default))
-                        .tracking(-0.5)
-                        .lineSpacing(2)
-                        .foregroundStyle(BL.highlight)
-                }
-
-                section(label: "attribution", accent: BL.cyan) {
-                    Text("The hexagonal-loop algorithm is adapted from Charlotte Dann's *Hexagonal Generative Art* CodePen, building on David Siaw's Hexlife. Truchet tile mathematics is public domain (Sébastien Truchet, 1704).")
-                        .font(.bl(14))
-                        .lineSpacing(4)
-                        .foregroundStyle(BL.paper)
-                    Link("Charlotte Dann — original CodePen",
-                         destination: URL(string: "https://codepen.io/pouretrebelle/pen/ZBNJmd")!)
-                        .font(.bl(13)).tint(BL.cyan)
-                    Link("Hexagonal Generative Art — write-up",
-                         destination: URL(string: "https://codepen.io/pouretrebelle/post/hexagons")!)
-                        .font(.bl(13)).tint(BL.cyan)
-                }
-
-                section(label: "privacy", accent: BL.green) {
-                    Text("Mandaza collects no data. No analytics, no network requests, no account. The only system permission requested is one-time write access to Photos when you tap Save.")
-                        .font(.bl(14))
-                        .lineSpacing(4)
-                        .foregroundStyle(BL.paper)
-                }
-
-                section(label: "feedback", accent: BL.violet) {
-                    Link("Email the developer",
-                         destination: URL(string: "mailto:luke@lukesteuber.com?subject=Mandaza%20feedback")!)
-                        .font(.bl(13)).tint(BL.violet)
-                }
-
-                HStack {
-                    BLCaption("built by luke steuber", tint: BL.muted)
-                    Spacer()
-                    BLCaption("2026", tint: BL.muted)
-                }
-                .padding(.top, 12)
-            }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 32)
-        }
-        .background(BL.void.ignoresSafeArea())
-        .navigationTitle("About")
-        .mandazaNavigationBarTitleDisplayModeInline()
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .toolbarBackground(BL.deep, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-    }
-
-    @ViewBuilder
-    private func section<Content: View>(
-        label: String, accent: Color, @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                BLDot(color: accent, size: 6)
-                BLCaption(label, tint: accent.opacity(0.9))
-            }
-            VStack(alignment: .leading, spacing: 8) { content() }
-                .padding(.leading, 2)
-        }
     }
 }
 
@@ -1050,28 +969,33 @@ private struct ZenClockOverlay: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: showSeconds ? 1 : 30)) { ctx in
             let now = ctx.date
-            VStack(spacing: 12) {
-                Text(timeString(now))
-                    .font(.system(size: 96, weight: .ultraLight, design: .default))
-                    .tracking(-2)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.4)
-                    .foregroundStyle(BL.highlight)
-                    // Two-layer shadow: dark drop for legibility over the
-                    // mandala, plus a subtle phylum bloom.
-                    .shadow(color: .black.opacity(0.7), radius: 16)
-                    .shadow(color: accent.opacity(0.3), radius: 28)
-                if showDate {
-                    Text(now, format: .dateTime.weekday(.wide).month(.wide).day())
-                        .font(.bl(14, weight: .light))
-                        .tracking(1.2)
-                        .textCase(.uppercase)
-                        .foregroundStyle(BL.paper.opacity(0.7))
-                        .shadow(color: .black.opacity(0.7), radius: 6)
+            GeometryReader { geo in
+                VStack(spacing: 12) {
+                    Text(timeString(now))
+                        .font(.system(size: 96, weight: .ultraLight, design: .default))
+                        .tracking(-2)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.4)
+                        .foregroundStyle(BL.highlight)
+                        // Two-layer shadow: dark drop for legibility over the
+                        // mandaza, plus a subtle phylum bloom.
+                        .shadow(color: .black.opacity(0.7), radius: 16)
+                        .shadow(color: accent.opacity(0.3), radius: 28)
+                    if showDate {
+                        Text(now, format: .dateTime.weekday(.wide).month(.wide).day())
+                            .font(.bl(14, weight: .light))
+                            .tracking(1.2)
+                            .textCase(.uppercase)
+                            .foregroundStyle(BL.paper.opacity(0.7))
+                            .shadow(color: .black.opacity(0.7), radius: 6)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.top, max(44, geo.size.height * 0.18))
             }
             .padding(.horizontal, 32)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Clock")

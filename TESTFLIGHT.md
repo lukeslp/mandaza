@@ -9,7 +9,7 @@ Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.
 | Step | Status |
 |---|---|
 | App Icon (1024×1024) | ✅ Generated programmatically (`scripts/render-icon.swift`) |
-| Bundle IDs | ✅ `com.lukesteuber.mandaza`, `com.lukesteuber.mandaza.widgets` |
+| Bundle IDs | ✅ `com.lukesteuber.mandaza`, `com.lukesteuber.mandaza.widgets`, `com.lukesteuber.mandaza.tv` |
 | Team ID | ✅ `596T7J7FB6` |
 | App Group entitlement | ✅ `group.com.lukesteuber.mandaza` |
 | Photos permission usage string | ✅ |
@@ -19,6 +19,43 @@ Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.
 | Distribution provisioning profile | ❌ Needs App Store Connect app record first |
 | TestFlight beta review | ❌ Submitted after first upload |
 | Public TestFlight link | ❌ Generated after beta review passes |
+| **tvOS app** (`com.lukesteuber.mandaza.tv`) | ⏳ Separate App Store Connect record + upload (see below) |
+
+## tvOS (MandazaTV) — App Store Connect & upload
+
+The Apple TV app uses bundle id **`com.lukesteuber.mandaza.tv`** (not the iOS app’s id). You need a **second app** in App Store Connect for tvOS, with its own TestFlight / App Review track.
+
+### A. Developer Portal (Identifiers)
+
+1. Confirm an **App ID** exists for `com.lukesteuber.mandaza.tv` with **App Groups** enabled and **`group.com.lukesteuber.mandaza`** checked (same group as iOS — see [PROVISIONING.md](PROVISIONING.md)).
+2. Register a physical Apple TV for **development** if you need on-device debugging (optional for store upload).
+
+### B. App Store Connect — new tvOS app
+
+1. **My Apps** → **+** → **New App**
+2. **Platforms**: **tvOS** (not iOS).
+3. **Name**: Mandaza (or “Mandaza TV” if the plain name is taken).
+4. **Primary Language**: English (U.S.)
+5. **Bundle ID**: `com.lukesteuber.mandaza.tv`
+6. **SKU**: e.g. `mandaza-tv-001` (unique; not user-visible)
+7. **Privacy** → same as iOS: **Data collected: None**, same **Privacy Policy URL** as the iOS app.
+
+### C. Build, export, upload (command line)
+
+Same API key and `ASC_API_ISSUER` as iOS ([step 5](#5-generate-an-app-store-connect-api-key)). Then:
+
+```bash
+scripts/archive-tvos.sh        # build/MandazaTV.xcarchive
+scripts/export-ipa-tvos.sh     # build/export-tvos/MandazaTV.ipa
+scripts/upload-testflight.sh --tvos   # uses altool --type appletvos
+```
+
+`CFBundleVersion` is still driven by `git rev-list --count HEAD` so iOS and tvOS builds stay in sync numerically if you deploy from the same commit.
+
+### D. TestFlight / review notes for tvOS
+
+- **What to test:** fullscreen mandala, **Play/Pause** = new pattern, **Menu** = show/hide dock, Zen sheet from dock, deep link `mandaza://seed/<UUID>` if you test from iOS handoff.
+- **No Photos / no widgets** on tvOS — reviewers should not expect iOS-only strings.
 
 ## One-time user steps
 
@@ -26,9 +63,10 @@ Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.
 
 → https://developer.apple.com/account/resources/identifiers/list
 
-For **each** of these two App IDs:
+For **each** of these App IDs:
 - `com.lukesteuber.mandaza`
 - `com.lukesteuber.mandaza.widgets`
+- `com.lukesteuber.mandaza.tv` (tvOS — App Groups must match iOS)
 
 Either confirm it exists (Xcode likely auto-registered during dev signing) or
 click `+` → App IDs → App → fill in:
@@ -156,6 +194,12 @@ After the first upload works once, every subsequent build is just:
 
 ```bash
 scripts/archive.sh && scripts/export-ipa.sh && scripts/upload-testflight.sh
+```
+
+Apple TV (same API key; separate App Store Connect app — see [tvOS section](#tvos-mandazatv--app-store-connect--upload)):
+
+```bash
+scripts/archive-tvos.sh && scripts/export-ipa-tvos.sh && scripts/upload-testflight.sh --tvos
 ```
 
 - `CFBundleVersion` auto-increments from `git rev-list --count HEAD` so every
