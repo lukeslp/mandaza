@@ -18,7 +18,9 @@ public struct EngineConfig: Equatable, Codable, Hashable, Sendable {
     public var regularity: Double = 5
     /// 0…1 — drawing speed coefficient.
     public var drawSpeed: Double = 0.707
-    public var glow: Bool = true
+    public var glow: Bool = false
+    /// When `glow` is true, scales shadow blur. `nil` means full strength (legacy snapshots).
+    public var glowStrength: Double? = nil
     public var idlePulse: Bool = true
     public var lineWidth: Double = 1.2
     public var autoRegenIdleMs: Double = 22000
@@ -746,6 +748,7 @@ extension MandazaEngine {
             engine.completeAllPaths()
 
             let glowRadius = engine.radius / 5
+            let glowScale = min(max(config.glowStrength ?? 1.0, 0.18), 1.0)
             let strokeWidth = (engine.radius / 30) * config.lineWidth
 
             ctx.setLineCap(.round)
@@ -757,7 +760,9 @@ extension MandazaEngine {
                 let color = engine.color(for: loop, timeMs: 0)
                 ctx.setStrokeColor(color)
                 if config.glow {
-                    ctx.setShadow(offset: .zero, blur: glowRadius, color: color)
+                    let a = CGFloat(0.55 + 0.30 * glowScale)
+                    let shadow = UIColor(cgColor: color).withAlphaComponent(a).cgColor
+                    ctx.setShadow(offset: .zero, blur: glowRadius * glowScale, color: shadow)
                 } else {
                     ctx.setShadow(offset: .zero, blur: 0, color: nil)
                 }

@@ -459,10 +459,7 @@ struct ContentView: View {
         // recoverable.
         pushCurrentToRecents()
         seed = UUID().uuidString
-        if settings.randomizePaletteOnRegenerate {
-            settings.paletteId = Palette.all.filter { $0.id != settings.paletteId }
-                .randomElement()?.id ?? settings.paletteId
-        }
+        settings.randomizePatternLook(includePalette: settings.randomizePaletteOnRegenerate)
         selectionFeedback()
         reloadWidgetTimelines()
     }
@@ -651,6 +648,17 @@ private struct SettingsSheet: View {
     let loadFavorite: (MandazaSnapshot) -> Void
     @Environment(\.dismiss) private var dismiss
 
+    /// Turning Glow on from settings uses full-strength bloom; random New uses a softer band.
+    private var glowToggleBinding: Binding<Bool> {
+        Binding(
+            get: { settings.glow },
+            set: { on in
+                settings.glow = on
+                if on { settings.glowStrength = 1.0 }
+            }
+        )
+    }
+
     var body: some View {
         let accent = BL.accent(for: settings.paletteId)
         return NavigationStack {
@@ -687,7 +695,7 @@ private struct SettingsSheet: View {
                                 .foregroundStyle(BL.muted)
                         }
                     }
-                    Toggle("Glow", isOn: $settings.glow)
+                    Toggle("Glow", isOn: glowToggleBinding)
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
                     LabeledSlider(title: "Line Width",
@@ -714,7 +722,7 @@ private struct SettingsSheet: View {
                     .pickerStyle(.menu)
                     .font(.bl(15))
                     .foregroundStyle(BL.paper)
-                    Toggle("Randomize palette on New", isOn: $settings.randomizePaletteOnRegenerate)
+                    Toggle("Randomize Palette on New", isOn: $settings.randomizePaletteOnRegenerate)
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
                 } header: { blHeader("Pattern", accent: accent) }
@@ -945,13 +953,36 @@ private struct LabeledSlider: View {
                 .tint(accent)
             }
             #else
-            if let step {
-                Slider(value: $value, in: range, step: step)
-                    .tint(accent)
-            } else {
-                Slider(value: $value, in: range)
-                    .tint(accent)
+            HStack(spacing: 10) {
+                Button {
+                    adjustValue(by: -(step ?? (range.upperBound - range.lowerBound) / 20))
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.system(size: 20, weight: .regular))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(BL.muted)
+                .accessibilityLabel("Decrease \(title)")
+
+                if let step {
+                    Slider(value: $value, in: range, step: step)
+                        .tint(accent)
+                } else {
+                    Slider(value: $value, in: range)
+                        .tint(accent)
+                }
+
+                Button {
+                    adjustValue(by: step ?? (range.upperBound - range.lowerBound) / 20)
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 20, weight: .regular))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(BL.muted)
+                .accessibilityLabel("Increase \(title)")
             }
+            .frame(minHeight: 44)
             #endif
         }
         .accessibilityElement(children: .combine)

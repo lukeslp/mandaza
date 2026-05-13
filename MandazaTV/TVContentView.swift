@@ -1,11 +1,11 @@
 /*
- File Purpose: Fullscreen tvOS ambient mandala view — remote-friendly controls,
- widget-style overlay panels, Zen clock, and App Group–backed settings.
+ File Purpose: Fullscreen tvOS ambient mandala view with a minimal quick-control
+ rail, deterministic remote recovery, Zen clock, and App Group–backed settings.
 
  Primary Components:
  - `TVContentView` — canvas host, idle suppressor, dock, Zen sheet, deep links.
  - `TVZenClockOverlay` — large clock/date overlay (Zen aesthetic).
- - `TVZenOptionsSheet` — Zen / loop / interval tuning for 10-foot UI.
+ - `TVZenOptionsSheet` — Ambient Options form; Zen tuning in a tvOS-safe collapsible section.
 
  Inputs / Outputs:
  - Inputs: Siri Remote (Play/Pause, Menu), `mandaza://` URLs, shared settings.
@@ -27,7 +27,9 @@ struct TVContentView: View {
 
     @State private var autoRegenTask: Task<Void, Never>? = nil
     @State private var dockIdleTask: Task<Void, Never>? = nil
+    @State private var ambientHintTask: Task<Void, Never>? = nil
     @State private var lastIdle: Bool = false
+    @State private var showAmbientHint: Bool = false
 
     @FocusState private var dockFocus: TVDockFocus?
 
@@ -83,12 +85,13 @@ struct TVContentView: View {
             }
 
             VStack(spacing: 0) {
-                if !showDock {
+                if showAmbientHint && !showDock {
                     ambientHintChrome
                         .accessibilitySortPriority(4)
-                    Spacer(minLength: 0)
-                } else {
-                    Spacer(minLength: 0)
+                        .transition(.opacity)
+                }
+                Spacer(minLength: 0)
+                if showDock {
                     tvControlDock
                         .accessibilitySortPriority(3)
                         .transition(dockTransition())
@@ -96,6 +99,7 @@ struct TVContentView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: showDock)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: showAmbientHint)
         }
         .onAppear {
             applyTVAmbientDefaultsIfNeeded()
@@ -109,6 +113,7 @@ struct TVContentView: View {
             UIApplication.shared.isIdleTimerDisabled = false
             autoRegenTask?.cancel()
             dockIdleTask?.cancel()
+            ambientHintTask?.cancel()
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
         .onChange(of: settings.zenMode) { _, on in
@@ -131,6 +136,10 @@ struct TVContentView: View {
             regenerate()
         }
         .onExitCommand {
+            if showZenSheet {
+                showZenSheet = false
+                return
+            }
             dockIdleTask?.cancel()
             if showDock {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
@@ -138,12 +147,12 @@ struct TVContentView: View {
                 }
                 dockFocus = nil
             } else {
-                showControls()
+                recoverControlsFromRemote()
             }
         }
         .onMoveCommand { _ in
             guard !showDock else { return }
-            showControls()
+            recoverControlsFromRemote()
         }
         .sheet(isPresented: $showZenSheet) {
             TVZenOptionsSheet(settings: settings)
@@ -159,11 +168,15 @@ struct TVContentView: View {
         }
         .onChange(of: showDock) { _, expanded in
             if expanded {
+                ambientHintTask?.cancel()
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { showAmbientHint = false }
                 dockFocus = .newPattern
                 resetDockIdleTimerIfNeeded()
             } else {
                 dockIdleTask?.cancel()
                 dockFocus = nil
+                withAnimation(reduceMotion ? nil : .easeIn(duration: 0.2)) { showAmbientHint = true }
+                scheduleAmbientHintDismiss()
             }
         }
         .onChange(of: dockFocus) { _, _ in
@@ -175,203 +188,164 @@ struct TVContentView: View {
 
     // MARK: - Ambient hint (panels hidden)
 
+    /// Brief, top-aligned chip so ambient art stays primary (not full-screen chrome).
     private var ambientHintChrome: some View {
-        VStack(spacing: 16) {
+        HStack(spacing: 10) {
             Image(systemName: "rectangle.compress.vertical")
-                .font(.system(size: 44, weight: .light))
-                .foregroundStyle(BL.paper.opacity(0.9))
-                .shadow(color: .black.opacity(0.85), radius: 12)
-            Text("Controls hidden")
-                .font(.title3.weight(.semibold))
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(BL.paper.opacity(0.95))
+            Text("Menu for controls")
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(BL.highlight)
-                .shadow(color: .black.opacity(0.85), radius: 10)
-            Text("Press the Menu button on the Siri Remote to bring back palettes and settings. A directional press also opens controls.")
-                .font(.body.weight(.medium))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(BL.paper.opacity(0.92))
-                .shadow(color: .black.opacity(0.9), radius: 8)
-                .frame(maxWidth: 820)
-            Text("Play Pause still creates a new pattern.")
-                .font(.callout)
-                .foregroundStyle(BL.muted)
-                .shadow(color: .black.opacity(0.85), radius: 6)
         }
-        .padding(.horizontal, 48)
-        .padding(.top, 56)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+        .background(
+            Capsule(style: .continuous)
+                .fill(BL.void.opacity(0.82))
+                .overlay(
+                    Capsule(style: .continuous)
+                        .strokeBorder(BL.rule.opacity(0.55), lineWidth: 1)
+                )
+        )
+        .shadow(color: .black.opacity(0.55), radius: 10, y: 2)
+        .frame(maxWidth: 520)
+        .padding(.top, 28)
+        .frame(maxWidth: .infinity, alignment: .top)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Controls hidden. Press Menu or a directional button on the Siri Remote to show palettes and settings. Play Pause creates a new pattern.")
+        .accessibilityLabel("Ambient mode. Press Menu or swipe to show controls.")
     }
 
     // MARK: - Dock
 
     private var tvControlDock: some View {
-        VStack(alignment: .leading, spacing: 28) {
-            HStack(alignment: .firstTextBaseline, spacing: 16) {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center, spacing: 12) {
                 BLDot(color: BL.accent(for: settings.paletteId), size: 12)
-                Text("Mandaza")
-                    .font(.bl(28, weight: .semibold))
+                Text("Mandaza Ambient")
+                    .font(.bl(22, weight: .semibold))
                     .foregroundStyle(BL.highlight)
                 Spacer(minLength: 0)
                 Text(seedPrefix)
-                    .font(.blMono(18))
+                    .font(.blMono(13))
                     .foregroundStyle(BL.muted)
             }
 
-            Button {
-                noteUserInteraction()
-                regenerate()
-            } label: {
-                Label("New pattern", systemImage: "arrow.triangle.2.circlepath")
-                    .font(.title3.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(BL.accent(for: settings.paletteId))
-            .focused($dockFocus, equals: .newPattern)
-            .accessibilityHint("Generates a new random mandala.")
+            HStack(spacing: 12) {
+                Button {
+                    noteUserInteraction()
+                    regenerate()
+                } label: {
+                    Label("New", systemImage: "sparkles")
+                        .font(.body.weight(.semibold))
+                        .frame(minWidth: 132)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(BL.accent(for: settings.paletteId))
+                .focused($dockFocus, equals: .newPattern)
+                .accessibilityHint("Generates a new random mandala.")
 
-            HStack(spacing: 20) {
-                glowToggleButton
+                Button {
+                    noteUserInteraction()
+                    settings.zenMode.toggle()
+                } label: {
+                    Label(settings.zenMode ? "Zen On" : "Zen Off",
+                          systemImage: settings.zenMode ? "moon.stars.fill" : "moon.stars")
+                        .font(.body.weight(.semibold))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.bordered)
+                .focused($dockFocus, equals: .zenMode)
+                .accessibilityHint("Turns ambient Zen clock mode on or off.")
 
                 Button {
                     noteUserInteraction()
                     showZenSheet = true
                 } label: {
-                    Label("Ambient options", systemImage: "moon.stars")
+                    Label("Ambient Options", systemImage: "slider.horizontal.3")
                         .font(.body.weight(.semibold))
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 8)
                 }
                 .buttonStyle(.bordered)
                 .focused($dockFocus, equals: .ambientOptions)
-                .accessibilityHint("Zen mode, clock, and automatic new patterns.")
+                .accessibilityHint("Open detailed ambient settings.")
 
                 Spacer(minLength: 0)
             }
 
-            paletteCarousel
-
-            remoteLegend
+            compactPaletteRow
         }
-        .padding(36)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                .fill(BL.void.opacity(0.94))
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(BL.void.opacity(0.9))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
                         .strokeBorder(BL.rule, lineWidth: 1)
                 )
         }
-        .padding(.horizontal, 48)
-        .padding(.bottom, 48)
+        .padding(.horizontal, 36)
+        .padding(.bottom, 36)
         .safeAreaPadding(.horizontal, 12)
         .focusSection()
         .defaultFocus($dockFocus, .newPattern)
     }
 
-    private var glowToggleButton: some View {
-        Button {
-            noteUserInteraction()
-            settings.glow.toggle()
-        } label: {
-            Label(
-                settings.glow ? "Glow on" : "Glow off",
-                systemImage: settings.glow ? "sparkles" : "sparkles.slash"
-            )
-            .font(.body.weight(.semibold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 10)
-        }
-        .buttonStyle(.bordered)
-        .focused($dockFocus, equals: .glow)
-        .accessibilityHint("Adds a soft glow around strokes. Uses more GPU when on.")
-    }
-
-    private var remoteLegend: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            legendRow(symbol: "playpause.fill", title: "Play Pause", subtitle: "New pattern")
-            legendRow(symbol: "rectangle.portrait.and.arrow.right", title: "Menu", subtitle: showDock ? "Hide controls" : "Show controls")
-            Text("Dock hides after idle while visible — use Menu or move the focus ring to bring it back.")
-                .font(.callout.weight(.medium))
-                .foregroundStyle(BL.muted)
-        }
-        .padding(.top, 4)
-    }
-
-    private func legendRow(symbol: String, title: String, subtitle: String) -> some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: symbol)
-                .font(.title3)
-                .foregroundStyle(BL.accent(for: settings.paletteId))
-                .frame(width: 36)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(BL.paper)
-                Text(subtitle)
-                    .font(.callout)
-                    .foregroundStyle(BL.muted)
+    private var compactPaletteRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Palettes")
+                .font(.bl(15, weight: .semibold))
+                .foregroundStyle(BL.highlight)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(Palette.all) { palette in
+                        paletteChip(palette)
+                    }
+                }
+                .padding(.vertical, 2)
             }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title). \(subtitle)")
     }
 
-    private var paletteCarousel: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Palettes")
-                .font(.bl(18, weight: .semibold))
-                .foregroundStyle(BL.highlight)
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 210, maximum: 260), spacing: 18)],
-                alignment: .leading,
-                spacing: 18
-            ) {
-                ForEach(Palette.all) { palette in
-                    let selected = settings.paletteId == palette.id
-                    Button {
-                        noteUserInteraction()
-                        settings.paletteId = palette.id
-                    } label: {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack(spacing: 8) {
-                                Text(palette.name)
-                                    .font(.bl(20, weight: .medium))
-                                    .foregroundStyle(BL.paper)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.76)
-                                Spacer(minLength: 0)
-                                if selected {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.title3)
-                                        .foregroundStyle(BL.accent(for: palette.id))
-                                }
-                            }
-                            paletteSwatch(for: palette)
-                                .frame(height: 12)
-                                .clipShape(Capsule())
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 18)
-                        .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
-                    }
-                    .buttonStyle(.card)
-                    .focused($dockFocus, equals: .palette(palette.id))
-                    .accessibilityLabel("\(palette.name) palette\(selected ? ", selected" : "")")
-                    .accessibilityHint("Applies this color palette to new patterns.")
+    private func paletteChip(_ palette: Palette) -> some View {
+        let selected = settings.paletteId == palette.id
+        return Button {
+            noteUserInteraction()
+            settings.paletteId = palette.id
+        } label: {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(BL.accent(for: palette.id))
+                    .frame(width: 8, height: 8)
+                Text(palette.name)
+                    .font(.bl(14, weight: .medium))
+                    .lineLimit(1)
+                if selected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption)
                 }
             }
+            .foregroundStyle(selected ? BL.highlight : BL.paper)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(selected ? BL.deep.opacity(0.95) : BL.deep.opacity(0.6))
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .strokeBorder(selected ? BL.accent(for: palette.id).opacity(0.6) : BL.rule, lineWidth: 1)
+            )
         }
-    }
-
-    private func paletteSwatch(for palette: Palette) -> some View {
-        HStack(spacing: 0) {
-            ForEach(Array(palette.stops.enumerated()), id: \.offset) { _, color in
-                color
-            }
-        }
+        .buttonStyle(.plain)
+        .focused($dockFocus, equals: .palette(palette.id))
+        .accessibilityLabel("\(palette.name) palette\(selected ? ", selected" : "")")
+        .accessibilityHint("Applies this color palette.")
     }
 
     private var seedPrefix: String {
@@ -402,8 +376,23 @@ struct TVContentView: View {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
             showDock = true
         }
+        ambientHintTask?.cancel()
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { showAmbientHint = false }
         dockFocus = focus
         resetDockIdleTimerIfNeeded()
+    }
+
+    private func recoverControlsFromRemote() {
+        showControls(focus: .newPattern)
+    }
+
+    private func scheduleAmbientHintDismiss() {
+        ambientHintTask?.cancel()
+        ambientHintTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.6)) { showAmbientHint = false }
+        }
     }
 
     private func resetDockIdleTimerIfNeeded() {
@@ -438,10 +427,7 @@ struct TVContentView: View {
 
     private func regenerate() {
         seed = UUID().uuidString
-        if settings.randomizePaletteOnRegenerate {
-            settings.paletteId = Palette.all.filter { $0.id != settings.paletteId }
-                .randomElement()?.id ?? settings.paletteId
-        }
+        settings.randomizePatternLook(includePalette: settings.randomizePaletteOnRegenerate)
         if showDock { resetDockIdleTimerIfNeeded() }
     }
 
@@ -486,7 +472,7 @@ struct TVContentView: View {
 
 private enum TVDockFocus: Hashable {
     case newPattern
-    case glow
+    case zenMode
     case ambientOptions
     case palette(String)
 }
@@ -503,107 +489,128 @@ private struct TVZenOptionsSheet: View {
     private static let opacityPresets: [Double] = [0.4, 0.55, 0.7, 0.85, 1.0]
     private static let containerOpacityPresets: [Double] = [0.0, 0.12, 0.2, 0.3, 0.4]
     private static let fontWeightPresets: [Double] = [0.1, 0.22, 0.34, 0.5, 0.66]
+    private static let fontWeightLabels: [String] = fontWeightPresets.map { ZenClockTypography.weightLabel(for: $0) }
 
     @State private var intervalIndex: Int = 0
     @State private var opacityIndex: Int = 4
     @State private var containerOpacityIndex: Int = 0
     @State private var fontWeightIndex: Int = 0
+    @State private var showZenDetails: Bool = false
+
+    private var glowToggleBinding: Binding<Bool> {
+        Binding(
+            get: { settings.glow },
+            set: { on in
+                settings.glow = on
+                if on { settings.glowStrength = 1.0 }
+            }
+        )
+    }
+
+    /// Keeps menu pickers and `syncStyleIndices` from fighting UIKit context-menu teardown on the same turn.
+    private func scheduleSyncStyleIndices() {
+        Task { @MainActor in
+            syncStyleIndices()
+        }
+    }
+
+    private func scheduleSyncIntervalIndex() {
+        Task { @MainActor in
+            syncIntervalIndex()
+        }
+    }
+
+    private var loopIntervalSelection: Binding<Int> {
+        Binding(
+            get: { intervalIndex },
+            set: { new in
+                intervalIndex = new
+                settings.zenAutoRegenSeconds = Self.intervalPresets[new]
+            }
+        )
+    }
+
+    private var fontWeightSelection: Binding<Int> {
+        Binding(
+            get: { fontWeightIndex },
+            set: { new in
+                fontWeightIndex = new
+                settings.zenClockFontWeight = Self.fontWeightPresets[new]
+            }
+        )
+    }
+
+    private var clockOpacitySelection: Binding<Int> {
+        Binding(
+            get: { opacityIndex },
+            set: { new in
+                opacityIndex = new
+                settings.zenClockOpacity = Self.opacityPresets[new]
+            }
+        )
+    }
+
+    private var containerOpacitySelection: Binding<Int> {
+        Binding(
+            get: { containerOpacityIndex },
+            set: { new in
+                containerOpacityIndex = new
+                settings.zenClockContainerOpacity = Self.containerOpacityPresets[new]
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var zenControlsHeaderRow: some View {
+        Button {
+            showZenDetails.toggle()
+        } label: {
+            HStack {
+                Text("Zen Controls")
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.down")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(showZenDetails ? 0 : -90))
+                    .animation(.default, value: showZenDetails)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(showZenDetails ? "Collapse Zen tuning." : "Expand Zen tuning.")
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    Toggle("Zen mode", isOn: $settings.zenMode)
+                    Toggle("Zen Mode", isOn: $settings.zenMode)
                         .accessibilityHint("Ambient clock and optional automatic new patterns.")
-                    Toggle("Show clock", isOn: $settings.zenShowClock)
-                        .disabled(!settings.zenMode)
-                    Toggle("Show seconds", isOn: $settings.zenShowSeconds)
-                        .disabled(!settings.zenMode || !settings.zenShowClock)
-                    Toggle("Show date", isOn: $settings.zenShowDate)
-                        .disabled(!settings.zenMode || !settings.zenShowClock)
+
+                    if settings.zenMode {
+                        zenControlsHeaderRow
+                        if showZenDetails {
+                            zenLoopControls
+                            zenClockToggles
+                            zenClockStylePickers
+                            zenClockOpacityPickers
+                        }
+                    }
                 } header: {
                     Text("Zen")
                 }
 
                 Section {
-                    Toggle("Randomize palette on New", isOn: $settings.randomizePaletteOnRegenerate)
-                        .accessibilityHint("When on, Play Pause or New pattern picks a different palette.")
+                    Toggle("Randomize Palette on New", isOn: $settings.randomizePaletteOnRegenerate)
+                        .accessibilityHint("When on, Play Pause or New picks a different palette.")
+                    Toggle("Glow", isOn: glowToggleBinding)
                 } header: {
-                    Text("Palettes")
-                }
-
-                if settings.zenMode {
-                    Section {
-                        Picker("Clock position", selection: $settings.zenClockPositionRaw) {
-                            Text("Top").tag(ZenClockPosition.top.rawValue)
-                            Text("Upper third").tag(ZenClockPosition.upperThird.rawValue)
-                            Text("Center").tag(ZenClockPosition.center.rawValue)
-                        }
-                        .pickerStyle(.inline)
-
-                        Picker("Font style", selection: $settings.zenClockFontStyleRaw) {
-                            Text("System").tag(ZenClockFontStyle.system.rawValue)
-                            Text("Rounded").tag(ZenClockFontStyle.rounded.rawValue)
-                            Text("Monospaced").tag(ZenClockFontStyle.monospaced.rawValue)
-                        }
-                        .pickerStyle(.inline)
-
-                        Picker("Font weight", selection: $fontWeightIndex) {
-                            ForEach(Self.fontWeightPresets.indices, id: \.self) { i in
-                                Text(ZenClockTypography.weightLabel(for: Self.fontWeightPresets[i])).tag(i)
-                            }
-                        }
-                        .pickerStyle(.inline)
-                        .onChange(of: fontWeightIndex) { _, i in
-                            settings.zenClockFontWeight = Self.fontWeightPresets[i]
-                        }
-
-                        Picker("Clock opacity", selection: $opacityIndex) {
-                            ForEach(Self.opacityPresets.indices, id: \.self) { i in
-                                Text(opacityLabel(Self.opacityPresets[i])).tag(i)
-                            }
-                        }
-                        .pickerStyle(.inline)
-                        .onChange(of: opacityIndex) { _, i in
-                            settings.zenClockOpacity = Self.opacityPresets[i]
-                        }
-
-                        Picker("Container opacity", selection: $containerOpacityIndex) {
-                            ForEach(Self.containerOpacityPresets.indices, id: \.self) { i in
-                                Text(opacityLabel(Self.containerOpacityPresets[i])).tag(i)
-                            }
-                        }
-                        .pickerStyle(.inline)
-                        .onChange(of: containerOpacityIndex) { _, i in
-                            settings.zenClockContainerOpacity = Self.containerOpacityPresets[i]
-                        }
-                    } header: {
-                        Text("Clock style")
-                    }
-                }
-
-                Section {
-                    Toggle("Loop new patterns", isOn: $settings.zenAutoRegen)
-                        .disabled(!settings.zenMode)
-                    if settings.zenAutoRegen && settings.zenMode {
-                        Picker("Loop interval", selection: $intervalIndex) {
-                            ForEach(Self.intervalPresets.indices, id: \.self) { i in
-                                Text(intervalLabel(Self.intervalPresets[i]))
-                                    .tag(i)
-                            }
-                        }
-                        .pickerStyle(.inline)
-                        .accessibilityHint("How long to wait after a pattern finishes before generating another.")
-                        .onChange(of: intervalIndex) { _, i in
-                            settings.zenAutoRegenSeconds = Self.intervalPresets[i]
-                        }
-                    }
-                } header: {
-                    Text("Automatic patterns")
+                    Text("Pattern")
                 }
             }
             .background(BL.void.ignoresSafeArea())
-            .navigationTitle("Ambient options")
+            .navigationTitle("Ambient Options")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
@@ -613,19 +620,88 @@ private struct TVZenOptionsSheet: View {
         .onAppear {
             syncIntervalIndex()
             syncStyleIndices()
+            showZenDetails = settings.zenMode
         }
         .onChange(of: settings.zenAutoRegenSeconds) { _, _ in
-            syncIntervalIndex()
+            scheduleSyncIntervalIndex()
         }
         .onChange(of: settings.zenClockOpacity) { _, _ in
-            syncStyleIndices()
+            scheduleSyncStyleIndices()
         }
         .onChange(of: settings.zenClockContainerOpacity) { _, _ in
-            syncStyleIndices()
+            scheduleSyncStyleIndices()
         }
         .onChange(of: settings.zenClockFontWeight) { _, _ in
-            syncStyleIndices()
+            scheduleSyncStyleIndices()
         }
+        .onChange(of: settings.zenMode) { _, enabled in
+            showZenDetails = enabled
+        }
+    }
+
+    @ViewBuilder
+    private var zenLoopControls: some View {
+        Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
+        if settings.zenAutoRegen {
+            Picker("Loop interval", selection: loopIntervalSelection) {
+                ForEach(Self.intervalPresets.indices, id: \.self) { i in
+                    Text(intervalLabel(Self.intervalPresets[i]))
+                        .tag(i)
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityHint("How long to wait after a pattern finishes before generating another.")
+        }
+    }
+
+    @ViewBuilder
+    private var zenClockToggles: some View {
+        Toggle("Show Clock", isOn: $settings.zenShowClock)
+        Toggle("Show Seconds", isOn: $settings.zenShowSeconds)
+            .disabled(!settings.zenShowClock)
+        Toggle("Show Date", isOn: $settings.zenShowDate)
+            .disabled(!settings.zenShowClock)
+    }
+
+    @ViewBuilder
+    private var zenClockStylePickers: some View {
+        Picker("Clock position", selection: $settings.zenClockPositionRaw) {
+            Text("Top").tag(ZenClockPosition.top.rawValue)
+            Text("Upper third").tag(ZenClockPosition.upperThird.rawValue)
+            Text("Center").tag(ZenClockPosition.center.rawValue)
+        }
+        .pickerStyle(.menu)
+
+        Picker("Font style", selection: $settings.zenClockFontStyleRaw) {
+            Text("System").tag(ZenClockFontStyle.system.rawValue)
+            Text("Rounded").tag(ZenClockFontStyle.rounded.rawValue)
+            Text("Monospaced").tag(ZenClockFontStyle.monospaced.rawValue)
+        }
+        .pickerStyle(.menu)
+
+        Picker("Font weight", selection: fontWeightSelection) {
+            ForEach(Self.fontWeightPresets.indices, id: \.self) { i in
+                Text(Self.fontWeightLabels[i]).tag(i)
+            }
+        }
+        .pickerStyle(.menu)
+    }
+
+    @ViewBuilder
+    private var zenClockOpacityPickers: some View {
+        Picker("Clock opacity", selection: clockOpacitySelection) {
+            ForEach(Self.opacityPresets.indices, id: \.self) { i in
+                Text(opacityLabel(Self.opacityPresets[i])).tag(i)
+            }
+        }
+        .pickerStyle(.menu)
+
+        Picker("Container opacity", selection: containerOpacitySelection) {
+            ForEach(Self.containerOpacityPresets.indices, id: \.self) { i in
+                Text(opacityLabel(Self.containerOpacityPresets[i])).tag(i)
+            }
+        }
+        .pickerStyle(.menu)
     }
 
     private func syncIntervalIndex() {
@@ -705,7 +781,7 @@ private struct TVZenClockOverlay: View {
                         .tracking(-2)
                         .monospacedDigit()
                         .lineLimit(1)
-                        .minimumScaleFactor(0.35)
+                        .minimumScaleFactor(0.5)
                         .foregroundStyle(BL.highlight)
                         .shadow(color: .black.opacity(0.75), radius: 20)
                         .shadow(color: accent.opacity(0.35), radius: 32)
@@ -718,8 +794,8 @@ private struct TVZenClockOverlay: View {
                             .shadow(color: .black.opacity(0.75), radius: 8)
                     }
                 }
-                .padding(.horizontal, 80)
-                .padding(.vertical, 18)
+                .padding(.horizontal, 64)
+                .padding(.vertical, 22)
                 .background {
                     if containerOpacity > 0.001 {
                         RoundedRectangle(cornerRadius: 26, style: .continuous)
@@ -765,20 +841,20 @@ private struct TVZenClockOverlay: View {
     private func topPadding(height: CGFloat) -> CGFloat {
         switch position {
         case .top:
-            return 56
+            return 72
         case .upperThird:
-            return max(56, height * 0.18)
+            return max(72, height * 0.16)
         case .center:
             return 0
         }
     }
 
     private func clockFont() -> Font {
-        .system(size: 112, weight: ZenClockTypography.fontWeight(for: fontWeight), design: mappedDesign(fontStyle))
+        .system(size: 168, weight: ZenClockTypography.fontWeight(for: fontWeight), design: mappedDesign(fontStyle))
     }
 
     private func dateFont() -> Font {
-        .system(size: 18, weight: .light, design: mappedDesign(fontStyle))
+        .system(size: 26, weight: .light, design: mappedDesign(fontStyle))
     }
 
     private func mappedDesign(_ style: ZenClockFontStyle) -> Font.Design {

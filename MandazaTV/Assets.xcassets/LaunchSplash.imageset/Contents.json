@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "filename": "launch-splash-tv.png",
+      "idiom": "tv"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

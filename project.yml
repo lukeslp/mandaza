@@ -34,6 +34,7 @@ targets:
         CFBundleVersion: "1"
         UILaunchScreen:
           UIColorName: AccentColor
+          UIImageName: LaunchSplash
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
           UISceneConfigurations: {}
@@ -82,7 +83,9 @@ targets:
         CFBundleIconName: AppIcon
         CFBundleShortVersionString: "0.2.0"
         CFBundleVersion: "1"
-        UILaunchScreen: {}
+        UILaunchScreen:
+          UIColorName: AccentColor
+          UIImageName: LaunchSplash
         ITSAppUsesNonExemptEncryption: false
         CFBundleURLTypes:
           - CFBundleURLName: com.lukesteuber.mandaza

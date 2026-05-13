@@ -9,10 +9,17 @@ final class SettingsTests: XCTestCase {
         s.drawSpeed = 0.8
         s.lineWidth = 2.5
         s.glow = false
-        let cfg = s.engineConfig()
+        s.glowStrength = 1.0
+        var cfg = s.engineConfig()
         XCTAssertEqual(cfg.drawSpeed, 0.8, accuracy: 0.0001)
         XCTAssertEqual(cfg.lineWidth, 2.5, accuracy: 0.0001)
         XCTAssertFalse(cfg.glow)
+        XCTAssertNil(cfg.glowStrength)
+        s.glow = true
+        s.glowStrength = 0.42
+        cfg = s.engineConfig()
+        XCTAssertTrue(cfg.glow)
+        XCTAssertEqual(cfg.glowStrength ?? 0, 0.42, accuracy: 0.0001)
     }
 
     func testEngineConfigMapsDensityToCellSize() {
@@ -83,12 +90,14 @@ final class SettingsTests: XCTestCase {
         let savedDraw = s.drawSpeed
         let savedLine = s.lineWidth
         let savedGlow = s.glow
+        let savedGlowStrength = s.glowStrength
         defer {
             s.density = savedDensity
             s.geometryPreset = savedGeometry
             s.drawSpeed = savedDraw
             s.lineWidth = savedLine
             s.glow = savedGlow
+            s.glowStrength = savedGlowStrength
         }
         var cfg = EngineConfig()
         cfg.randomPattern = false
@@ -97,11 +106,13 @@ final class SettingsTests: XCTestCase {
         cfg.drawSpeed = 0.5
         cfg.lineWidth = 2.0
         cfg.glow = false
+        cfg.glowStrength = 0.4
         s.applyLook(from: cfg)
         XCTAssertEqual(s.geometryPreset, "medium")
         XCTAssertEqual(s.density, 0.7, accuracy: 0.0001)
         XCTAssertEqual(s.drawSpeed, 0.5, accuracy: 0.0001)
         XCTAssertEqual(s.lineWidth, 2.0, accuracy: 0.0001)
         XCTAssertFalse(s.glow)
+        XCTAssertEqual(s.glowStrength, 0.4, accuracy: 0.0001)
     }
 }

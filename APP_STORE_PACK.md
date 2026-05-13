@@ -82,12 +82,13 @@ Questions or feedback: luke@lukesteuber.com
 
 MandazaTV is a fullscreen ambient visual experience for Apple TV.
 
-Generate endlessly varied procedural mandalas, switch palettes, and tune Zen options from a remote-friendly control dock.
+Generate endlessly varied procedural mandalas, switch palettes, and tune Zen options from an ambient-first quick control rail with a secondary deep settings sheet.
 
 Features:
 - Fullscreen animated procedural mandalas
 - Play/Pause to generate a new composition
-- Menu to show or hide controls
+- Menu to hide controls in ambient mode and restore them when hidden
+- Directional swipe restores controls when hidden
 - Zen clock/date overlay options with style controls (opacity, container, font, position)
 - Shared visual language with the iOS app
 
@@ -96,9 +97,10 @@ MandazaTV runs on-device and does not require an account.
 #### What to Test (TestFlight)
 
 - Play/Pause generates a new pattern.
-- Menu toggles the dock.
-- Dock auto-hides after idle and can be restored with Menu.
-- Zen sheet controls update overlay behavior.
+- Menu hides/restores controls deterministically.
+- Dock auto-hides after idle and can be restored with Menu or directional swipe.
+- Quick rail controls (Zen / Loop / Palette) behave without opening deep settings.
+- Ambient Options controls update overlay behavior.
 - General smoothness in long-running ambient mode.
 
 ## Privacy and Compliance Pack
@@ -131,7 +133,7 @@ MandazaTV runs on-device and does not require an account.
 
 ### Launch/Splash
 
-- iOS launch configured via `UILaunchScreen` with `AccentColor`.
+- iOS launch configured via `UILaunchScreen` with `AccentColor` + `LaunchSplash` image.
 - tvOS launch uses standard launch screen configuration (`UILaunchScreen: {}`).
 
 ### Screenshot Checklist

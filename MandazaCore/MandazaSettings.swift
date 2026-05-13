@@ -34,6 +34,8 @@ public final class MandazaSettings {
     public var drawSpeed: Double       { didSet { write(drawSpeed, .drawSpeed) } }
     public var lineWidth: Double       { didSet { write(lineWidth, .lineWidth) } }
     public var glow: Bool              { didSet { write(glow, .glow) } }
+    /// When `glow` is true, scales shadow blur (stored 0.18…1). Random New may pick a soft band; turning Glow on in settings sets 1.0.
+    public var glowStrength: Double    { didSet { write(glowStrength, .glowStrength) } }
 
     // MARK: - Density / geometry (new in Phase B)
 
@@ -83,11 +85,12 @@ public final class MandazaSettings {
         self.paletteId       = suite.string(forKey: Key.paletteId.rawValue) ?? Palette.all.first?.id ?? "aurora"
         self.drawSpeed       = Self.readDouble(suite, .drawSpeed, default: 0.707)
         self.lineWidth       = Self.readDouble(suite, .lineWidth, default: 1.2)
-        self.glow            = Self.readBool(suite, .glow, default: true)
+        self.glow            = Self.readBool(suite, .glow, default: false)
+        self.glowStrength    = Self.readDouble(suite, .glowStrength, default: 1.0)
 
         self.density         = Self.readDouble(suite, .density, default: 0.5)
         self.geometryPreset  = suite.string(forKey: Key.geometryPreset.rawValue) ?? "auto"
-        self.randomizePaletteOnRegenerate = Self.readBool(suite, .randomizePaletteOnRegenerate, default: false)
+        self.randomizePaletteOnRegenerate = Self.readBool(suite, .randomizePaletteOnRegenerate, default: true)
 
         self.zenMode             = Self.readBool(suite, .zenMode, default: false)
         self.zenShowClock        = Self.readBool(suite, .zenShowClock, default: true)
@@ -120,6 +123,7 @@ public final class MandazaSettings {
         c.drawSpeed = drawSpeed
         c.lineWidth = lineWidth
         c.glow = glow
+        c.glowStrength = glow ? glowStrength : nil
 
         // Density slider → cellSize (engine inverts: smaller cellSize = bigger cells).
         c.cellSizeRandom = false
@@ -154,12 +158,34 @@ public final class MandazaSettings {
         favorites.contains(where: { $0.seed == seed })
     }
 
+    /// Randomizes the core pattern controls used by "New" so each generation
+    /// can materially differ in structure, density, and stroke behavior.
+    public func randomizePatternLook(includePalette: Bool) {
+        if includePalette {
+            paletteId = Palette.all.filter { $0.id != paletteId }
+                .randomElement()?.id ?? paletteId
+        }
+        density = Double.random(in: 0.12 ... 0.92)
+        drawSpeed = Double.random(in: 0.18 ... 1.0)
+        lineWidth = Double.random(in: 0.65 ... 2.8)
+        geometryPreset = ["auto", "sparse", "medium", "dense", "busy"].randomElement() ?? "auto"
+        // Glow defaults off; on randomize, enable softly < half the time.
+        if Double.random(in: 0..<1) < 0.42 {
+            glow = true
+            glowStrength = Double.random(in: 0.34 ... 0.58)
+        } else {
+            glow = false
+            glowStrength = 1.0
+        }
+    }
+
     /// Applies density, geometry, and stroke look from a frozen snapshot so
     /// favorites / recents reproduce the saved artwork (not just seed + palette).
     public func applyLook(from config: EngineConfig) {
         drawSpeed = config.drawSpeed
         lineWidth = config.lineWidth
         glow = config.glow
+        glowStrength = min(max(config.glowStrength ?? 1.0, 0.18), 1.0)
         density = max(0.0, min(1.0, 1.0 - config.cellSize))
         if config.randomPattern {
             geometryPreset = "auto"
@@ -187,7 +213,7 @@ public final class MandazaSettings {
     // MARK: - Storage primitives
 
     private enum Key: String, CaseIterable {
-        case paletteId, drawSpeed, lineWidth, glow
+        case paletteId, drawSpeed, lineWidth, glow, glowStrength
         case density, geometryPreset, randomizePaletteOnRegenerate
         case zenMode, zenShowClock, zenShowSeconds, zenShowDate
         case zenAutoRegen, zenAutoRegenSeconds

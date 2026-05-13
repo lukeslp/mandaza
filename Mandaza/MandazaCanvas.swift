@@ -17,6 +17,7 @@ struct MandazaCanvas: View {
     @State private var built = false
     @State private var firstTimestamp: Date? = nil
     @State private var wasIdle: Bool? = nil
+    @State private var lastAdvanceTimestamp: Date? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isLuminanceReduced) private var luminanceReduced
 
@@ -50,6 +51,7 @@ struct MandazaCanvas: View {
         built = ok
         firstTimestamp = nil
         wasIdle = nil
+        lastAdvanceTimestamp = nil
         if ok && reduceMotion {
             engine.completeAllPaths()
         }
@@ -57,6 +59,11 @@ struct MandazaCanvas: View {
 
     private func advance(now: Date) {
         guard built else { return }
+        if let last = lastAdvanceTimestamp,
+           now.timeIntervalSince(last) < 0.0005 {
+            return
+        }
+        lastAdvanceTimestamp = now
         if firstTimestamp == nil { firstTimestamp = now }
         let t = msSince(start: firstTimestamp, now: now)
         let alive = engine.advance(timeMs: t)
@@ -77,6 +84,7 @@ struct MandazaCanvas: View {
         guard built else { return }
 
         let glowRadius = engine.radius / 5
+        let glowScale = min(max(config.glowStrength ?? 1.0, 0.18), 1.0)
         let strokeWidth = (engine.radius / 30) * config.lineWidth
 
         for loop in engine.loops {
@@ -84,8 +92,8 @@ struct MandazaCanvas: View {
             let color = Color(cgColor: engine.color(for: loop, timeMs: timeMs))
             var layer = ctx
             if config.glow {
-                layer.addFilter(.shadow(color: color.opacity(0.85),
-                                        radius: glowRadius))
+                layer.addFilter(.shadow(color: color.opacity(0.55 + 0.30 * glowScale),
+                                        radius: glowRadius * glowScale))
             }
             layer.stroke(path,
                          with: .color(color),
