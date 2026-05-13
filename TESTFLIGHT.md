@@ -166,10 +166,12 @@ source ~/.zshrc
 ### 6. First upload
 
 ```bash
-scripts/archive.sh           # ~1 minute
+scripts/archive.sh           # runs unit tests, then archives (~few min)
 scripts/export-ipa.sh        # ~30 seconds — this is the step that needs the App Store record
 scripts/upload-testflight.sh # ~5 minutes (Apple is doing notarization + scanning)
 ```
+
+`scripts/archive.sh` runs `xcodebuild test` on the **iPhone 17** simulator first (set `SKIP_TESTS=1` to skip for a local-only archive). `scripts/archive-tvos.sh` runs a Debug **tvOS Simulator** build smoke before the Release archive (same `SKIP_TESTS=1` escape hatch).
 
 Apple emails you when the build finishes processing (~10-30 min). Once it does:
 

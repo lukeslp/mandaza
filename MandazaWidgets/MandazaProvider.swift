@@ -7,6 +7,7 @@ struct MandazaEntry: TimelineEntry {
     let intent: MandazaWidgetIntent
 }
 
+@MainActor
 struct MandazaProvider: AppIntentTimelineProvider {
 
     func placeholder(in context: Context) -> MandazaEntry {
@@ -42,12 +43,12 @@ struct MandazaProvider: AppIntentTimelineProvider {
                                  intent: MandazaWidgetIntent) -> MandazaSnapshot {
         let bucketMinutes = intent.interval.minutes
         let bucket = Int(date.timeIntervalSince1970) / max(60, bucketMinutes * 60)
-        let palette = MainActor.assumeIsolated { intent.palette.resolved() }
-        let config = MainActor.assumeIsolated { MandazaSettings.shared.engineConfig() }
+        let palette = intent.palette.resolved()
+        let config = MandazaSettings.shared.engineConfig()
         let seed = "widget-\(bucket)-\(bucketMinutes)-\(palette)"
 
         // If the user has favorites and the bucket lines up, prefer a favorite.
-        let favorites = MainActor.assumeIsolated { MandazaSettings.shared.favorites }
+        let favorites = MandazaSettings.shared.favorites
         if !favorites.isEmpty, bucket % 3 == 0 {
             let fav = favorites[abs(bucket) % favorites.count]
             return MandazaSnapshot(seed: fav.seed,

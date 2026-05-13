@@ -20,11 +20,14 @@ TV has no third-party WidgetKit surface).
   customizable for nightstand or desk display.
 - **Zen presentation controls** — clock/container opacity, font style and
   weight, and position presets (top / upper-third / center), with tvOS-first
-  tuning mirrored on iOS.
+  tuning mirrored on iOS. Weight **labels** and rendered `Font.Weight` share
+  one `ZenClockTypography` table in `MandazaCore` so the slider never disagrees
+  with the clock.
 - **Settings streamlined** — Zen Mode toggle is surfaced at the top; settings
   footer now links directly to `dr.eamer.dev`.
 - **Favorites** — heart any mandala to keep it; favorites cycle into widget
-  rotation automatically.
+  rotation automatically. Loading a favorite or **Previous** snapshot also
+  restores density, geometry, and stroke look from the saved `EngineConfig`.
 - **Density + geometry controls** — pattern editability without the curated
   feel slipping.
 - **Widgets**
@@ -63,6 +66,12 @@ xcodebuild -scheme Mandaza \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   test
 ```
+
+**Release archives:** `scripts/archive.sh` regenerates the project with XcodeGen,
+runs **unit tests** on the iPhone 17 simulator (override with `SKIP_TESTS=1` to
+skip), then produces `build/Mandaza.xcarchive`. `scripts/archive-tvos.sh` runs a
+tvOS Simulator **Debug build** smoke first (same skip flag), then archives
+`MandazaTV`.
 
 ### Apple TV (tvOS)
 
@@ -113,18 +122,19 @@ MandazaCore/                  Sources shared between app and widget targets
   MandazaEngine.swift         Algorithm port: cells, dots, loops, beziers + off-main renderImage
   Palettes.swift              11 palettes, CGColor + SwiftUI Color representations
   MandazaSnapshot.swift       Value-type record of one mandala (used by widgets + favorites)
-  MandazaSettings.swift       @Observable, App Group-backed persistence
+  MandazaSettings.swift       @Observable, App Group-backed persistence + applyLook(from:)
+  ZenClockTypography.swift    Shared zen clock weight → Font.Weight + label mapping
   MandazaImageView.swift      Still-image renderer used by widgets and favorites grid
 
 MandazaWidgets/               WidgetKit app extension
   MandazaWidgetsBundle.swift  @main bundle
   MandazaWidgets.swift        StandBy / Lock Screen / Home Screen widget definitions
-  MandazaProvider.swift       Timeline provider with bucketed rotation logic
+  MandazaProvider.swift       @MainActor timeline provider with bucketed rotation logic
   MandazaWidgetIntent.swift   AppIntent for long-press configuration
 
 MandazaTests/                 Unit tests
   EngineTests.swift           8 tests on engine determinism + renderImage + palette
-  SettingsTests.swift         5 tests on settings → engine-config mapping + favorites
+  SettingsTests.swift         Settings → engine-config, favorites, typography, applyLook
   SnapshotTests.swift         3 tests on MandazaSnapshot + EngineConfig Codable round-trip
 
 MandazaTV/                    tvOS app (ambient / screensaver-style while open)

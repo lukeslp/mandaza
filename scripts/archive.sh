@@ -11,6 +11,9 @@
 # tvOS (separate bundle): scripts/archive-tvos.sh → export-ipa-tvos.sh → upload-testflight.sh --tvos
 #
 # Requires: xcodegen, Xcode 26.4+, Apple Developer membership.
+#
+# Environment:
+#   SKIP_TESTS=1  — skip the pre-archive `xcodebuild test` gate (local fast path).
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -22,6 +25,22 @@ ARCHIVE="build/Mandaza.xcarchive"
 
 # Regenerate the project so any project.yml changes land in the archive.
 xcodegen --quiet
+
+if [[ "${SKIP_TESTS:-}" != "1" ]]; then
+    echo "→ Running unit tests (set SKIP_TESTS=1 to skip)"
+    xcodebuild test \
+        -project "${PROJECT}" \
+        -scheme "${SCHEME}" \
+        -destination 'platform=iOS Simulator,name=iPhone 17' \
+        -configuration Debug \
+        2>&1 | (which xcbeautify >/dev/null 2>&1 && xcbeautify --quiet || tail -50) || {
+            echo "✗ Tests failed. Fix failures before archiving, or use SKIP_TESTS=1 for a local-only archive." >&2
+            exit 1
+        }
+    echo "✓ Tests passed"
+else
+    echo "→ Skipping tests (SKIP_TESTS=1)"
+fi
 
 # Auto-increment CFBundleVersion based on current count of git commits.
 # Marketing version (CFBundleShortVersionString) is held steady in project.yml.

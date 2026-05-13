@@ -179,6 +179,8 @@ Use short, legible overlays with one core message per frame.
 
 ### iOS Build and Upload
 
+`archive.sh` runs **unit tests** on the iPhone 17 simulator, then archives. Use `SKIP_TESTS=1` only for a quick local archive when you intentionally accept untested bits.
+
 ```bash
 scripts/archive.sh
 scripts/export-ipa.sh
@@ -186,6 +188,8 @@ scripts/upload-testflight.sh
 ```
 
 ### tvOS Build and Upload
+
+`archive-tvos.sh` runs a **Debug tvOS Simulator build** smoke, then the Release archive. Same `SKIP_TESTS=1` escape hatch.
 
 ```bash
 scripts/archive-tvos.sh

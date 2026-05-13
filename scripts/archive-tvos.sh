@@ -9,6 +9,9 @@
 #   scripts/upload-testflight.sh --tvos
 #
 # Requires: xcodegen, Xcode with tvOS SDK, Apple Developer membership.
+#
+# Environment:
+#   SKIP_TESTS=1  — skip the pre-archive Debug `xcodebuild build` smoke on tvOS Simulator.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -19,6 +22,22 @@ CONFIG="Release"
 ARCHIVE="build/MandazaTV.xcarchive"
 
 xcodegen --quiet
+
+if [[ "${SKIP_TESTS:-}" != "1" ]]; then
+    echo "→ tvOS Debug build smoke (set SKIP_TESTS=1 to skip)"
+    xcodebuild build \
+        -project "${PROJECT}" \
+        -scheme "${SCHEME}" \
+        -destination 'platform=tvOS Simulator,name=Apple TV' \
+        -configuration Debug \
+        2>&1 | (which xcbeautify >/dev/null 2>&1 && xcbeautify --quiet || tail -50) || {
+            echo "✗ tvOS build smoke failed." >&2
+            exit 1
+        }
+    echo "✓ tvOS build smoke passed"
+else
+    echo "→ Skipping tvOS build smoke (SKIP_TESTS=1)"
+fi
 
 BUILD_NUMBER="$(git rev-list --count HEAD)"
 echo "→ tvOS build number: ${BUILD_NUMBER}"

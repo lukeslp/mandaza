@@ -68,4 +68,40 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(s.favorites.first?.seed, "seed-59")
         s.favorites = []
     }
+
+    func testZenClockTypographyWeightLabelMatchesBuckets() {
+        XCTAssertEqual(ZenClockTypography.weightLabel(for: 0.49), "Regular")
+        XCTAssertEqual(ZenClockTypography.weightLabel(for: 0.5), "Medium")
+        XCTAssertEqual(ZenClockTypography.weightLabel(for: 0.77), "Semi Bold")
+        XCTAssertEqual(ZenClockTypography.weightLabel(for: 0.78), "Bold")
+    }
+
+    func testApplyLookRestoresEngineFields() {
+        let s = MandazaSettings.shared
+        let savedDensity = s.density
+        let savedGeometry = s.geometryPreset
+        let savedDraw = s.drawSpeed
+        let savedLine = s.lineWidth
+        let savedGlow = s.glow
+        defer {
+            s.density = savedDensity
+            s.geometryPreset = savedGeometry
+            s.drawSpeed = savedDraw
+            s.lineWidth = savedLine
+            s.glow = savedGlow
+        }
+        var cfg = EngineConfig()
+        cfg.randomPattern = false
+        cfg.geometry = 1
+        cfg.cellSize = 0.3
+        cfg.drawSpeed = 0.5
+        cfg.lineWidth = 2.0
+        cfg.glow = false
+        s.applyLook(from: cfg)
+        XCTAssertEqual(s.geometryPreset, "medium")
+        XCTAssertEqual(s.density, 0.7, accuracy: 0.0001)
+        XCTAssertEqual(s.drawSpeed, 0.5, accuracy: 0.0001)
+        XCTAssertEqual(s.lineWidth, 2.0, accuracy: 0.0001)
+        XCTAssertFalse(s.glow)
+    }
 }

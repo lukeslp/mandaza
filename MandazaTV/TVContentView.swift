@@ -111,6 +111,20 @@ struct TVContentView: View {
             dockIdleTask?.cancel()
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
+        .onChange(of: settings.zenMode) { _, on in
+            if !on || !settings.zenAutoRegen {
+                autoRegenTask?.cancel()
+            } else if lastIdle {
+                handleIdleChange(true)
+            }
+        }
+        .onChange(of: settings.zenAutoRegen) { _, on in
+            if !on || !settings.zenMode {
+                autoRegenTask?.cancel()
+            } else if lastIdle {
+                handleIdleChange(true)
+            }
+        }
         .onOpenURL { handleIncomingURL($0) }
         .onPlayPauseCommand {
             if showDock { resetDockIdleTimerIfNeeded() }
@@ -511,6 +525,13 @@ private struct TVZenOptionsSheet: View {
                     Text("Zen")
                 }
 
+                Section {
+                    Toggle("Randomize palette on New", isOn: $settings.randomizePaletteOnRegenerate)
+                        .accessibilityHint("When on, Play Pause or New pattern picks a different palette.")
+                } header: {
+                    Text("Palettes")
+                }
+
                 if settings.zenMode {
                     Section {
                         Picker("Clock position", selection: $settings.zenClockPositionRaw) {
@@ -529,7 +550,7 @@ private struct TVZenOptionsSheet: View {
 
                         Picker("Font weight", selection: $fontWeightIndex) {
                             ForEach(Self.fontWeightPresets.indices, id: \.self) { i in
-                                Text(weightLabel(Self.fontWeightPresets[i])).tag(i)
+                                Text(ZenClockTypography.weightLabel(for: Self.fontWeightPresets[i])).tag(i)
                             }
                         }
                         .pickerStyle(.inline)
@@ -613,7 +634,6 @@ private struct TVZenOptionsSheet: View {
             intervalIndex = exact
         } else {
             intervalIndex = nearestPresetIndex(to: v)
-            settings.zenAutoRegenSeconds = Self.intervalPresets[intervalIndex]
         }
     }
 
@@ -660,16 +680,6 @@ private struct TVZenOptionsSheet: View {
 
     private func opacityLabel(_ value: Double) -> String {
         "\(Int(value * 100))%"
-    }
-
-    private func weightLabel(_ value: Double) -> String {
-        switch value {
-        case ..<0.18: return "Ultra Light"
-        case ..<0.3: return "Light"
-        case ..<0.42: return "Regular"
-        case ..<0.58: return "Medium"
-        default: return "Semi Bold"
-        }
     }
 }
 
@@ -764,7 +774,7 @@ private struct TVZenClockOverlay: View {
     }
 
     private func clockFont() -> Font {
-        .system(size: 112, weight: mappedWeight(fontWeight), design: mappedDesign(fontStyle))
+        .system(size: 112, weight: ZenClockTypography.fontWeight(for: fontWeight), design: mappedDesign(fontStyle))
     }
 
     private func dateFont() -> Font {
@@ -776,18 +786,6 @@ private struct TVZenClockOverlay: View {
         case .system: return .default
         case .rounded: return .rounded
         case .monospaced: return .monospaced
-        }
-    }
-
-    private func mappedWeight(_ value: Double) -> Font.Weight {
-        switch value {
-        case ..<0.15: return .ultraLight
-        case ..<0.25: return .thin
-        case ..<0.35: return .light
-        case ..<0.5: return .regular
-        case ..<0.62: return .medium
-        case ..<0.78: return .semibold
-        default: return .bold
         }
     }
 }

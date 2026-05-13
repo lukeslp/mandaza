@@ -154,6 +154,26 @@ public final class MandazaSettings {
         favorites.contains(where: { $0.seed == seed })
     }
 
+    /// Applies density, geometry, and stroke look from a frozen snapshot so
+    /// favorites / recents reproduce the saved artwork (not just seed + palette).
+    public func applyLook(from config: EngineConfig) {
+        drawSpeed = config.drawSpeed
+        lineWidth = config.lineWidth
+        glow = config.glow
+        density = max(0.0, min(1.0, 1.0 - config.cellSize))
+        if config.randomPattern {
+            geometryPreset = "auto"
+        } else {
+            switch config.geometry {
+            case 0: geometryPreset = "sparse"
+            case 1: geometryPreset = "medium"
+            case 5: geometryPreset = "dense"
+            case 6: geometryPreset = "busy"
+            default: geometryPreset = "auto"
+            }
+        }
+    }
+
     public var zenClockFontStyle: ZenClockFontStyle {
         get { ZenClockFontStyle(rawValue: zenClockFontStyleRaw) ?? .system }
         set { zenClockFontStyleRaw = newValue.rawValue }

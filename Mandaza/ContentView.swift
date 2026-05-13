@@ -106,7 +106,10 @@ struct ContentView: View {
                     .onTapGesture {
                         restoreControls()
                     }
+                    .accessibilityElement()
                     .accessibilityLabel("Show controls")
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityHint("Restores the bottom toolbar.")
             }
 
             // Layer 4 — export progress dim.
@@ -157,6 +160,20 @@ struct ContentView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
+        .onChange(of: settings.zenMode) { _, on in
+            if !on || !settings.zenAutoRegen {
+                autoRegenTask?.cancel()
+            } else if lastIdle {
+                handleIdleChange(true)
+            }
+        }
+        .onChange(of: settings.zenAutoRegen) { _, on in
+            if !on || !settings.zenMode {
+                autoRegenTask?.cancel()
+            } else if lastIdle {
+                handleIdleChange(true)
+            }
+        }
         .onChange(of: showSettings) { _, isPresented in
             if !isPresented { noteInteraction() }
         }
@@ -425,6 +442,9 @@ struct ContentView: View {
 
     private func scheduleControlsFade() {
         controlsFadeTask?.cancel()
+        // Don't auto-hide chrome while VoiceOver / Switch Control need persistent targets.
+        guard !UIAccessibility.isVoiceOverRunning,
+              !UIAccessibility.isSwitchControlRunning else { return }
         controlsFadeTask = Task { @MainActor in
             try? await Task.sleep(for: controlsFadeDelay)
             guard !Task.isCancelled, !showSettings, exportAlert == nil, !exportInProgress else { return }
@@ -464,6 +484,7 @@ struct ContentView: View {
         // already there if it was just-generated).
         seed = snap.seed
         settings.paletteId = snap.paletteId
+        settings.applyLook(from: snap.config)
         showRecents = false
         selectionFeedback()
     }
@@ -482,6 +503,7 @@ struct ContentView: View {
     private func loadFavorite(_ snapshot: MandazaSnapshot) {
         seed = snapshot.seed
         settings.paletteId = snapshot.paletteId
+        settings.applyLook(from: snapshot.config)
     }
 
     private func selectionFeedback() {
@@ -736,7 +758,7 @@ private struct SettingsSheet: View {
                                       value: $settings.zenClockFontWeight,
                                       range: 0.1 ... 0.75,
                                       accent: accent,
-                                      format: { zenWeightLabel(for: $0) })
+                                      format: { ZenClockTypography.weightLabel(for: $0) })
 
                         Picker("Font", selection: $settings.zenClockFontStyleRaw) {
                             Text("System").tag(ZenClockFontStyle.system.rawValue)
@@ -835,16 +857,6 @@ private struct SettingsSheet: View {
         case ..<0.5:  return "Loose"
         case ..<0.75: return "Tight"
         default:      return "Packed"
-        }
-    }
-
-    private func zenWeightLabel(for value: Double) -> String {
-        switch value {
-        case ..<0.15: return "Ultra Light"
-        case ..<0.25: return "Light"
-        case ..<0.35: return "Regular"
-        case ..<0.5: return "Medium"
-        default: return "Semi Bold"
         }
     }
 }
@@ -1101,7 +1113,7 @@ private struct ZenClockOverlay: View {
     }
 
     private func clockFont() -> Font {
-        .system(size: 96, weight: mappedWeight(fontWeight), design: mappedDesign(fontStyle))
+        .system(size: 96, weight: ZenClockTypography.fontWeight(for: fontWeight), design: mappedDesign(fontStyle))
     }
 
     private func dateFont() -> Font {
@@ -1113,18 +1125,6 @@ private struct ZenClockOverlay: View {
         case .system: return .default
         case .rounded: return .rounded
         case .monospaced: return .monospaced
-        }
-    }
-
-    private func mappedWeight(_ value: Double) -> Font.Weight {
-        switch value {
-        case ..<0.15: return .ultraLight
-        case ..<0.25: return .thin
-        case ..<0.35: return .light
-        case ..<0.5: return .regular
-        case ..<0.62: return .medium
-        case ..<0.78: return .semibold
-        default: return .bold
         }
     }
 }
