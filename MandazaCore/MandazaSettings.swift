@@ -1,6 +1,18 @@
 import Foundation
 import Observation
 
+public enum ZenClockFontStyle: String, CaseIterable, Codable, Sendable {
+    case system
+    case rounded
+    case monospaced
+}
+
+public enum ZenClockPosition: String, CaseIterable, Codable, Sendable {
+    case top
+    case upperThird
+    case center
+}
+
 /// Single source of truth for user-editable state, shared between the app
 /// and the widget extension via an App Group `UserDefaults` suite.
 ///
@@ -30,6 +42,7 @@ public final class MandazaSettings {
     /// "auto" or "sparse" / "medium" / "dense" / "busy" — preset names that
     /// map onto the engine's `geometry` index.
     public var geometryPreset: String  { didSet { write(geometryPreset, .geometryPreset) } }
+    public var randomizePaletteOnRegenerate: Bool { didSet { write(randomizePaletteOnRegenerate, .randomizePaletteOnRegenerate) } }
 
     // MARK: - Zen mode
 
@@ -39,6 +52,11 @@ public final class MandazaSettings {
     public var zenShowDate: Bool          { didSet { write(zenShowDate, .zenShowDate) } }
     public var zenAutoRegen: Bool         { didSet { write(zenAutoRegen, .zenAutoRegen) } }
     public var zenAutoRegenSeconds: Double { didSet { write(zenAutoRegenSeconds, .zenAutoRegenSeconds) } }
+    public var zenClockOpacity: Double { didSet { write(zenClockOpacity, .zenClockOpacity) } }
+    public var zenClockContainerOpacity: Double { didSet { write(zenClockContainerOpacity, .zenClockContainerOpacity) } }
+    public var zenClockFontStyleRaw: String { didSet { write(zenClockFontStyleRaw, .zenClockFontStyleRaw) } }
+    public var zenClockFontWeight: Double { didSet { write(zenClockFontWeight, .zenClockFontWeight) } }
+    public var zenClockPositionRaw: String { didSet { write(zenClockPositionRaw, .zenClockPositionRaw) } }
 
     // MARK: - Favorites
 
@@ -69,6 +87,7 @@ public final class MandazaSettings {
 
         self.density         = Self.readDouble(suite, .density, default: 0.5)
         self.geometryPreset  = suite.string(forKey: Key.geometryPreset.rawValue) ?? "auto"
+        self.randomizePaletteOnRegenerate = Self.readBool(suite, .randomizePaletteOnRegenerate, default: false)
 
         self.zenMode             = Self.readBool(suite, .zenMode, default: false)
         self.zenShowClock        = Self.readBool(suite, .zenShowClock, default: true)
@@ -76,6 +95,11 @@ public final class MandazaSettings {
         self.zenShowDate         = Self.readBool(suite, .zenShowDate, default: true)
         self.zenAutoRegen        = Self.readBool(suite, .zenAutoRegen, default: true)
         self.zenAutoRegenSeconds = Self.readDouble(suite, .zenAutoRegenSeconds, default: 6)
+        self.zenClockOpacity = Self.readDouble(suite, .zenClockOpacity, default: 1.0)
+        self.zenClockContainerOpacity = Self.readDouble(suite, .zenClockContainerOpacity, default: 0.0)
+        self.zenClockFontStyleRaw = suite.string(forKey: Key.zenClockFontStyleRaw.rawValue) ?? ZenClockFontStyle.system.rawValue
+        self.zenClockFontWeight = Self.readDouble(suite, .zenClockFontWeight, default: 0.1)
+        self.zenClockPositionRaw = suite.string(forKey: Key.zenClockPositionRaw.rawValue) ?? ZenClockPosition.upperThird.rawValue
 
         self.widgetRotationMinutes = Self.readInt(suite, .widgetRotationMinutes, default: 60)
 
@@ -130,13 +154,25 @@ public final class MandazaSettings {
         favorites.contains(where: { $0.seed == seed })
     }
 
+    public var zenClockFontStyle: ZenClockFontStyle {
+        get { ZenClockFontStyle(rawValue: zenClockFontStyleRaw) ?? .system }
+        set { zenClockFontStyleRaw = newValue.rawValue }
+    }
+
+    public var zenClockPosition: ZenClockPosition {
+        get { ZenClockPosition(rawValue: zenClockPositionRaw) ?? .upperThird }
+        set { zenClockPositionRaw = newValue.rawValue }
+    }
+
     // MARK: - Storage primitives
 
     private enum Key: String, CaseIterable {
         case paletteId, drawSpeed, lineWidth, glow
-        case density, geometryPreset
+        case density, geometryPreset, randomizePaletteOnRegenerate
         case zenMode, zenShowClock, zenShowSeconds, zenShowDate
         case zenAutoRegen, zenAutoRegenSeconds
+        case zenClockOpacity, zenClockContainerOpacity
+        case zenClockFontStyleRaw, zenClockFontWeight, zenClockPositionRaw
         case favorites
         case widgetRotationMinutes
     }

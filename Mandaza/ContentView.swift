@@ -74,7 +74,12 @@ struct ContentView: View {
             if settings.zenMode, settings.zenShowClock {
                 ZenClockOverlay(showSeconds: settings.zenShowSeconds,
                                 showDate: settings.zenShowDate,
-                                accent: BL.accent(for: settings.paletteId))
+                                accent: BL.accent(for: settings.paletteId),
+                                clockOpacity: settings.zenClockOpacity,
+                                containerOpacity: settings.zenClockContainerOpacity,
+                                fontStyle: settings.zenClockFontStyle,
+                                fontWeight: settings.zenClockFontWeight,
+                                position: settings.zenClockPosition)
                     .allowsHitTesting(false)
                     .transition(.opacity)
             }
@@ -434,8 +439,10 @@ struct ContentView: View {
         // recoverable.
         pushCurrentToRecents()
         seed = UUID().uuidString
-        settings.paletteId = Palette.all.filter { $0.id != settings.paletteId }
-            .randomElement()?.id ?? settings.paletteId
+        if settings.randomizePaletteOnRegenerate {
+            settings.paletteId = Palette.all.filter { $0.id != settings.paletteId }
+                .randomElement()?.id ?? settings.paletteId
+        }
         selectionFeedback()
         reloadWidgetTimelines()
     }
@@ -633,7 +640,7 @@ private struct SettingsSheet: View {
                 } header: {
                     blHeader("Zen Mode", accent: accent)
                 } footer: {
-                    Text("Show a clock over the mandaza and loop new patterns continuously.")
+                    Text("Show a clock over the Mandaza and loop new patterns continuously.")
                         .font(.bl(12))
                         .foregroundStyle(BL.muted)
                 }
@@ -685,6 +692,9 @@ private struct SettingsSheet: View {
                     .pickerStyle(.menu)
                     .font(.bl(15))
                     .foregroundStyle(BL.paper)
+                    Toggle("Randomize palette on New", isOn: $settings.randomizePaletteOnRegenerate)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
                 } header: { blHeader("Pattern", accent: accent) }
                 .listRowBackground(BL.deep)
 
@@ -708,6 +718,45 @@ private struct SettingsSheet: View {
                     .listRowBackground(BL.deep)
                     .font(.bl(15))
                     .foregroundStyle(BL.paper)
+
+                    Section {
+                        LabeledSlider(title: "Clock Opacity",
+                                      value: $settings.zenClockOpacity,
+                                      range: 0.4 ... 1.0,
+                                      accent: accent,
+                                      format: { "\(Int($0 * 100))%" })
+
+                        LabeledSlider(title: "Container",
+                                      value: $settings.zenClockContainerOpacity,
+                                      range: 0.0 ... 0.5,
+                                      accent: accent,
+                                      format: { "\(Int($0 * 100))%" })
+
+                        LabeledSlider(title: "Weight",
+                                      value: $settings.zenClockFontWeight,
+                                      range: 0.1 ... 0.75,
+                                      accent: accent,
+                                      format: { zenWeightLabel(for: $0) })
+
+                        Picker("Font", selection: $settings.zenClockFontStyleRaw) {
+                            Text("System").tag(ZenClockFontStyle.system.rawValue)
+                            Text("Rounded").tag(ZenClockFontStyle.rounded.rawValue)
+                            Text("Monospaced").tag(ZenClockFontStyle.monospaced.rawValue)
+                        }
+                        .pickerStyle(.menu)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+
+                        Picker("Position", selection: $settings.zenClockPositionRaw) {
+                            Text("Top").tag(ZenClockPosition.top.rawValue)
+                            Text("Upper Third").tag(ZenClockPosition.upperThird.rawValue)
+                            Text("Center").tag(ZenClockPosition.center.rawValue)
+                        }
+                        .pickerStyle(.menu)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+                    } header: { blHeader("Clock Style", accent: accent) }
+                    .listRowBackground(BL.deep)
 
                     Section {
                         Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
@@ -786,6 +835,16 @@ private struct SettingsSheet: View {
         case ..<0.5:  return "Loose"
         case ..<0.75: return "Tight"
         default:      return "Packed"
+        }
+    }
+
+    private func zenWeightLabel(for value: Double) -> String {
+        switch value {
+        case ..<0.15: return "Ultra Light"
+        case ..<0.25: return "Light"
+        case ..<0.35: return "Regular"
+        case ..<0.5: return "Medium"
+        default: return "Semi Bold"
         }
     }
 }
@@ -965,6 +1024,11 @@ private struct ZenClockOverlay: View {
     let showSeconds: Bool
     let showDate: Bool
     var accent: Color = BL.cyan
+    let clockOpacity: Double
+    let containerOpacity: Double
+    let fontStyle: ZenClockFontStyle
+    let fontWeight: Double
+    let position: ZenClockPosition
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: showSeconds ? 1 : 30)) { ctx in
@@ -972,30 +1036,38 @@ private struct ZenClockOverlay: View {
             GeometryReader { geo in
                 VStack(spacing: 12) {
                     Text(timeString(now))
-                        .font(.system(size: 96, weight: .ultraLight, design: .default))
+                        .font(clockFont())
                         .tracking(-2)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.4)
                         .foregroundStyle(BL.highlight)
                         // Two-layer shadow: dark drop for legibility over the
-                        // mandaza, plus a subtle phylum bloom.
+                        // Mandaza, plus a subtle phylum bloom.
                         .shadow(color: .black.opacity(0.7), radius: 16)
                         .shadow(color: accent.opacity(0.3), radius: 28)
                     if showDate {
                         Text(now, format: .dateTime.weekday(.wide).month(.wide).day())
-                            .font(.bl(14, weight: .light))
+                            .font(dateFont())
                             .tracking(1.2)
                             .textCase(.uppercase)
                             .foregroundStyle(BL.paper.opacity(0.7))
                             .shadow(color: .black.opacity(0.7), radius: 6)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.top, max(44, geo.size.height * 0.18))
+                .padding(.horizontal, 28)
+                .padding(.vertical, 12)
+                .background {
+                    if containerOpacity > 0.001 {
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .fill(Color.black.opacity(min(max(containerOpacity, 0), 0.85)))
+                    }
+                }
+                .opacity(min(max(clockOpacity, 0.2), 1.0))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignmentForPosition())
+                .padding(.top, topPadding(height: geo.size.height))
             }
-            .padding(.horizontal, 32)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Clock")
@@ -1006,6 +1078,54 @@ private struct ZenClockOverlay: View {
             ? .dateTime.hour().minute().second()
             : .dateTime.hour().minute()
         return date.formatted(style)
+    }
+
+    private func alignmentForPosition() -> Alignment {
+        switch position {
+        case .top, .upperThird:
+            return .top
+        case .center:
+            return .center
+        }
+    }
+
+    private func topPadding(height: CGFloat) -> CGFloat {
+        switch position {
+        case .top:
+            return 44
+        case .upperThird:
+            return max(44, height * 0.18)
+        case .center:
+            return 0
+        }
+    }
+
+    private func clockFont() -> Font {
+        .system(size: 96, weight: mappedWeight(fontWeight), design: mappedDesign(fontStyle))
+    }
+
+    private func dateFont() -> Font {
+        .system(size: 14, weight: .light, design: mappedDesign(fontStyle))
+    }
+
+    private func mappedDesign(_ style: ZenClockFontStyle) -> Font.Design {
+        switch style {
+        case .system: return .default
+        case .rounded: return .rounded
+        case .monospaced: return .monospaced
+        }
+    }
+
+    private func mappedWeight(_ value: Double) -> Font.Weight {
+        switch value {
+        case ..<0.15: return .ultraLight
+        case ..<0.25: return .thin
+        case ..<0.35: return .light
+        case ..<0.5: return .regular
+        case ..<0.62: return .medium
+        case ..<0.78: return .semibold
+        default: return .bold
+        }
     }
 }
 

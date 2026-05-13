@@ -44,7 +44,7 @@ Tap to generate a new pattern, tune the look, and save high-resolution images fo
 Features:
 - Real-time generative canvas with smooth animated loop drawing
 - 11 curated color palettes
-- Zen Mode with optional clock overlay
+- Zen Mode with optional clock overlay and style controls (opacity, container, font, position)
 - Favorites with quick recall
 - Lock Screen, Home Screen, and StandBy widgets
 - Export presets for iPhone, iPad, and Square 4K
@@ -88,7 +88,7 @@ Features:
 - Fullscreen animated procedural mandalas
 - Play/Pause to generate a new composition
 - Menu to show or hide controls
-- Zen clock/date overlay options
+- Zen clock/date overlay options with style controls (opacity, container, font, position)
 - Shared visual language with the iOS app
 
 MandazaTV runs on-device and does not require an account.

@@ -18,6 +18,9 @@ TV has no third-party WidgetKit surface).
 - **Zen Mode** — large ultra-light digital clock floating over the mandala,
   auto-regenerating patterns at a user-set interval. Calm by default,
   customizable for nightstand or desk display.
+- **Zen presentation controls** — clock/container opacity, font style and
+  weight, and position presets (top / upper-third / center), with tvOS-first
+  tuning mirrored on iOS.
 - **Settings streamlined** — Zen Mode toggle is surfaced at the top; settings
   footer now links directly to `dr.eamer.dev`.
 - **Favorites** — heart any mandala to keep it; favorites cycle into widget

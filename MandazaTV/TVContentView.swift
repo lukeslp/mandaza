@@ -67,9 +67,13 @@ struct TVContentView: View {
                     TVZenClockOverlay(
                         showSeconds: settings.zenShowSeconds,
                         showDate: settings.zenShowDate,
-                        accent: BL.accent(for: settings.paletteId)
+                        accent: BL.accent(for: settings.paletteId),
+                        clockOpacity: settings.zenClockOpacity,
+                        containerOpacity: settings.zenClockContainerOpacity,
+                        fontStyle: settings.zenClockFontStyle,
+                        fontWeight: settings.zenClockFontWeight,
+                        position: settings.zenClockPosition
                     )
-                    .padding(.top, 56)
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -420,6 +424,10 @@ struct TVContentView: View {
 
     private func regenerate() {
         seed = UUID().uuidString
+        if settings.randomizePaletteOnRegenerate {
+            settings.paletteId = Palette.all.filter { $0.id != settings.paletteId }
+                .randomElement()?.id ?? settings.paletteId
+        }
         if showDock { resetDockIdleTimerIfNeeded() }
     }
 
@@ -478,8 +486,14 @@ private struct TVZenOptionsSheet: View {
 
     /// Preset seconds for loop interval (matches living-room tuning).
     private static let intervalPresets: [Double] = [6, 15, 30, 60, 120]
+    private static let opacityPresets: [Double] = [0.4, 0.55, 0.7, 0.85, 1.0]
+    private static let containerOpacityPresets: [Double] = [0.0, 0.12, 0.2, 0.3, 0.4]
+    private static let fontWeightPresets: [Double] = [0.1, 0.22, 0.34, 0.5, 0.66]
 
     @State private var intervalIndex: Int = 0
+    @State private var opacityIndex: Int = 4
+    @State private var containerOpacityIndex: Int = 0
+    @State private var fontWeightIndex: Int = 0
 
     var body: some View {
         NavigationStack {
@@ -495,6 +509,56 @@ private struct TVZenOptionsSheet: View {
                         .disabled(!settings.zenMode || !settings.zenShowClock)
                 } header: {
                     Text("Zen")
+                }
+
+                if settings.zenMode {
+                    Section {
+                        Picker("Clock position", selection: $settings.zenClockPositionRaw) {
+                            Text("Top").tag(ZenClockPosition.top.rawValue)
+                            Text("Upper third").tag(ZenClockPosition.upperThird.rawValue)
+                            Text("Center").tag(ZenClockPosition.center.rawValue)
+                        }
+                        .pickerStyle(.inline)
+
+                        Picker("Font style", selection: $settings.zenClockFontStyleRaw) {
+                            Text("System").tag(ZenClockFontStyle.system.rawValue)
+                            Text("Rounded").tag(ZenClockFontStyle.rounded.rawValue)
+                            Text("Monospaced").tag(ZenClockFontStyle.monospaced.rawValue)
+                        }
+                        .pickerStyle(.inline)
+
+                        Picker("Font weight", selection: $fontWeightIndex) {
+                            ForEach(Self.fontWeightPresets.indices, id: \.self) { i in
+                                Text(weightLabel(Self.fontWeightPresets[i])).tag(i)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .onChange(of: fontWeightIndex) { _, i in
+                            settings.zenClockFontWeight = Self.fontWeightPresets[i]
+                        }
+
+                        Picker("Clock opacity", selection: $opacityIndex) {
+                            ForEach(Self.opacityPresets.indices, id: \.self) { i in
+                                Text(opacityLabel(Self.opacityPresets[i])).tag(i)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .onChange(of: opacityIndex) { _, i in
+                            settings.zenClockOpacity = Self.opacityPresets[i]
+                        }
+
+                        Picker("Container opacity", selection: $containerOpacityIndex) {
+                            ForEach(Self.containerOpacityPresets.indices, id: \.self) { i in
+                                Text(opacityLabel(Self.containerOpacityPresets[i])).tag(i)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .onChange(of: containerOpacityIndex) { _, i in
+                            settings.zenClockContainerOpacity = Self.containerOpacityPresets[i]
+                        }
+                    } header: {
+                        Text("Clock style")
+                    }
                 }
 
                 Section {
@@ -527,9 +591,19 @@ private struct TVZenOptionsSheet: View {
         }
         .onAppear {
             syncIntervalIndex()
+            syncStyleIndices()
         }
         .onChange(of: settings.zenAutoRegenSeconds) { _, _ in
             syncIntervalIndex()
+        }
+        .onChange(of: settings.zenClockOpacity) { _, _ in
+            syncStyleIndices()
+        }
+        .onChange(of: settings.zenClockContainerOpacity) { _, _ in
+            syncStyleIndices()
+        }
+        .onChange(of: settings.zenClockFontWeight) { _, _ in
+            syncStyleIndices()
         }
     }
 
@@ -556,6 +630,25 @@ private struct TVZenOptionsSheet: View {
         return best
     }
 
+    private func syncStyleIndices() {
+        opacityIndex = nearestIndex(in: Self.opacityPresets, to: settings.zenClockOpacity)
+        containerOpacityIndex = nearestIndex(in: Self.containerOpacityPresets, to: settings.zenClockContainerOpacity)
+        fontWeightIndex = nearestIndex(in: Self.fontWeightPresets, to: settings.zenClockFontWeight)
+    }
+
+    private func nearestIndex(in presets: [Double], to value: Double) -> Int {
+        var best = 0
+        var bestDist = Double.greatestFiniteMagnitude
+        for (i, p) in presets.enumerated() {
+            let d = abs(p - value)
+            if d < bestDist {
+                bestDist = d
+                best = i
+            }
+        }
+        return best
+    }
+
     private func intervalLabel(_ seconds: Double) -> String {
         let s = Int(seconds)
         if s >= 60 {
@@ -563,6 +656,20 @@ private struct TVZenOptionsSheet: View {
             return m == 1 ? "1 minute" : "\(m) minutes"
         }
         return "\(s) seconds"
+    }
+
+    private func opacityLabel(_ value: Double) -> String {
+        "\(Int(value * 100))%"
+    }
+
+    private func weightLabel(_ value: Double) -> String {
+        switch value {
+        case ..<0.18: return "Ultra Light"
+        case ..<0.3: return "Light"
+        case ..<0.42: return "Regular"
+        case ..<0.58: return "Medium"
+        default: return "Semi Bold"
+        }
     }
 }
 
@@ -572,30 +679,47 @@ private struct TVZenClockOverlay: View {
     let showSeconds: Bool
     let showDate: Bool
     var accent: Color = BL.cyan
+    let clockOpacity: Double
+    let containerOpacity: Double
+    let fontStyle: ZenClockFontStyle
+    let fontWeight: Double
+    let position: ZenClockPosition
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: showSeconds ? 1 : 30)) { ctx in
             let now = ctx.date
-            VStack(spacing: 16) {
-                Text(timeString(now))
-                    .font(.system(size: 112, weight: .ultraLight, design: .default))
-                    .tracking(-2)
-                    .monospacedDigit()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.35)
-                    .foregroundStyle(BL.highlight)
-                    .shadow(color: .black.opacity(0.75), radius: 20)
-                    .shadow(color: accent.opacity(0.35), radius: 32)
-                if showDate {
-                    Text(now, format: .dateTime.weekday(.wide).month(.wide).day())
-                        .font(.bl(18, weight: .light))
-                        .tracking(1.4)
-                        .textCase(.uppercase)
-                        .foregroundStyle(BL.paper.opacity(0.75))
-                        .shadow(color: .black.opacity(0.75), radius: 8)
+            GeometryReader { geo in
+                VStack(spacing: 16) {
+                    Text(timeString(now))
+                        .font(clockFont())
+                        .tracking(-2)
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.35)
+                        .foregroundStyle(BL.highlight)
+                        .shadow(color: .black.opacity(0.75), radius: 20)
+                        .shadow(color: accent.opacity(0.35), radius: 32)
+                    if showDate {
+                        Text(now, format: .dateTime.weekday(.wide).month(.wide).day())
+                            .font(dateFont())
+                            .tracking(1.4)
+                            .textCase(.uppercase)
+                            .foregroundStyle(BL.paper.opacity(0.75))
+                            .shadow(color: .black.opacity(0.75), radius: 8)
+                    }
                 }
+                .padding(.horizontal, 80)
+                .padding(.vertical, 18)
+                .background {
+                    if containerOpacity > 0.001 {
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .fill(Color.black.opacity(min(max(containerOpacity, 0), 0.85)))
+                    }
+                }
+                .opacity(min(max(clockOpacity, 0.2), 1.0))
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignmentForPosition())
+                .padding(.top, topPadding(height: geo.size.height))
             }
-            .padding(.horizontal, 80)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(clockAccessibilityLabel())
@@ -617,6 +741,54 @@ private struct TVZenClockOverlay: View {
             parts.append("with seconds")
         }
         return parts.joined(separator: ", ")
+    }
+
+    private func alignmentForPosition() -> Alignment {
+        switch position {
+        case .top, .upperThird:
+            return .top
+        case .center:
+            return .center
+        }
+    }
+
+    private func topPadding(height: CGFloat) -> CGFloat {
+        switch position {
+        case .top:
+            return 56
+        case .upperThird:
+            return max(56, height * 0.18)
+        case .center:
+            return 0
+        }
+    }
+
+    private func clockFont() -> Font {
+        .system(size: 112, weight: mappedWeight(fontWeight), design: mappedDesign(fontStyle))
+    }
+
+    private func dateFont() -> Font {
+        .system(size: 18, weight: .light, design: mappedDesign(fontStyle))
+    }
+
+    private func mappedDesign(_ style: ZenClockFontStyle) -> Font.Design {
+        switch style {
+        case .system: return .default
+        case .rounded: return .rounded
+        case .monospaced: return .monospaced
+        }
+    }
+
+    private func mappedWeight(_ value: Double) -> Font.Weight {
+        switch value {
+        case ..<0.15: return .ultraLight
+        case ..<0.25: return .thin
+        case ..<0.35: return .light
+        case ..<0.5: return .regular
+        case ..<0.62: return .medium
+        case ..<0.78: return .semibold
+        default: return .bold
+        }
     }
 }
 
