@@ -11,19 +11,33 @@ Inputs / Outputs:
 - Inputs: CLI paths to square icon PNG, iOS portrait `--splash`, optional `--tv-icon` for tvOS icon stacks, optional `--tv-store-backdrop` for tvOS App Store depth layers, and optional wide `--tv-splash` for tvOS top shelf + tv launch (defaults to `--splash` when omitted).
 - Outputs: Overwrites PNG files under Mandaza/ and MandazaTV/ Assets.xcassets.
 
-CRITICAL — do not mix iOS and tvOS splash sources:
-  * `--splash` MUST be the portrait Mandaza mandala (single piece), e.g.
-    design-candidates/ios-assets/launch-splash-ios.png  (1290x2796 portrait)
-  * `--tv-splash` MUST be the wide TV grid (or other landscape art), e.g.
-    design-candidates/tvos-assets/launch-splash-tv-grid.png  (>= 1920x1080 landscape)
-  Passing the TV grid as `--splash` will install the icon-grid wallpaper as
-  the iOS launch screen, which is the wrong app's brand.
+CRITICAL — iOS Mandaza and tvOS Mandaza brand artwork are NOT shared:
+  * `--icon` is the iOS app icon (square, 1024x1024 ideally), e.g.
+    design-candidates/ios-assets/app-icon.png
+  * `--splash` is the iOS launch screen (portrait, 1290x2796), e.g.
+    design-candidates/ios-assets/launch-splash.png
+  * `--tv-icon`, `--tv-store-backdrop`, `--tv-splash` are tvOS-only inputs from
+    the MandazaTV brand set. There are no canonical tvOS source files committed
+    under design-candidates/ — the deployed MandazaTV/Assets.xcassets is the
+    source of truth for tvOS.
 
-Reference invocation (matches the canonical sources committed in design-candidates/):
+  IMPORTANT: when `--tv-*` flags are omitted, this script falls back to the iOS
+  inputs and overwrites tvOS assets with iOS art. That is almost never what you
+  want. To update iOS art without touching tvOS, do NOT run this script — copy
+  the new files directly:
+      cp <new-icon-1024.png>  Mandaza/Assets.xcassets/AppIcon.appiconset/icon-1024.png
+      cp <new-splash.png>     Mandaza/Assets.xcassets/LaunchSplash.imageset/launch-splash.png
+  (Both files must already be at the target dimensions; the runtime guard
+  refuses landscape splashes on the iOS portrait slot.)
+
+Run this script ONLY when refreshing iOS + tvOS together with all sources in
+hand:
   python3 scripts/apply-brand-assets.py \\
-    --icon design-candidates/ios-assets/icon-1024-candidate-c.png \\
-    --splash design-candidates/ios-assets/launch-splash-ios.png \\
-    --tv-splash design-candidates/tvos-assets/launch-splash-tv-grid.png
+    --icon design-candidates/ios-assets/app-icon.png \\
+    --splash design-candidates/ios-assets/launch-splash.png \\
+    --tv-icon <wide-tv-icon.png> \\
+    --tv-store-backdrop <tv-store-backdrop.png> \\
+    --tv-splash <tv-landscape-art.png>
 """
 
 from __future__ import annotations

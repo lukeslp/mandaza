@@ -72,7 +72,7 @@ public final class MandazaSettings {
     // MARK: - Init
 
     private init() {
-        let suite = UserDefaults(suiteName: Self.suiteName) ?? .standard
+        let suite = Self.makeDefaults()
         self.defaults = suite
 
         // Migration: copy values from .standard suite to App Group on first
@@ -250,6 +250,22 @@ public final class MandazaSettings {
                 target.set(v, forKey: key.rawValue)
             }
         }
+    }
+
+    private static func makeDefaults() -> UserDefaults {
+        #if os(tvOS)
+        // tvOS does not share settings with widgets; avoid App Group lookups.
+        return .standard
+        #else
+        // In non-entitled helper/test processes, opening a group suite can emit
+        // CFPrefs warnings. Only use group defaults when the App Group container
+        // is resolvable for this process.
+        guard FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: suiteName) != nil,
+              let suite = UserDefaults(suiteName: suiteName) else {
+            return .standard
+        }
+        return suite
+        #endif
     }
 }
 
