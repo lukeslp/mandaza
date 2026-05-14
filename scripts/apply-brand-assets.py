@@ -10,6 +10,20 @@ Primary Functions:
 Inputs / Outputs:
 - Inputs: CLI paths to square icon PNG, iOS portrait `--splash`, optional `--tv-icon` for tvOS icon stacks, optional `--tv-store-backdrop` for tvOS App Store depth layers, and optional wide `--tv-splash` for tvOS top shelf + tv launch (defaults to `--splash` when omitted).
 - Outputs: Overwrites PNG files under Mandaza/ and MandazaTV/ Assets.xcassets.
+
+CRITICAL — do not mix iOS and tvOS splash sources:
+  * `--splash` MUST be the portrait Mandaza mandala (single piece), e.g.
+    design-candidates/ios-assets/launch-splash-ios.png  (1290x2796 portrait)
+  * `--tv-splash` MUST be the wide TV grid (or other landscape art), e.g.
+    design-candidates/tvos-assets/launch-splash-tv-grid.png  (>= 1920x1080 landscape)
+  Passing the TV grid as `--splash` will install the icon-grid wallpaper as
+  the iOS launch screen, which is the wrong app's brand.
+
+Reference invocation (matches the canonical sources committed in design-candidates/):
+  python3 scripts/apply-brand-assets.py \\
+    --icon design-candidates/ios-assets/icon-1024-candidate-c.png \\
+    --splash design-candidates/ios-assets/launch-splash-ios.png \\
+    --tv-splash design-candidates/tvos-assets/launch-splash-tv-grid.png
 """
 
 from __future__ import annotations
@@ -104,6 +118,19 @@ def main() -> int:
     tv_store_backdrop_img = Image.open(tv_store_backdrop_src).convert("RGBA")
     splash_img = Image.open(splash_src).convert("RGBA")
     tv_splash_img = Image.open(tv_splash_src).convert("RGBA")
+
+    # Foot-gun guard: the iOS launch screen slot is portrait. If `--splash` is
+    # clearly landscape, the caller almost certainly handed us the tvOS grid
+    # by mistake. Refuse rather than silently installing the wrong brand.
+    sw, sh = splash_img.size
+    if sw > sh:
+        print(
+            f"--splash looks landscape ({sw}x{sh}); the iOS LaunchSplash slot is "
+            "portrait. Did you mean --tv-splash? Pass the portrait Mandaza piece "
+            "(e.g. design-candidates/ios-assets/launch-splash-ios.png) to --splash.",
+            file=sys.stderr,
+        )
+        return 2
 
     # iOS
     ios_icon = root / "Mandaza/Assets.xcassets/AppIcon.appiconset/icon-1024.png"

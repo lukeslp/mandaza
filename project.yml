@@ -30,8 +30,8 @@ targets:
       properties:
         CFBundleDisplayName: Mandaza
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "1.0.1"
+        CFBundleVersion: "10"
         UILaunchScreen:
           UIColorName: AccentColor
           UIImageName: LaunchSplash
@@ -81,8 +81,8 @@ targets:
       properties:
         CFBundleDisplayName: Mandaza
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "1.0.1"
+        CFBundleVersion: "10"
         UILaunchScreen:
           UIColorName: AccentColor
           UIImageName: LaunchSplash
@@ -111,8 +111,8 @@ targets:
       path: MandazaWidgets/Info.plist
       properties:
         CFBundleDisplayName: Mandaza Widgets
-        CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "1"
+        CFBundleShortVersionString: "1.0.1"
+        CFBundleVersion: "10"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:

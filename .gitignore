@@ -43,5 +43,9 @@ Package.resolved
 # Plist user data
 *.plist.user
 
+# Python bytecode / caches (e.g. scripts/apply-brand-assets.py)
+__pycache__/
+*.pyc
+
 # Claude Code runtime artifacts
 .claude/
