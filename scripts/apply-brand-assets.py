@@ -26,7 +26,7 @@ CRITICAL — iOS Mandaza and tvOS Mandaza brand artwork are NOT shared:
   want. To update iOS art without touching tvOS, do NOT run this script — copy
   the new files directly:
       cp <new-icon-1024.png>  Mandaza/Assets.xcassets/AppIcon.appiconset/icon-1024.png
-      cp <new-splash.png>     Mandaza/Assets.xcassets/LaunchSplash.imageset/launch-splash.png
+      cp <new-splash.png>     Mandaza/Assets.xcassets/LaunchSplashIOS.imageset/launch-splash.png
   (Both files must already be at the target dimensions; the runtime guard
   refuses landscape splashes on the iOS portrait slot.)
 
@@ -139,7 +139,7 @@ def main() -> int:
     sw, sh = splash_img.size
     if sw > sh:
         print(
-            f"--splash looks landscape ({sw}x{sh}); the iOS LaunchSplash slot is "
+            f"--splash looks landscape ({sw}x{sh}); the iOS LaunchSplashIOS slot is "
             "portrait. Did you mean --tv-splash? Pass the portrait Mandaza piece "
             "(e.g. design-candidates/ios-assets/launch-splash-ios.png) to --splash.",
             file=sys.stderr,
@@ -148,7 +148,7 @@ def main() -> int:
 
     # iOS
     ios_icon = root / "Mandaza/Assets.xcassets/AppIcon.appiconset/icon-1024.png"
-    ios_splash = root / "Mandaza/Assets.xcassets/LaunchSplash.imageset/launch-splash.png"
+    ios_splash = root / "Mandaza/Assets.xcassets/LaunchSplashIOS.imageset/launch-splash.png"
     save_png(icon_rgb, ios_icon)
     save_png(fit_on_canvas(splash_img, 1290, 2796), ios_splash)
 
@@ -186,7 +186,7 @@ def main() -> int:
     save_png(fit_on_canvas(tv_splash_img, 4640, 1440), tv_brand / "Top Shelf Image Wide.imageset/wide@2x.png")
 
     # tvOS launch splash (full HD frame; UILaunchScreen references this name).
-    tv_launch_dir = root / "MandazaTV/Assets.xcassets/LaunchSplash.imageset"
+    tv_launch_dir = root / "MandazaTV/Assets.xcassets/LaunchSplashTV.imageset"
     tv_launch_dir.mkdir(parents=True, exist_ok=True)
     save_png(fit_on_canvas(tv_splash_img, 1920, 1080), tv_launch_dir / "launch-splash-tv.png")
     contents = {
@@ -195,7 +195,7 @@ def main() -> int:
     }
     (tv_launch_dir / "Contents.json").write_text(json.dumps(contents, indent=2) + "\n", encoding="utf-8")
 
-    print("Wrote iOS icon + splash, tvOS icon stacks, top shelf, and tv LaunchSplash imageset.")
+    print("Wrote iOS icon + splash, tvOS icon stacks, top shelf, and tv LaunchSplashTV imageset.")
     return 0
 
 
