@@ -37,8 +37,13 @@
 	<false/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Mandaza saves your generated artwork to Photos so you can use it as a wallpaper.</string>
-	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>LaunchSplashIOS</string>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

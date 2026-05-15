@@ -32,7 +32,9 @@ targets:
         CFBundleIconName: AppIcon
         CFBundleShortVersionString: "1.1"
         CFBundleVersion: "11"
-        UILaunchStoryboardName: LaunchScreen
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchSplashIOS
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
           UISceneConfigurations: {}
@@ -81,4 +83,3 @@ targets:
         CFBundleIconName: AppIcon
         CFBundleShortVersionString: "1.1"
         CFBundleVersion: "11"
-        UILaunchStoryboardName: LaunchScreen
