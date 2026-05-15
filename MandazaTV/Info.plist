@@ -35,12 +35,5 @@
 	<string>11</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>UILaunchScreen</key>
-	<dict>
-		<key>UIColorName</key>
-		<string>AccentColor</string>
-		<key>UIImageName</key>
-		<string>LaunchSplashTV</string>
-	</dict>
 </dict>
 </plist>

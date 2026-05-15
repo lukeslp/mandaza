@@ -32,9 +32,7 @@ targets:
         CFBundleIconName: AppIcon
         CFBundleShortVersionString: "1.1"
         CFBundleVersion: "11"
-        UILaunchScreen:
-          UIColorName: AccentColor
-          UIImageName: LaunchSplashIOS
+        UILaunchStoryboardName: LaunchScreen
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
           UISceneConfigurations: {}
@@ -83,86 +81,4 @@ targets:
         CFBundleIconName: AppIcon
         CFBundleShortVersionString: "1.1"
         CFBundleVersion: "11"
-        UILaunchScreen:
-          UIColorName: AccentColor
-          UIImageName: LaunchSplashTV
-        ITSAppUsesNonExemptEncryption: false
-        CFBundleURLTypes:
-          - CFBundleURLName: com.lukesteuber.mandaza
-            CFBundleURLSchemes:
-              - mandaza
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.tv
-        CODE_SIGN_ENTITLEMENTS: MandazaTV/MandazaTV.entitlements
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        TVOS_DEPLOYMENT_TARGET: "17.0"
-        TARGETED_DEVICE_FAMILY: "3"
-        SUPPORTED_PLATFORMS: "appletvos appletvsimulator"
-
-  MandazaWidgets:
-    type: app-extension
-    platform: iOS
-    sources:
-      - path: MandazaWidgets
-      - path: MandazaCore
-    info:
-      path: MandazaWidgets/Info.plist
-      properties:
-        CFBundleDisplayName: Mandaza Widgets
-        CFBundleShortVersionString: "1.1"
-        CFBundleVersion: "11"
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.widgetkit-extension
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.widgets
-        CODE_SIGN_ENTITLEMENTS: MandazaWidgets/MandazaWidgets.entitlements
-        SKIP_INSTALL: YES
-        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
-        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
-        SUPPORTS_MACCATALYST: NO
-        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
-
-  MandazaTests:
-    type: bundle.unit-test
-    platform: iOS
-    sources:
-      - path: MandazaTests
-      - path: MandazaCore
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.tests
-        GENERATE_INFOPLIST_FILE: YES
-        BUNDLE_LOADER: "$(TEST_HOST)"
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Mandaza.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Mandaza"
-        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
-        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
-    dependencies:
-      - target: Mandaza
-
-schemes:
-  Mandaza:
-    build:
-      targets:
-        Mandaza: all
-        MandazaWidgets: all
-    test:
-      targets:
-        - MandazaTests
-    run:
-      config: Debug
-    archive:
-      config: Release
-
-  MandazaTV:
-    build:
-      targets:
-        MandazaTV: all
-    run:
-      config: Debug
-    archive:
-      config: Release
+        UILaunchStoryboardName: LaunchScreen
