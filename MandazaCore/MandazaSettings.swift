@@ -36,6 +36,9 @@ public final class MandazaSettings {
     public var glow: Bool              { didSet { write(glow, .glow) } }
     /// When `glow` is true, scales shadow blur (stored 0.18…1). Random New may pick a soft band; turning Glow on in settings sets 1.0.
     public var glowStrength: Double    { didSet { write(glowStrength, .glowStrength) } }
+    /// True when the user has explicitly disabled glow via the settings toggle.
+    /// randomizePatternLook respects this and will not re-enable glow.
+    public var glowUserDisabled: Bool  { didSet { write(glowUserDisabled, .glowUserDisabled) } }
 
     // MARK: - Density / geometry (new in Phase B)
 
@@ -87,6 +90,7 @@ public final class MandazaSettings {
         self.lineWidth       = Self.readDouble(suite, .lineWidth, default: 1.2)
         self.glow            = Self.readBool(suite, .glow, default: false)
         self.glowStrength    = Self.readDouble(suite, .glowStrength, default: 1.0)
+        self.glowUserDisabled = Self.readBool(suite, .glowUserDisabled, default: true)
 
         self.density         = Self.readDouble(suite, .density, default: 0.5)
         self.geometryPreset  = suite.string(forKey: Key.geometryPreset.rawValue) ?? "auto"
@@ -169,13 +173,15 @@ public final class MandazaSettings {
         drawSpeed = Double.random(in: 0.18 ... 1.0)
         lineWidth = Double.random(in: 0.65 ... 2.8)
         geometryPreset = ["auto", "sparse", "medium", "dense", "busy"].randomElement() ?? "auto"
-        // Glow defaults off; on randomize, enable softly < half the time.
-        if Double.random(in: 0..<1) < 0.42 {
-            glow = true
-            glowStrength = Double.random(in: 0.34 ... 0.58)
-        } else {
-            glow = false
-            glowStrength = 1.0
+        // Respect the user's explicit glow preference — never re-enable if they turned it off.
+        if !glowUserDisabled {
+            if Double.random(in: 0..<1) < 0.42 {
+                glow = true
+                glowStrength = Double.random(in: 0.34 ... 0.58)
+            } else {
+                glow = false
+                glowStrength = 1.0
+            }
         }
     }
 
@@ -213,7 +219,7 @@ public final class MandazaSettings {
     // MARK: - Storage primitives
 
     private enum Key: String, CaseIterable {
-        case paletteId, drawSpeed, lineWidth, glow, glowStrength
+        case paletteId, drawSpeed, lineWidth, glow, glowStrength, glowUserDisabled
         case density, geometryPreset, randomizePaletteOnRegenerate
         case zenMode, zenShowClock, zenShowSeconds, zenShowDate
         case zenAutoRegen, zenAutoRegenSeconds

@@ -649,11 +649,13 @@ private struct SettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     /// Turning Glow on from settings uses full-strength bloom; random New uses a softer band.
+    /// Tracks explicit user intent so randomizePatternLook never re-enables glow against their preference.
     private var glowToggleBinding: Binding<Bool> {
         Binding(
             get: { settings.glow },
             set: { on in
                 settings.glow = on
+                settings.glowUserDisabled = !on
                 if on { settings.glowStrength = 1.0 }
             }
         )

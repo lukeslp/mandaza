@@ -43,9 +43,11 @@ public enum BL {
         case "cyberpunk":      return blue
         case "risograph":      return pink
         case "oxblood":        return orange
-        case "arctic":         return cyan
+        case "canopy":         return green
+        case "arctic":         return green   // legacy alias
         case "dichromat":      return amber
         case "amber":          return amber
+        case "terrain":        return orange
         default:               return green
         }
     }

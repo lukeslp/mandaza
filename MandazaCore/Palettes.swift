@@ -29,15 +29,17 @@ struct Palette: Identifiable, Hashable {
         .init(id: "cyberpunk",      name: "Cyberpunk",      hexes: ["#ff006e", "#fb5607", "#ffbe0b", "#8338ec", "#3a86ff"]),
         .init(id: "risograph",      name: "Risograph",      hexes: ["#ff5e5b", "#ffed66", "#00cecb", "#5c5cff"]),
         .init(id: "oxblood",        name: "Oxblood",        hexes: ["#1a0a0c", "#3d0c11", "#7a1722", "#c1292e", "#f1d4af"]),
-        .init(id: "arctic",         name: "Arctic",         hexes: ["#03045e", "#0077b6", "#48cae4", "#90e0ef", "#caf0f8"]),
+        .init(id: "canopy",          name: "Canopy",         hexes: ["#012210", "#064e29", "#0ea047", "#39ff14", "#b2ff87"]),
         .init(id: "dichromat",      name: "Dichromat",      hexes: ["#0072b2", "#56b4e9", "#f0e442", "#e69f00", "#d55e00"]),
-        .init(id: "amber",          name: "Amber",          hexes: ["#1f1000", "#522e0a", "#a55a17", "#dba34a", "#fdd99b"])
+        .init(id: "amber",          name: "Amber",          hexes: ["#1f1000", "#522e0a", "#a55a17", "#dba34a", "#fdd99b"]),
+        .init(id: "terrain",        name: "Terrain",        hexes: ["#1a0f05", "#7c3810", "#c47830", "#6b7c45", "#c8d4a0"])
     ]
 
     static func by(id: String) -> Palette {
-        // Fallback chain: requested id → legacy "riso" alias → first palette.
+        // Fallback chain: requested id → legacy aliases → first palette.
         all.first(where: { $0.id == id })
             ?? all.first(where: { $0.id == "risograph" && id == "riso" })
+            ?? all.first(where: { $0.id == "canopy"    && id == "arctic" })
             ?? all[0]
     }
 
