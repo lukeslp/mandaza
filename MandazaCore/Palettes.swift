@@ -1,17 +1,17 @@
 import SwiftUI
 import CoreGraphics
 
-struct Palette: Identifiable, Hashable {
-    let id: String
-    let name: String
+public struct Palette: Identifiable, Hashable {
+    public let id: String
+    public let name: String
     /// Source hex strings — kept for inspection / debugging.
-    let hexes: [String]
+    public let hexes: [String]
     /// Thread-safe CGColors. Used by the engine (which may run off main).
-    let cgStops: [CGColor]
+    public let cgStops: [CGColor]
     /// SwiftUI Colors — main-thread / view-layer use.
-    let stops: [Color]
+    public let stops: [Color]
 
-    init(id: String, name: String, hexes: [String]) {
+    public init(id: String, name: String, hexes: [String]) {
         self.id = id
         self.name = name
         self.hexes = hexes
@@ -20,7 +20,7 @@ struct Palette: Identifiable, Hashable {
         self.stops = rgbs.map { Color(red: $0.r, green: $0.g, blue: $0.b) }
     }
 
-    static let all: [Palette] = [
+    public static let all: [Palette] = [
         .init(id: "aurora",         name: "Aurora",         hexes: ["#3c096c", "#5a189a", "#9d4edd", "#48bfe3", "#80ffdb"]),
         .init(id: "sunset",         name: "Sunset",         hexes: ["#ff006e", "#fb5607", "#ffbe0b", "#fee440", "#fff3b0"]),
         .init(id: "ember",          name: "Ember",          hexes: ["#370617", "#9d0208", "#dc2f02", "#f48c06", "#ffba08"]),
@@ -35,7 +35,7 @@ struct Palette: Identifiable, Hashable {
         .init(id: "terrain",        name: "Terrain",        hexes: ["#1a0f05", "#7c3810", "#c47830", "#6b7c45", "#c8d4a0"])
     ]
 
-    static func by(id: String) -> Palette {
+    public static func by(id: String) -> Palette {
         // Fallback chain: requested id → legacy aliases → first palette.
         all.first(where: { $0.id == id })
             ?? all.first(where: { $0.id == "risograph" && id == "riso" })
@@ -44,7 +44,7 @@ struct Palette: Identifiable, Hashable {
     }
 
     /// Thread-safe color interpolation for the engine.
-    func interpolatedCGColor(at t: Double) -> CGColor {
+    public func interpolatedCGColor(at t: Double) -> CGColor {
         let clamped = max(0, min(0.99999, t))
         guard cgStops.count > 1 else { return cgStops.first ?? CGColor(srgbRed: 1, green: 1, blue: 1, alpha: 1) }
         let seg = clamped * Double(cgStops.count - 1)
@@ -54,7 +54,7 @@ struct Palette: Identifiable, Hashable {
     }
 
     /// View-layer color interpolation.
-    func interpolated(at t: Double) -> Color {
+    public func interpolated(at t: Double) -> Color {
         let clamped = max(0, min(0.99999, t))
         guard stops.count > 1 else { return stops.first ?? .white }
         let seg = clamped * Double(stops.count - 1)
