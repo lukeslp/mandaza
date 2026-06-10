@@ -97,7 +97,7 @@ final class Cell {
     }
 }
 
-final class Loop {
+public final class Loop {
     var pairs: [(Dot, Dot)] = []
     var bezier: [[CGPoint]] = []     // each entry has 4 points: p0, c1, c2, p1
     var lengths: [Double] = []
@@ -194,16 +194,16 @@ private func cubicLengthEstimate(_ c: [CGPoint]) -> Double {
 // MARK: - Engine
 
 /// Single in-flight mandala. Owns grid, loops, animation state.
-final class MandazaEngine {
+public final class MandazaEngine {
 
     // Inputs
-    var config: EngineConfig
-    var paletteId: String
+    public var config: EngineConfig
+    public var paletteId: String
 
     // Sizing / grid
-    private(set) var width: Double = 0
-    private(set) var height: Double = 0
-    private(set) var radius: Double = 0
+    public private(set) var width: Double = 0
+    public private(set) var height: Double = 0
+    public private(set) var radius: Double = 0
     private var nbx: Int = 0
     private var nby: Int = 0
     private var offsx: Double = 0
@@ -211,8 +211,8 @@ final class MandazaEngine {
     private var grid: [[Cell]] = []
 
     // Loops / state
-    private(set) var loops: [Loop] = []
-    private(set) var allDrawn: Bool = false
+    public private(set) var loops: [Loop] = []
+    public private(set) var allDrawn: Bool = false
 
     // RNGs
     private var rndStruct = Mash()
@@ -230,7 +230,7 @@ final class MandazaEngine {
     private static let MIN_NB_CELLS = 10.0
     private static let MAX_NB_CELLS = 100.0
 
-    init(config: EngineConfig = EngineConfig(), paletteId: String = "aurora") {
+    public init(config: EngineConfig = EngineConfig(), paletteId: String = "aurora") {
         self.config = config
         self.paletteId = paletteId
     }
@@ -238,7 +238,7 @@ final class MandazaEngine {
     /// Recompute grid + loops for the given canvas size.
     /// `seed` lets you regenerate the same composition (e.g. for high-res export).
     @discardableResult
-    func regenerate(width: Double, height: Double, seed: String? = nil) -> Bool {
+    public func regenerate(width: Double, height: Double, seed: String? = nil) -> Bool {
         self.width = width
         self.height = height
         self.withMargin = config.withMargin
@@ -272,7 +272,7 @@ final class MandazaEngine {
 
     /// Build an entirely-drawn snapshot for export — same grid + palette as the
     /// current animated state (use `regenerate(seed:)` first if you need stability).
-    func completeAllPaths() {
+    public func completeAllPaths() {
         for loop in loops {
             loop.path = CGMutablePath()
             guard !loop.bezier.isEmpty else { continue }
@@ -290,7 +290,7 @@ final class MandazaEngine {
     /// Advance animation. Returns false when no further drawing is happening
     /// (everything has been stroked completely).
     @discardableResult
-    func advance(timeMs: Double) -> Bool {
+    public func advance(timeMs: Double) -> Bool {
         var anyAlive = false
         let drawSpeed = (10 + 1990 * config.drawSpeed * config.drawSpeed) / 1000.0
         for loop in loops {
@@ -317,7 +317,7 @@ final class MandazaEngine {
 
     /// Path to stroke for `loop` at the current animation pos — includes a
     /// partial fragment of the in-flight curve. Caller chooses color / shadow.
-    func currentPath(for loop: Loop) -> CGPath {
+    public func currentPath(for loop: Loop) -> CGPath {
         let p = CGMutablePath()
         p.addPath(loop.path)
         if loop.nextToDraw < loop.bezier.count {
@@ -330,7 +330,7 @@ final class MandazaEngine {
 
     /// Color to stroke `loop` with, given current time (pulse offset).
     /// Thread-safe — does not touch SwiftUI.
-    func color(for loop: Loop, timeMs: Double) -> CGColor {
+    public func color(for loop: Loop, timeMs: Double) -> CGColor {
         let palette = Palette.by(id: paletteId)
         let total = max(1, loop.colorTotal)
         var t = total > 1 ? Double(loop.colorIndex) / Double(total - 1) : 0.5
@@ -727,10 +727,10 @@ extension MandazaEngine {
     /// and the engine has no UIKit/SwiftUI dependencies.
     ///
     /// Used by the export pipeline so a 4K save doesn't hang the main thread.
-    static func renderImage(seed: String,
-                            paletteId: String,
-                            config: EngineConfig,
-                            size: CGSize) -> UIImage? {
+    public static func renderImage(seed: String,
+                                   paletteId: String,
+                                   config: EngineConfig,
+                                   size: CGSize) -> UIImage? {
         guard size.width > 1, size.height > 1 else { return nil }
         let format = UIGraphicsImageRendererFormat()
         format.opaque = true
