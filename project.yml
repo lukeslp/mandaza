@@ -16,6 +16,12 @@ settings:
     ENABLE_BITCODE: NO
     CODE_SIGN_STYLE: Automatic
     ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+    STRING_CATALOG_GENERATE_SYMBOLS: YES
+
+# MandazaCore holds the shared engine/palette/settings sources. Every target
+# compiles these files directly (the MandazaKit Package.swift exists only for
+# external SPM consumers and must be excluded from app/extension/test builds).
 
 targets:
 
@@ -25,6 +31,9 @@ targets:
     sources:
       - path: Mandaza
       - path: MandazaCore
+        excludes:
+          - Package.swift
+          - ".swiftpm"
     info:
       path: Mandaza/Info.plist
       properties:
@@ -75,6 +84,9 @@ targets:
     sources:
       - path: MandazaTV
       - path: MandazaCore
+        excludes:
+          - Package.swift
+          - ".swiftpm"
       - path: Mandaza/MandazaCanvas.swift
     info:
       path: MandazaTV/Info.plist
@@ -83,3 +95,83 @@ targets:
         CFBundleIconName: AppIcon
         CFBundleShortVersionString: "1.1"
         CFBundleVersion: "11"
+        ITSAppUsesNonExemptEncryption: false
+        CFBundleURLTypes:
+          - CFBundleURLName: com.lukesteuber.mandaza
+            CFBundleURLSchemes:
+              - mandaza
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.tv
+        CODE_SIGN_ENTITLEMENTS: MandazaTV/MandazaTV.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TVOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "3"
+        SUPPORTED_PLATFORMS: "appletvos appletvsimulator"
+
+  MandazaWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: MandazaWidgets
+      - path: MandazaCore
+        excludes:
+          - Package.swift
+          - ".swiftpm"
+    info:
+      path: MandazaWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Mandaza Widgets
+        CFBundleShortVersionString: "1.1"
+        CFBundleVersion: "11"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.widgets
+        CODE_SIGN_ENTITLEMENTS: MandazaWidgets/MandazaWidgets.entitlements
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+
+  MandazaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MandazaTests
+      - path: MandazaCore
+        excludes:
+          - Package.swift
+          - ".swiftpm"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.tests
+        GENERATE_INFOPLIST_FILE: YES
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+    dependencies:
+      - target: Mandaza
+
+schemes:
+
+  Mandaza:
+    build:
+      targets:
+        Mandaza: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - MandazaTests
+
+  MandazaTV:
+    build:
+      targets:
+        MandazaTV: all
+    run:
+      config: Debug
