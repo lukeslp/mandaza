@@ -23,7 +23,6 @@ public struct EngineConfig: Equatable, Codable, Hashable, Sendable {
     public var glowStrength: Double? = nil
     public var idlePulse: Bool = true
     public var lineWidth: Double = 1.2
-    public var autoRegenIdleMs: Double = 22000
 
     public init() {}
 }
