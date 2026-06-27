@@ -18,6 +18,14 @@ struct WatchRootView: View {
     @State private var crown = 0.0
 
     private var paletteId: String {
+        #if DEBUG
+        // Screenshot automation hook: SIMCTL_CHILD_MANDAZA_PALETTE=<id> pins the
+        // palette. No effect in release builds or when the var is unset.
+        if let pinned = ProcessInfo.processInfo.environment["MANDAZA_PALETTE"],
+           Palette.all.contains(where: { $0.id == pinned }) {
+            return pinned
+        }
+        #endif
         guard !Palette.all.isEmpty else { return "aurora" }
         let count = Palette.all.count
         return Palette.all[((paletteIndex % count) + count) % count].id
