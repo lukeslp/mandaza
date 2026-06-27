@@ -24,7 +24,7 @@ struct MandazaWidgetIntent: WidgetConfigurationIntent {
 
 enum PaletteOption: String, AppEnum {
     case followsApp, aurora, sunset, ember, bioluminescent
-    case vaporwave, cyberpunk, risograph, oxblood, arctic, dichromat, amber
+    case vaporwave, cyberpunk, risograph, oxblood, canopy, dichromat, amber, terrain
 
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Palette")
     static var caseDisplayRepresentations: [PaletteOption: DisplayRepresentation] = [
@@ -37,9 +37,10 @@ enum PaletteOption: String, AppEnum {
         .cyberpunk:       "Cyberpunk",
         .risograph:       "Risograph",
         .oxblood:         "Oxblood",
-        .arctic:          "Arctic",
+        .canopy:          "Canopy",
         .dichromat:       "Dichromat",
-        .amber:           "Amber"
+        .amber:           "Amber",
+        .terrain:         "Terrain"
     ]
 
     /// Resolved palette id given the user's app default.
