@@ -194,6 +194,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: MandazaWatch/MandazaWatch.entitlements
         WATCHOS_DEPLOYMENT_TARGET: "10.0"
         TARGETED_DEVICE_FAMILY: "4"
+        SUPPORTED_PLATFORMS: "watchos watchsimulator"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 
 schemes:

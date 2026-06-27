@@ -73,6 +73,9 @@ public struct MandazaCanvas: View {
         .onChange(of: size)      { _, _ in rebuild() }
         .onChange(of: paletteId) { _, new in engine.paletteId = new }
         .onChange(of: config)    { _, new in engine.config = new }
+        .onChange(of: reduceMotion) { _, reduced in
+            if reduced && built { engine.completeAllPaths() }
+        }
     }
 
     @ViewBuilder
@@ -107,9 +110,16 @@ public struct MandazaCanvas: View {
 
     private func advance(now: Date) {
         guard built else { return }
-        if let last = lastAdvanceTimestamp,
-           now.timeIntervalSince(last) < 0.0005 {
-            return
+        if let last = lastAdvanceTimestamp {
+            let gap = now.timeIntervalSince(last)
+            if gap < 0.0005 { return }
+            // Absorb long stalls (Always-On dimming, wrist-down, backgrounding)
+            // by sliding the start anchor forward, so elapsed time stays
+            // continuous and the animation doesn't jump ahead on resume. Normal
+            // per-frame gaps are well under this threshold and pass through.
+            if gap > 1.0, let first = firstTimestamp {
+                firstTimestamp = first.addingTimeInterval(gap)
+            }
         }
         lastAdvanceTimestamp = now
         if firstTimestamp == nil { firstTimestamp = now }

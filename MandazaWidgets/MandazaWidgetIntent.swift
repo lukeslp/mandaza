@@ -24,7 +24,11 @@ struct MandazaWidgetIntent: WidgetConfigurationIntent {
 
 enum PaletteOption: String, AppEnum {
     case followsApp, aurora, sunset, ember, bioluminescent
-    case vaporwave, cyberpunk, risograph, oxblood, canopy, dichromat, amber, terrain
+    // `arctic` is the legacy raw value for what is now the "Canopy" palette.
+    // The case is kept (and only the display name updated) so widget configs
+    // saved by older builds still decode instead of resetting to the default.
+    // resolved() returns "arctic", which Palette.by(id:) maps to canopy.
+    case vaporwave, cyberpunk, risograph, oxblood, arctic, dichromat, amber, terrain
 
     static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Palette")
     static var caseDisplayRepresentations: [PaletteOption: DisplayRepresentation] = [
@@ -37,7 +41,7 @@ enum PaletteOption: String, AppEnum {
         .cyberpunk:       "Cyberpunk",
         .risograph:       "Risograph",
         .oxblood:         "Oxblood",
-        .canopy:          "Canopy",
+        .arctic:          "Canopy",
         .dichromat:       "Dichromat",
         .amber:           "Amber",
         .terrain:         "Terrain"

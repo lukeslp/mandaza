@@ -37,7 +37,7 @@ struct WatchRootView: View {
                 .focusable()
                 .digitalCrownRotation($crown,
                                       from: 0,
-                                      through: Double(max(1, Palette.all.count)),
+                                      through: Double(max(1, Palette.all.count - 1)),
                                       by: 1,
                                       sensitivity: .low,
                                       isContinuous: true,
