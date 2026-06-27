@@ -54,7 +54,7 @@ struct TVContentView: View {
                     MandazaCanvas(
                         size: geo.size,
                         seed: UUID(uuidString: seed) ?? UUID(),
-                        paletteId: settings.paletteId,
+                        paletteId: MandazaScreenshot.palette(settings.paletteId),
                         config: engineConfigForTV(),
                         onIdleChange: handleIdleChange(_:)
                     )

@@ -48,7 +48,7 @@ struct ContentView: View {
                     Color.black
                     MandazaCanvas(size: geo.size,
                                   seed: UUID(uuidString: seed) ?? UUID(),
-                                  paletteId: settings.paletteId,
+                                  paletteId: MandazaScreenshot.palette(settings.paletteId),
                                   config: settings.engineConfig(),
                                   onIdleChange: handleIdleChange(_:))
                 }
