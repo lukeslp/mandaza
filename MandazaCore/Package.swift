@@ -5,7 +5,8 @@ let package = Package(
     name: "MandazaKit",
     platforms: [
         .iOS(.v17),
-        .tvOS(.v17)
+        .tvOS(.v17),
+        .watchOS(.v10)
     ],
     products: [
         .library(name: "MandazaKit", targets: ["MandazaKit"])

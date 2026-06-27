@@ -1,8 +1,12 @@
 import SwiftUI
 
+#if canImport(UIKit) && !os(watchOS)
 /// Renders a `MandazaSnapshot` to a still `Image` at the given size. Used by
 /// the widget extension (no animation budget) and by the app for thumbnail
 /// previews in the Favorites grid.
+///
+/// UIKit-only: the still renderer is backed by `UIGraphicsImageRenderer`, so
+/// this view is unavailable on watchOS (which uses the live `MandazaCanvas`).
 public struct MandazaImageView: View {
     let snapshot: MandazaSnapshot
     let size: CGSize
@@ -33,3 +37,4 @@ public struct MandazaImageView: View {
         }
     }
 }
+#endif

@@ -34,6 +34,7 @@ targets:
         excludes:
           - Package.swift
           - ".swiftpm"
+          - ".build"
     info:
       path: Mandaza/Info.plist
       properties:
@@ -87,7 +88,7 @@ targets:
         excludes:
           - Package.swift
           - ".swiftpm"
-      - path: Mandaza/MandazaCanvas.swift
+          - ".build"
     info:
       path: MandazaTV/Info.plist
       properties:
@@ -119,6 +120,7 @@ targets:
         excludes:
           - Package.swift
           - ".swiftpm"
+          - ".build"
     info:
       path: MandazaWidgets/Info.plist
       properties:
@@ -146,6 +148,7 @@ targets:
         excludes:
           - Package.swift
           - ".swiftpm"
+          - ".build"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.tests

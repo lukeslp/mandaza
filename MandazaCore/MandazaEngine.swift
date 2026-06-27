@@ -718,6 +718,9 @@ public final class MandazaEngine {
 
 // MARK: - Off-main rendering
 
+// UIGraphicsImageRenderer is unavailable on watchOS (which renders live via
+// MandazaCanvas instead), so the still-image export path is iOS/tvOS only.
+#if canImport(UIKit) && !os(watchOS)
 import UIKit
 
 extension MandazaEngine {
@@ -772,3 +775,4 @@ extension MandazaEngine {
         }
     }
 }
+#endif

@@ -1,13 +1,28 @@
 import SwiftUI
 
+/// Animation cadence for `MandazaCanvas`.
+///
+/// iOS and tvOS use `.smooth` (display-link, pauses under Always-On dimming).
+/// watchOS requests a throttled `.interval` cadence to protect battery, and
+/// `.paused` when the app is backgrounded / the wrist is down.
+public enum MandazaCadence: Equatable {
+    /// Display-link cadence; pauses automatically under Always-On luminance reduction.
+    case smooth
+    /// Fixed periodic cadence in seconds (e.g. `1.0 / 24`). Pauses under Always-On.
+    case interval(Double)
+    /// Frozen — no advancement. For background / inactive scene phases.
+    case paused
+}
+
 /// SwiftUI Canvas + TimelineView host for the live, animated mandaza.
 /// Owns one engine instance and an animation clock. Re-creates the engine
 /// when its size or seed changes.
-struct MandazaCanvas: View {
+public struct MandazaCanvas: View {
     let size: CGSize
     let seed: UUID
     let paletteId: String
     let config: EngineConfig
+    let cadence: MandazaCadence
 
     /// Fires `true` when all loops finish drawing, `false` when a new pattern
     /// starts. Parents use this to schedule auto-regenerate in Zen mode.
@@ -21,8 +36,48 @@ struct MandazaCanvas: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isLuminanceReduced) private var luminanceReduced
 
-    var body: some View {
-        TimelineView(.animation(paused: luminanceReduced)) { timeline in
+    public init(size: CGSize,
+                seed: UUID,
+                paletteId: String,
+                config: EngineConfig,
+                cadence: MandazaCadence = .smooth,
+                onIdleChange: ((Bool) -> Void)? = nil) {
+        self.size = size
+        self.seed = seed
+        self.paletteId = paletteId
+        self.config = config
+        self.cadence = cadence
+        self.onIdleChange = onIdleChange
+    }
+
+    public var body: some View {
+        Group {
+            switch cadence {
+            case .smooth:
+                timeline(.animation(paused: luminanceReduced))
+            case .interval(let seconds):
+                // Honor Always-On dimming even in throttled mode.
+                if luminanceReduced {
+                    timeline(.animation(paused: true))
+                } else {
+                    timeline(.periodic(from: .now, by: seconds))
+                }
+            case .paused:
+                timeline(.animation(paused: true))
+            }
+        }
+        .background(Color.black)
+        .ignoresSafeArea()
+        .onAppear { rebuild() }
+        .onChange(of: seed)      { _, _ in rebuild() }
+        .onChange(of: size)      { _, _ in rebuild() }
+        .onChange(of: paletteId) { _, new in engine.paletteId = new }
+        .onChange(of: config)    { _, new in engine.config = new }
+    }
+
+    @ViewBuilder
+    private func timeline<S: TimelineSchedule>(_ schedule: S) -> some View {
+        TimelineView(schedule) { timeline in
             let elapsedMs = msSince(start: firstTimestamp, now: timeline.date)
             Canvas(opaque: true,
                    colorMode: .extendedLinear,
@@ -33,13 +88,6 @@ struct MandazaCanvas: View {
                 advance(now: now)
             }
         }
-        .background(Color.black)
-        .ignoresSafeArea()
-        .onAppear { rebuild() }
-        .onChange(of: seed)      { _, _ in rebuild() }
-        .onChange(of: size)      { _, _ in rebuild() }
-        .onChange(of: paletteId) { _, new in engine.paletteId = new }
-        .onChange(of: config)    { _, new in engine.config = new }
     }
 
     private func rebuild() {
