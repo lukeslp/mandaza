@@ -19,6 +19,9 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
     STRING_CATALOG_GENERATE_SYMBOLS: YES
+    # Build number flows from the archive (scripts set CURRENT_PROJECT_VERSION
+    # to the git commit count); this default keeps non-archive builds valid.
+    CURRENT_PROJECT_VERSION: "44"
 
 # MandazaCore holds the shared engine/palette/settings sources. Every target
 # compiles these files directly (the MandazaKit Package.swift exists only for
@@ -42,7 +45,7 @@ targets:
         CFBundleDisplayName: Mandaza
         CFBundleIconName: AppIcon
         CFBundleShortVersionString: "1.2"
-        CFBundleVersion: "11"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:
           UIColorName: LaunchBackground
           UIImageName: LaunchSplashIOS
@@ -101,7 +104,7 @@ targets:
         CFBundleDisplayName: Mandaza
         CFBundleIconName: AppIcon
         CFBundleShortVersionString: "1.2"
-        CFBundleVersion: "11"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
         CFBundleURLTypes:
           - CFBundleURLName: com.lukesteuber.mandaza
@@ -132,7 +135,7 @@ targets:
       properties:
         CFBundleDisplayName: Mandaza Widgets
         CFBundleShortVersionString: "1.2"
-        CFBundleVersion: "11"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -182,7 +185,7 @@ targets:
       properties:
         CFBundleDisplayName: Mandaza
         CFBundleShortVersionString: "1.2"
-        CFBundleVersion: "11"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         WKApplication: true
         WKCompanionAppBundleIdentifier: com.lukesteuber.mandaza
         # actool injects this inconsistently for watch targets; declare it
