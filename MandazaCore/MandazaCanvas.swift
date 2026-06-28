@@ -34,6 +34,7 @@ public struct MandazaCanvas: View {
 
     @State private var engine = MandazaEngine()
     @State private var built = false
+    @State private var builtSize: CGSize = .zero
     @State private var firstTimestamp: Date? = nil
     @State private var wasIdle: Bool? = nil
     @State private var lastAdvanceTimestamp: Date? = nil
@@ -74,14 +75,29 @@ public struct MandazaCanvas: View {
         }
         .background(Color.black)
         .ignoresSafeArea()
-        .onAppear { rebuild() }
+        // Measure the ACTUAL rendered size and build the engine from it, so the
+        // grid (and the overscan center-crop) match the Canvas exactly. Relying
+        // on the passed-in `size` can disagree with the real Canvas size on
+        // watchOS and push the pattern off-frame.
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { updateSize(geo.size) }
+                    .onChange(of: geo.size) { _, s in updateSize(s) }
+            }
+        )
         .onChange(of: seed)      { _, _ in rebuild() }
-        .onChange(of: size)      { _, _ in rebuild() }
         .onChange(of: paletteId) { _, new in engine.paletteId = new }
         .onChange(of: config)    { _, new in engine.config = new }
         .onChange(of: reduceMotion) { _, reduced in
             if reduced && built { engine.completeAllPaths() }
         }
+    }
+
+    private func updateSize(_ s: CGSize) {
+        guard s.width > 1, s.height > 1, s != builtSize else { return }
+        builtSize = s
+        rebuild(render: s)
     }
 
     @ViewBuilder
@@ -99,11 +115,12 @@ public struct MandazaCanvas: View {
         }
     }
 
-    private func rebuild() {
+    private func rebuild(render: CGSize? = nil) {
+        let r = render ?? (builtSize == .zero ? size : builtSize)
         engine.config = config
         engine.paletteId = paletteId
-        let ok = engine.regenerate(width: Double(size.width) * fill,
-                                   height: Double(size.height) * fill,
+        let ok = engine.regenerate(width: Double(r.width) * fill,
+                                   height: Double(r.height) * fill,
                                    seed: seed.uuidString)
         built = ok
         firstTimestamp = nil
