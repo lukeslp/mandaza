@@ -23,6 +23,10 @@ public struct MandazaCanvas: View {
     let paletteId: String
     let config: EngineConfig
     let cadence: MandazaCadence
+    /// Overscan factor. 1.0 fits the grid with its natural margin; >1 lays the
+    /// grid out larger and center-crops, so the mandala fills the viewport edge
+    /// to edge (used on watchOS where every pixel counts).
+    let fill: Double
 
     /// Fires `true` when all loops finish drawing, `false` when a new pattern
     /// starts. Parents use this to schedule auto-regenerate in Zen mode.
@@ -41,12 +45,14 @@ public struct MandazaCanvas: View {
                 paletteId: String,
                 config: EngineConfig,
                 cadence: MandazaCadence = .smooth,
+                fill: Double = 1.0,
                 onIdleChange: ((Bool) -> Void)? = nil) {
         self.size = size
         self.seed = seed
         self.paletteId = paletteId
         self.config = config
         self.cadence = cadence
+        self.fill = fill
         self.onIdleChange = onIdleChange
     }
 
@@ -96,8 +102,8 @@ public struct MandazaCanvas: View {
     private func rebuild() {
         engine.config = config
         engine.paletteId = paletteId
-        let ok = engine.regenerate(width: Double(size.width),
-                                   height: Double(size.height),
+        let ok = engine.regenerate(width: Double(size.width) * fill,
+                                   height: Double(size.height) * fill,
                                    seed: seed.uuidString)
         built = ok
         firstTimestamp = nil
@@ -140,6 +146,13 @@ public struct MandazaCanvas: View {
     private func drawScene(in ctx: inout GraphicsContext, size: CGSize, timeMs: Double) {
         ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
         guard built else { return }
+
+        // Overscan: the engine is laid out for `size * fill`; center it in the
+        // visible canvas so the natural grid margin is cropped off the edges.
+        if fill != 1.0 {
+            ctx.translateBy(x: (size.width - engine.width) / 2,
+                            y: (size.height - engine.height) / 2)
+        }
 
         let glowRadius = engine.radius / 5
         let glowScale = min(max(config.glowStrength ?? 1.0, 0.18), 1.0)
