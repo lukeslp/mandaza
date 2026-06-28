@@ -23,10 +23,11 @@ public struct MandazaCanvas: View {
     let paletteId: String
     let config: EngineConfig
     let cadence: MandazaCadence
-    /// Overscan factor. 1.0 fits the grid with its natural margin; >1 lays the
-    /// grid out larger and center-crops, so the mandala fills the viewport edge
-    /// to edge (used on watchOS where every pixel counts).
-    let fill: Double
+    /// Per-axis zoom applied at draw time to crop the hex grid's natural margin
+    /// so the mandala reaches the edges. (1, 1) = no zoom. The grid is still
+    /// built at the real screen size (so cell density is unchanged); this only
+    /// scales the rendered drawing about the center and clips the empty border.
+    let fill: CGSize
 
     /// Fires `true` when all loops finish drawing, `false` when a new pattern
     /// starts. Parents use this to schedule auto-regenerate in Zen mode.
@@ -46,7 +47,7 @@ public struct MandazaCanvas: View {
                 paletteId: String,
                 config: EngineConfig,
                 cadence: MandazaCadence = .smooth,
-                fill: Double = 1.0,
+                fill: CGSize = CGSize(width: 1, height: 1),
                 onIdleChange: ((Bool) -> Void)? = nil) {
         self.size = size
         self.seed = seed
@@ -119,8 +120,8 @@ public struct MandazaCanvas: View {
         let r = render ?? (builtSize == .zero ? size : builtSize)
         engine.config = config
         engine.paletteId = paletteId
-        let ok = engine.regenerate(width: Double(r.width) * fill,
-                                   height: Double(r.height) * fill,
+        let ok = engine.regenerate(width: Double(r.width),
+                                   height: Double(r.height),
                                    seed: seed.uuidString)
         built = ok
         firstTimestamp = nil
@@ -164,11 +165,12 @@ public struct MandazaCanvas: View {
         ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
         guard built else { return }
 
-        // Overscan: the engine is laid out for `size * fill`; center it in the
-        // visible canvas so the natural grid margin is cropped off the edges.
-        if fill != 1.0 {
-            ctx.translateBy(x: (size.width - engine.width) / 2,
-                            y: (size.height - engine.height) / 2)
+        // Zoom about the center to crop the grid's natural margin so the
+        // mandala reaches the edges (cells keep their on-screen size).
+        if fill.width != 1 || fill.height != 1 {
+            ctx.translateBy(x: size.width / 2, y: size.height / 2)
+            ctx.scaleBy(x: fill.width, y: fill.height)
+            ctx.translateBy(x: -size.width / 2, y: -size.height / 2)
         }
 
         let glowRadius = engine.radius / 5

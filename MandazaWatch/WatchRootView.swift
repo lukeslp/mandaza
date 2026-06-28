@@ -46,7 +46,7 @@ struct WatchRootView: View {
                       paletteId: paletteId,
                       config: settings.engineConfig(),
                       cadence: cadence,
-                      fill: 1.3,
+                      fill: CGSize(width: 1.18, height: 1.18),
                       onIdleChange: handleIdle)
             .frame(width: screenSize.width, height: screenSize.height)
             .focusable()
