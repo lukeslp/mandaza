@@ -34,6 +34,12 @@ struct ContentView: View {
     @State private var showRecents = false
     private let recentsCap = 5
 
+    /// Music Mode: microphone-driven modulation of the live canvas. The
+    /// reactor is foreground-only; scenePhase handling stops and resumes it.
+    @State private var reactor = AudioReactor()
+    /// Whether the pre-permission explainer has been shown once.
+    @AppStorage("music.hasPrimed") private var hasPrimed = false
+
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.displayScale) private var displayScale
@@ -50,7 +56,8 @@ struct ContentView: View {
                                   seed: UUID(uuidString: seed) ?? UUID(),
                                   paletteId: MandazaScreenshot.palette(settings.paletteId),
                                   config: settings.engineConfig(),
-                                  onIdleChange: handleIdleChange(_:))
+                                  onIdleChange: handleIdleChange(_:),
+                                  modulationSource: reactor.source)
                 }
                 .onAppear { canvasSize = geo.size }
                 .onChange(of: geo.size) { _, new in canvasSize = new }
@@ -111,6 +118,18 @@ struct ContentView: View {
                     .accessibilityAddTraits(.isButton)
                     .accessibilityHint("Restores the bottom toolbar.")
             }
+
+            // Layer 3.5 — "mic is live" honesty affordance while Music Mode runs.
+            VStack {
+                HStack {
+                    Spacer()
+                    MusicModeIndicator(reactor: reactor)
+                        .padding(.trailing, 16)
+                        .padding(.top, 8)
+                }
+                Spacer()
+            }
+            .allowsHitTesting(false)
 
             // Layer 4 — export progress dim.
             if exportInProgress {
@@ -181,8 +200,19 @@ struct ContentView: View {
             if !inProgress { noteInteraction() }
         }
         .onOpenURL { handleIncomingURL($0) }
-        .onAppear { scheduleControlsFade() }
+        .onAppear {
+            scheduleControlsFade()
+            WatchSyncController.shared.activate()
+            if settings.musicMode, hasPrimed {
+                Task { await reactor.start() }
+            }
+        }
         .onDisappear { controlsFadeTask?.cancel() }
+        // Persist the user's Music Mode intent — but only while active, so the
+        // forced stop on backgrounding doesn't erase the preference.
+        .onChange(of: reactor.source.isActive) { _, active in
+            if scenePhase == .active { settings.musicMode = active }
+        }
     }
 
     // MARK: - Canvas accessibility
@@ -246,10 +276,21 @@ struct ContentView: View {
                 toggleFavorite()
             }
 
+            MusicModeButton(reactor: reactor, hasPrimed: $hasPrimed, accent: accent)
+
             Menu {
                 Button("Save Screen Size") {
                     noteInteraction()
                     exportFullScreen()
+                }
+
+                if watchAvailable {
+                    Button {
+                        noteInteraction()
+                        sendCurrentToWatch()
+                    } label: {
+                        Label("Send to Watch", systemImage: "applewatch")
+                    }
                 }
 
                 Section("Export Size") {
@@ -540,11 +581,33 @@ struct ContentView: View {
             if lastIdle, settings.zenMode, settings.zenAutoRegen, !reduceMotion {
                 handleIdleChange(true)
             }
+            if settings.musicMode, hasPrimed, reactor.state == .idle {
+                Task { await reactor.start() }
+            }
+            if watchAvailable {
+                WatchSyncController.shared.pushSettings(settings)
+            }
         case .background, .inactive:
             autoRegenTask?.cancel()
+            reactor.stop()
         @unknown default:
             break
         }
+    }
+
+    // MARK: - Watch
+
+    private var watchAvailable: Bool {
+        WatchSyncController.shared.isPaired && WatchSyncController.shared.isWatchAppInstalled
+    }
+
+    private func sendCurrentToWatch() {
+        let snap = MandazaSnapshot(seed: seed,
+                                   paletteId: settings.paletteId,
+                                   config: settings.engineConfig())
+        WatchSyncController.shared.send(snapshot: snap)
+        showToast("Sent to Watch")
+        selectionFeedback()
     }
 
     private func handleIncomingURL(_ url: URL) {
@@ -810,6 +873,22 @@ private struct SettingsSheet: View {
                 } header: { blHeader("Motion", accent: accent) }
                 .listRowBackground(BL.deep)
 
+                Section {
+                    NavigationLink {
+                        WatchSettingsView(settings: settings)
+                    } label: {
+                        HStack {
+                            Image(systemName: "applewatch")
+                                .font(.system(size: 17))
+                                .foregroundStyle(BL.muted)
+                            Text("Apple Watch")
+                                .font(.bl(15))
+                                .foregroundStyle(BL.paper)
+                        }
+                    }
+                } header: { blHeader("Devices", accent: accent) }
+                .listRowBackground(BL.deep)
+
                 if !settings.favorites.isEmpty {
                     Section {
                         NavigationLink("All Favorites") {
@@ -902,6 +981,12 @@ private struct FavoritesGrid: View {
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
+                        if WatchSyncController.shared.isPaired,
+                           WatchSyncController.shared.isWatchAppInstalled {
+                            Button {
+                                WatchSyncController.shared.send(snapshot: snap)
+                            } label: { Label("Send to Watch", systemImage: "applewatch") }
+                        }
                         Button(role: .destructive) {
                             settings.favorites.removeAll { $0.id == snap.id }
                         } label: { Label("Remove", systemImage: "trash") }
