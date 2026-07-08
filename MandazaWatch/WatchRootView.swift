@@ -85,12 +85,12 @@ struct WatchRootView: View {
             .onChange(of: crown) { _, value in
                 paletteIndex = Int(value.rounded())
             }
+            // Exclusive: a successful long press must NOT also fire the tap
+            // (which would regenerate and unpin behind the sheet).
             .gesture(
                 LongPressGesture(minimumDuration: 0.6)
                     .onEnded { _ in showSheet = true }
-            )
-            .simultaneousGesture(
-                TapGesture().onEnded { regenerate() }
+                    .exclusively(before: TapGesture().onEnded { regenerate() })
             )
             .contentShape(Rectangle())
             .background(Color.black)
@@ -107,6 +107,7 @@ struct WatchRootView: View {
             }
             .sheet(isPresented: $showSheet) {
                 WatchSettingsSheet(musicMode: musicModeBinding,
+                                   micDenied: reactor.state == .denied,
                                    lastSyncDate: lastSyncAt > 0
                                        ? Date(timeIntervalSince1970: lastSyncAt)
                                        : nil,
@@ -143,7 +144,11 @@ struct WatchRootView: View {
     private func wireSyncHooks() {
         WatchSyncController.shared.onSettingsReceived = {
             lastSyncAt = Date().timeIntervalSince1970
-            if let i = Palette.all.firstIndex(where: { $0.id == settings.paletteId }) {
+            if let snap = settings.pinnedSnapshot {
+                // A pushed design stays pinned until the user taps —
+                // an incoming settings context must not mutate it.
+                apply(snapshot: snap, announce: false)
+            } else if let i = Palette.all.firstIndex(where: { $0.id == settings.paletteId }) {
                 paletteIndex = i
                 crown = Double(i)
             }

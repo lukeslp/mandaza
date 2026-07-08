@@ -8,6 +8,7 @@ import SwiftUI
 /// behavior stays in `WatchRootView`.
 struct WatchSettingsSheet: View {
     @Binding var musicMode: Bool
+    var micDenied: Bool = false
     let lastSyncDate: Date?
     let onDone: () -> Void
 
@@ -15,8 +16,16 @@ struct WatchSettingsSheet: View {
         List {
             Section {
                 Toggle("Music Mode", isOn: $musicMode)
+                    .disabled(micDenied)
                     .accessibilityLabel("Music Mode")
                     .accessibilityHint("Drives the mandala from live audio")
+                if micDenied {
+                    // watchOS has no openSettings URL; instructions are the
+                    // only recovery path.
+                    Text("Microphone access is off. Allow it in the Watch app under Privacy & Security › Microphone › Mandaza.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
             Section {
                 if let lastSyncDate {

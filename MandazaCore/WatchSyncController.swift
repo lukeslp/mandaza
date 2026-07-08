@@ -99,6 +99,13 @@ extension WatchSyncController: WCSessionDelegate {
             #if os(iOS)
             self.isPaired = paired
             self.isWatchAppInstalled = installed
+            // First push happens here, once the session is really activated —
+            // cold-launch callers checking pairing flags before activation
+            // completes would otherwise skip it and the watch would keep
+            // stale settings until the user visits the Watch screen.
+            if activationState == .activated, paired, installed {
+                self.pushSettings(MandazaSettings.shared)
+            }
             #endif
             #if os(watchOS)
             if !pendingContext.isEmpty {

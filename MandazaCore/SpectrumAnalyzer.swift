@@ -1,10 +1,10 @@
 import Foundation
 import Accelerate
 
-/// Normalized 0…1 audio measurements for one FFT frame.
+/// Audio measurements for one FFT frame. Band levels and RMS are 0…1;
 /// `flux` is the spectral flux (sum of positive per-bin magnitude
-/// increases) versus the previous frame — a rough "how much changed"
-/// signal used for onset detection.
+/// increases) versus the previous frame — unbounded above, consumed
+/// only by `isOnset`, which compares it against its own running mean.
 public struct SpectrumBands: Equatable, Sendable {
     public var rms: Float
     public var bass: Float
@@ -124,7 +124,9 @@ public final class SpectrumAnalyzer {
 
         vDSP.subtract(magnitudes, previousMagnitudes, result: &fluxScratch)
         vDSP.clip(fluxScratch, to: 0...Float.greatestFiniteMagnitude, result: &fluxScratch)
-        let flux = min(max(vDSP.sum(fluxScratch) / (referenceMagnitude * 2), 0), 1)
+        // No upper clip: the onset comparator needs headroom above the
+        // running mean, and clipping saturated it at real music levels.
+        let flux = max(vDSP.sum(fluxScratch) / (referenceMagnitude * 2), 0)
         previousMagnitudes = magnitudes
 
         return SpectrumBands(rms: rms, bass: bass, mid: mid, treble: treble, flux: flux)
@@ -152,7 +154,10 @@ public final class SpectrumAnalyzer {
         let low = max(1, Int((lowHz / binHz).rounded(.up)))
         let high = min(magnitudes.count - 1, Int((highHz / binHz).rounded(.down)))
         guard low <= high else { return 0 }
-        let mean = vDSP.mean(magnitudes[low...high])
-        return min(max(mean / referenceMagnitude, 0), 1)
+        // Band ENERGY, not mean magnitude: a sine should read as its
+        // amplitude regardless of how many bins the band spans (mean
+        // dilutes a single-bin tone across wide mid/treble bands).
+        let energy = vDSP.sumOfSquares(magnitudes[low...high])
+        return min(max(sqrt(energy) / referenceMagnitude, 0), 1)
     }
 }

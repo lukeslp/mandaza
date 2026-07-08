@@ -208,10 +208,19 @@ struct ContentView: View {
             }
         }
         .onDisappear { controlsFadeTask?.cancel() }
-        // Persist the user's Music Mode intent — but only while active, so the
-        // forced stop on backgrounding doesn't erase the preference.
+        // Persist the user's Music Mode intent. Only a user-initiated stop
+        // leaves the reactor .idle with isActive false — interruptions and
+        // failures must not erase the preference (nor may the forced stop
+        // on backgrounding, hence the scenePhase guard).
         .onChange(of: reactor.source.isActive) { _, active in
-            if scenePhase == .active { settings.musicMode = active }
+            if scenePhase == .active, active || reactor.state == .idle {
+                settings.musicMode = active
+            }
+        }
+        // Mirror look/behavior changes to the watch no matter which screen
+        // they were made on (the controller debounces).
+        .onChange(of: watchSyncFingerprint) { _, _ in
+            if watchAvailable { WatchSyncController.shared.pushSettings(settings) }
         }
     }
 
@@ -276,7 +285,10 @@ struct ContentView: View {
                 toggleFavorite()
             }
 
-            MusicModeButton(reactor: reactor, hasPrimed: $hasPrimed, accent: accent)
+            MusicModeButton(reactor: reactor,
+                            hasPrimed: $hasPrimed,
+                            accent: accent,
+                            onInteract: noteInteraction)
 
             Menu {
                 Button("Save Screen Size") {
@@ -581,7 +593,8 @@ struct ContentView: View {
             if lastIdle, settings.zenMode, settings.zenAutoRegen, !reduceMotion {
                 handleIdleChange(true)
             }
-            if settings.musicMode, hasPrimed, reactor.state == .idle {
+            if settings.musicMode, hasPrimed,
+               reactor.state == .idle || reactor.state == .interrupted {
                 Task { await reactor.start() }
             }
             if watchAvailable {
@@ -599,6 +612,20 @@ struct ContentView: View {
 
     private var watchAvailable: Bool {
         WatchSyncController.shared.isPaired && WatchSyncController.shared.isWatchAppInstalled
+    }
+
+    /// One value covering every watch-relevant setting; a single onChange
+    /// pushes on any change (mirrors WatchSettingsView.syncFingerprint).
+    private var watchSyncFingerprint: String {
+        [settings.paletteId,
+         settings.geometryPreset,
+         String(settings.drawSpeed),
+         String(settings.lineWidth),
+         String(settings.glow),
+         String(settings.glowStrength),
+         String(settings.density),
+         String(settings.watchAutoRegen),
+         String(settings.watchAutoRegenSeconds)].joined(separator: "|")
     }
 
     private func sendCurrentToWatch() {

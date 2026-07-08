@@ -10,6 +10,9 @@ struct MusicModeButton: View {
     var reactor: AudioReactor
     @Binding var hasPrimed: Bool
     var accent: Color = BL.cyan
+    /// Lets the host reset its controls-fade timer on any interaction here
+    /// (including alert dismissals), so the dock never fades mid-dialog.
+    var onInteract: () -> Void = {}
 
     @State private var showPrimer = false
     @State private var showDenied = false
@@ -44,22 +47,27 @@ struct MusicModeButton: View {
             : "Makes the mandala move with sound from the microphone.")
         .alert("Music Mode", isPresented: $showPrimer) {
             Button("Continue") {
+                onInteract()
                 hasPrimed = true
                 Task { await reactor.start() }
             }
-            Button("Cancel", role: .cancel) {}
+            Button("Cancel", role: .cancel) { onInteract() }
         } message: {
             Text("Mandaza listens through the microphone to make the mandala move with your music. Audio is never recorded or stored.")
         }
         .alert("Microphone Access Needed", isPresented: $showDenied) {
-            Button("Open Settings") { openAppSettings() }
-            Button("Cancel", role: .cancel) {}
+            Button("Open Settings") {
+                onInteract()
+                openAppSettings()
+            }
+            Button("Cancel", role: .cancel) { onInteract() }
         } message: {
             Text("Mandaza needs microphone access to make the mandala move with your music. Audio is never recorded or stored.")
         }
     }
 
     private func tapped() {
+        onInteract()
         UISelectionFeedbackGenerator().selectionChanged()
         if isActive {
             reactor.stop()
