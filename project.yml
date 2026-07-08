@@ -44,7 +44,7 @@ targets:
       properties:
         CFBundleDisplayName: Mandaza
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "1.2"
+        CFBundleShortVersionString: "1.3"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:
           UIColorName: LaunchBackground
@@ -63,6 +63,7 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         ITSAppUsesNonExemptEncryption: false
         NSPhotoLibraryAddUsageDescription: Mandaza saves your generated artwork to Photos so you can use it as a wallpaper.
+        NSMicrophoneUsageDescription: Mandaza listens to ambient sound so the mandala can move with your music. Audio is never recorded or stored.
         CFBundleURLTypes:
           - CFBundleURLName: com.lukesteuber.mandaza
             CFBundleURLSchemes:
@@ -103,7 +104,7 @@ targets:
       properties:
         CFBundleDisplayName: Mandaza
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "1.2"
+        CFBundleShortVersionString: "1.3"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
         CFBundleURLTypes:
@@ -134,7 +135,7 @@ targets:
       path: MandazaWidgets/Info.plist
       properties:
         CFBundleDisplayName: Mandaza Widgets
-        CFBundleShortVersionString: "1.2"
+        CFBundleShortVersionString: "1.3"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
@@ -184,10 +185,11 @@ targets:
       path: MandazaWatch/Info.plist
       properties:
         CFBundleDisplayName: Mandaza
-        CFBundleShortVersionString: "1.2"
+        CFBundleShortVersionString: "1.3"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         WKApplication: true
         WKCompanionAppBundleIdentifier: com.lukesteuber.mandaza
+        NSMicrophoneUsageDescription: Mandaza listens to ambient sound so the mandala can move with your music. Audio is never recorded or stored.
         # actool injects this inconsistently for watch targets; declare it
         # explicitly so the archive validator always finds the icon name.
         CFBundleIconName: AppIcon
