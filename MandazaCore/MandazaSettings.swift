@@ -72,6 +72,17 @@ public final class MandazaSettings {
     /// Minutes between widget rotations when "Auto-rotate" is on.
     public var widgetRotationMinutes: Int { didSet { write(widgetRotationMinutes, .widgetRotationMinutes) } }
 
+    // MARK: - Watch
+
+    public var watchAutoRegen: Bool          { didSet { write(watchAutoRegen, .watchAutoRegen) } }
+    public var watchAutoRegenSeconds: Double { didSet { write(watchAutoRegenSeconds, .watchAutoRegenSeconds) } }
+
+    // MARK: - Music mode / pinned snapshot
+
+    public var musicMode: Bool { didSet { write(musicMode, .musicMode) } }
+    /// Raw JSON of the pinned snapshot; use `pinnedSnapshot` for typed access.
+    public var pinnedSnapshotData: Data? { didSet { writeData(pinnedSnapshotData, .pinnedSnapshotData) } }
+
     // MARK: - Init
 
     private init() {
@@ -109,6 +120,11 @@ public final class MandazaSettings {
         self.zenClockPositionRaw = suite.string(forKey: Key.zenClockPositionRaw.rawValue) ?? ZenClockPosition.upperThird.rawValue
 
         self.widgetRotationMinutes = Self.readInt(suite, .widgetRotationMinutes, default: 60)
+
+        self.watchAutoRegen        = Self.readBool(suite, .watchAutoRegen, default: true)
+        self.watchAutoRegenSeconds = Self.readDouble(suite, .watchAutoRegenSeconds, default: 6)
+        self.musicMode             = Self.readBool(suite, .musicMode, default: false)
+        self.pinnedSnapshotData    = suite.data(forKey: Key.pinnedSnapshotData.rawValue)
 
         if let data = suite.data(forKey: Key.favorites.rawValue),
            let list = try? JSONDecoder().decode([MandazaSnapshot].self, from: data) {
@@ -216,6 +232,22 @@ public final class MandazaSettings {
         set { zenClockPositionRaw = newValue.rawValue }
     }
 
+    /// Typed accessor over `pinnedSnapshotData` — the snapshot the watch face
+    /// keeps showing while auto-regeneration is paused.
+    public var pinnedSnapshot: MandazaSnapshot? {
+        get {
+            guard let data = pinnedSnapshotData else { return nil }
+            return try? JSONDecoder().decode(MandazaSnapshot.self, from: data)
+        }
+        set {
+            if let snap = newValue {
+                pinnedSnapshotData = try? JSONEncoder().encode(snap)
+            } else {
+                pinnedSnapshotData = nil
+            }
+        }
+    }
+
     // MARK: - Storage primitives
 
     private enum Key: String, CaseIterable {
@@ -227,6 +259,8 @@ public final class MandazaSettings {
         case zenClockFontStyleRaw, zenClockFontWeight, zenClockPositionRaw
         case favorites
         case widgetRotationMinutes
+        case watchAutoRegen, watchAutoRegenSeconds
+        case musicMode, pinnedSnapshotData
     }
 
     private func write<T>(_ value: T, _ key: Key) {
@@ -236,6 +270,14 @@ public final class MandazaSettings {
     private func writeJSON<T: Encodable>(_ value: T, _ key: Key) {
         if let data = try? JSONEncoder().encode(value) {
             defaults.set(data, forKey: key.rawValue)
+        }
+    }
+
+    private func writeData(_ value: Data?, _ key: Key) {
+        if let value {
+            defaults.set(value, forKey: key.rawValue)
+        } else {
+            defaults.removeObject(forKey: key.rawValue)
         }
     }
 
