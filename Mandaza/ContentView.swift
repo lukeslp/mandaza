@@ -119,18 +119,6 @@ struct ContentView: View {
                     .accessibilityHint("Restores the bottom toolbar.")
             }
 
-            // Layer 3.5 — "mic is live" honesty affordance while Music Mode runs.
-            VStack {
-                HStack {
-                    Spacer()
-                    MusicModeIndicator(reactor: reactor)
-                        .padding(.trailing, 16)
-                        .padding(.top, 8)
-                }
-                Spacer()
-            }
-            .allowsHitTesting(false)
-
             // Layer 4 — export progress dim.
             if exportInProgress {
                 Color.black.opacity(0.5).ignoresSafeArea()
@@ -155,7 +143,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showSettings) {
             SettingsSheet(settings: settings,
-                          loadFavorite: loadFavorite(_:))
+                          loadFavorite: loadFavorite(_:),
+                          reactor: reactor,
+                          hasPrimed: $hasPrimed)
         }
         .alert(item: $exportAlert) { alert in
             switch alert.kind {
@@ -203,9 +193,17 @@ struct ContentView: View {
         .onAppear {
             scheduleControlsFade()
             WatchSyncController.shared.activate()
+            #if DEBUG
+            if MandazaScreenshot.isMusicDemoActive {
+                reactor.source.startDemo()
+            } else if settings.musicMode, hasPrimed {
+                Task { await reactor.start() }
+            }
+            #else
             if settings.musicMode, hasPrimed {
                 Task { await reactor.start() }
             }
+            #endif
         }
         .onDisappear { controlsFadeTask?.cancel() }
         // Persist the user's Music Mode intent. Only a user-initiated stop
@@ -248,6 +246,12 @@ struct ContentView: View {
         !UIAccessibility.isVoiceOverRunning && !UIAccessibility.isSwitchControlRunning
     }
 
+    private var newPatternA11yHint: String {
+        let base = "Generates a new Mandaza and keeps the current one in Previous."
+        guard longPressEnabled else { return base }
+        return base + " Press and hold to toggle Music Mode."
+    }
+
     // MARK: - Control bar
 
     private var controlBar: some View {
@@ -275,8 +279,13 @@ struct ContentView: View {
                 newPatternButton(accent: accent)
             }
             .accessibilityLabel("New pattern")
-            .accessibilityHint("Generates a new Mandaza and keeps the current one in Previous.")
+            .accessibilityHint(newPatternA11yHint)
+            .accessibilityValue(reactor.source.isActive ? "Music Mode on" : "")
             .buttonStyle(.plain)
+            .musicModeLongPress(reactor: reactor,
+                                hasPrimed: $hasPrimed,
+                                enabled: longPressEnabled,
+                                onInteract: noteInteraction)
 
             dockButton(system: favoriteIcon,
                        label: settings.isFavorite(seed: seed) ? "Saved" : "Favorite",
@@ -284,11 +293,6 @@ struct ContentView: View {
                 noteInteraction()
                 toggleFavorite()
             }
-
-            MusicModeButton(reactor: reactor,
-                            hasPrimed: $hasPrimed,
-                            accent: accent,
-                            onInteract: noteInteraction)
 
             Menu {
                 Button("Save Screen Size") {
@@ -444,6 +448,9 @@ struct ContentView: View {
                 .fill(accent.opacity(0.10))
                 .overlay(Capsule().strokeBorder(accent.opacity(0.35), lineWidth: 1))
                 .frame(height: 50)
+        }
+        .overlay(alignment: .top) {
+            MusicModePulseRing(reactor: reactor, accent: accent)
         }
         .contentShape(Rectangle())
     }
@@ -736,7 +743,28 @@ private struct ExportAlert: Identifiable {
 private struct SettingsSheet: View {
     @Bindable var settings: MandazaSettings
     let loadFavorite: (MandazaSnapshot) -> Void
+    var reactor: AudioReactor
+    @Binding var hasPrimed: Bool
     @Environment(\.dismiss) private var dismiss
+
+    /// Settings is always reachable, so this is the accessible fallback for
+    /// Music Mode when the dock button's long-press is disabled (VoiceOver /
+    /// Switch Control) — and a plain discoverable route for everyone else.
+    /// No priming alert here: an explicit Settings toggle is already the
+    /// user's considered choice, so the system mic prompt suffices.
+    private var musicModeBinding: Binding<Bool> {
+        Binding(
+            get: { reactor.source.isActive },
+            set: { on in
+                hasPrimed = true
+                if on {
+                    Task { await reactor.start() }
+                } else {
+                    reactor.stop()
+                }
+            }
+        )
+    }
 
     /// Turning Glow on from settings uses full-strength bloom; random New uses a softer band.
     /// Tracks explicit user intent so randomizePatternLook never re-enables glow against their preference.
@@ -898,6 +926,28 @@ private struct SettingsSheet: View {
                                   accent: accent,
                                   format: { speedLabel(for: $0) })
                 } header: { blHeader("Motion", accent: accent) }
+                .listRowBackground(BL.deep)
+
+                Section {
+                    Toggle("Music Mode", isOn: musicModeBinding)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+                        .disabled(reactor.state == .denied)
+                    if reactor.state == .denied {
+                        Button("Open Settings to Allow Microphone") {
+                            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                            UIApplication.shared.open(url)
+                        }
+                        .font(.bl(15))
+                        .foregroundStyle(accent)
+                    }
+                } header: {
+                    blHeader("Music Mode", accent: accent)
+                } footer: {
+                    Text("Also: press and hold the New button. Mandaza listens through the microphone to make the mandala move with your music — audio is never recorded or stored.")
+                        .font(.bl(12))
+                        .foregroundStyle(BL.muted)
+                }
                 .listRowBackground(BL.deep)
 
                 Section {

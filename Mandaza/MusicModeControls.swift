@@ -1,15 +1,21 @@
 import SwiftUI
 import UIKit
 
-/// Dock control that toggles Music Mode. The first-ever activation shows a
-/// priming explanation BEFORE the system microphone prompt so the OS dialog
-/// never appears cold; a denied mic permission routes to Settings instead of
-/// failing silently. Self-contained — ContentView only places the view and
-/// hands it the reactor plus the persisted `hasPrimed` flag.
-struct MusicModeButton: View {
+/// Attaches Music Mode as a long-press on an existing button (the dock's
+/// center "New" control) instead of a dedicated dock icon — the toggle rides
+/// the app's one prominent action rather than adding chrome. The first-ever
+/// activation shows a priming explanation BEFORE the system microphone
+/// prompt so the OS dialog never appears cold; a denied permission routes to
+/// Settings instead of failing silently.
+///
+/// Long-press is disabled whenever VoiceOver or Switch Control is active
+/// (`enabled: false`) — same rule the canvas's long-press-to-regenerate
+/// already follows. Assistive-tech users get Music Mode via the ordinary
+/// Toggle in Settings instead, which VoiceOver announces natively.
+struct MusicModeLongPress: ViewModifier {
     var reactor: AudioReactor
     @Binding var hasPrimed: Bool
-    var accent: Color = BL.cyan
+    var enabled: Bool
     /// Lets the host reset its controls-fade timer on any interaction here
     /// (including alert dismissals), so the dock never fades mid-dialog.
     var onInteract: () -> Void = {}
@@ -17,59 +23,38 @@ struct MusicModeButton: View {
     @State private var showPrimer = false
     @State private var showDenied = false
 
-    private var isActive: Bool { reactor.source.isActive }
-
-    var body: some View {
-        Button {
-            tapped()
-        } label: {
-            VStack(spacing: 5) {
-                Image(systemName: "music.note")
-                    .font(.system(size: 20, weight: isActive ? .semibold : .regular))
-                    .foregroundStyle(isActive ? accent : BL.highlight)
-                    .frame(height: 26)
-                    .shadow(color: isActive ? accent.opacity(0.55) : .clear, radius: 8)
-
-                Text("Music")
-                    .font(.blMono(10, weight: isActive ? .semibold : .medium))
-                    .foregroundStyle(isActive ? accent.opacity(0.85) : BL.muted)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+    func body(content: Content) -> some View {
+        content
+            .simultaneousGesture(
+                enabled
+                    ? LongPressGesture(minimumDuration: 0.5).onEnded { _ in triggered() }
+                    : nil
+            )
+            .alert("Music Mode", isPresented: $showPrimer) {
+                Button("Continue") {
+                    onInteract()
+                    hasPrimed = true
+                    Task { await reactor.start() }
+                }
+                Button("Cancel", role: .cancel) { onInteract() }
+            } message: {
+                Text("Mandaza listens through the microphone to make the mandala move with your music. Audio is never recorded or stored.")
             }
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Music Mode")
-        .accessibilityValue(isActive ? "On" : "Off")
-        .accessibilityHint(isActive
-            ? "Stops listening to the microphone."
-            : "Makes the mandala move with sound from the microphone.")
-        .alert("Music Mode", isPresented: $showPrimer) {
-            Button("Continue") {
-                onInteract()
-                hasPrimed = true
-                Task { await reactor.start() }
+            .alert("Microphone Access Needed", isPresented: $showDenied) {
+                Button("Open Settings") {
+                    onInteract()
+                    openAppSettings()
+                }
+                Button("Cancel", role: .cancel) { onInteract() }
+            } message: {
+                Text("Mandaza needs microphone access to make the mandala move with your music. Audio is never recorded or stored.")
             }
-            Button("Cancel", role: .cancel) { onInteract() }
-        } message: {
-            Text("Mandaza listens through the microphone to make the mandala move with your music. Audio is never recorded or stored.")
-        }
-        .alert("Microphone Access Needed", isPresented: $showDenied) {
-            Button("Open Settings") {
-                onInteract()
-                openAppSettings()
-            }
-            Button("Cancel", role: .cancel) { onInteract() }
-        } message: {
-            Text("Mandaza needs microphone access to make the mandala move with your music. Audio is never recorded or stored.")
-        }
     }
 
-    private func tapped() {
+    private func triggered() {
         onInteract()
-        UISelectionFeedbackGenerator().selectionChanged()
-        if isActive {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        if reactor.source.isActive {
             reactor.stop()
         } else if reactor.state == .denied {
             showDenied = true
@@ -86,39 +71,42 @@ struct MusicModeButton: View {
     }
 }
 
-/// Three-bar level meter shown while Music Mode is listening. Heights follow
-/// the reactor's smoothed bass/mid/treble; monochrome white so it never
-/// competes with the palette. Renders nothing when the reactor is idle, so
-/// ContentView can place it unconditionally.
-struct MusicModeIndicator: View {
+extension View {
+    /// Long-press = toggle Music Mode. See `MusicModeLongPress`.
+    func musicModeLongPress(reactor: AudioReactor,
+                             hasPrimed: Binding<Bool>,
+                             enabled: Bool,
+                             onInteract: @escaping () -> Void = {}) -> some View {
+        modifier(MusicModeLongPress(reactor: reactor,
+                                    hasPrimed: hasPrimed,
+                                    enabled: enabled,
+                                    onInteract: onInteract))
+    }
+}
+
+/// A soft pulsing ring around the center button while Music Mode is
+/// listening — the button's own live feedback, so no separate indicator
+/// chrome is needed elsewhere on screen. Driven by `beatPulse` (a brief
+/// flash on each detected beat) and `level` (ambient brightness).
+struct MusicModePulseRing: View {
     var reactor: AudioReactor
+    var accent: Color
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private let barWidth: CGFloat = 3
-    private let minHeight: CGFloat = 4
-    private let maxRise: CGFloat = 14
-
     var body: some View {
         if reactor.source.isActive {
-            HStack(alignment: .bottom, spacing: 3) {
-                bar(level: reactor.source.modulation.bass)
-                bar(level: reactor.source.modulation.mid)
-                bar(level: reactor.source.modulation.treble)
-            }
-            .frame(height: minHeight + maxRise, alignment: .bottom)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Music Mode active, listening")
+            let mod = reactor.source.modulation
+            let effective = reduceMotion ? 0.4 : min(max(mod.level, 0), 1)
+            let pulse = reduceMotion ? 0 : min(max(mod.beatPulse, 0), 1)
+            Capsule()
+                .strokeBorder(accent.opacity(0.35 + 0.45 * effective + 0.2 * pulse),
+                              lineWidth: 1.5 + 1.5 * pulse)
+                .frame(height: 50)
+                .scaleEffect(1 + 0.04 * pulse)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: mod.beatPulse)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
-    }
-
-    private func bar(level: Double) -> some View {
-        // With Reduce Motion the bars hold a steady mid height — still reads
-        // as "listening" without dancing.
-        let effective = reduceMotion ? 0.5 : min(max(level, 0), 1)
-        return Capsule()
-            .fill(Color.white.opacity(0.7))
-            .frame(width: barWidth, height: minHeight + maxRise * CGFloat(effective))
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: effective)
     }
 }

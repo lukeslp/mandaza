@@ -40,4 +40,37 @@ public final class MandazaModulationSource {
     public var modulation: MandazaModulation = .zero
     public var isActive: Bool = false
     public init() {}
+
+    #if DEBUG
+    @ObservationIgnored private var demoTimer: Timer?
+
+    /// Screenshot/demo only: drives a synthetic, pleasant modulation so
+    /// Music Mode can be captured without live audio input. Never compiled
+    /// into release builds.
+    public func startDemo() {
+        isActive = true
+        let start = Date()
+        demoTimer?.invalidate()
+        demoTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            let t = Date().timeIntervalSince(start)
+            Task { @MainActor in
+                self.modulation = MandazaModulation(
+                    level: 0.55 + 0.25 * sin(t * 1.7),
+                    bass: 0.6 + 0.3 * sin(t * 1.1),
+                    mid: 0.45 + 0.3 * sin(t * 2.3 + 1),
+                    treble: 0.4 + 0.3 * sin(t * 3.1 + 2),
+                    beatPulse: max(0, sin(t * 2.0)),
+                    colorPhaseMs: t * 400)
+            }
+        }
+    }
+
+    public func stopDemo() {
+        demoTimer?.invalidate()
+        demoTimer = nil
+        isActive = false
+        modulation = .zero
+    }
+    #endif
 }

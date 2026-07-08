@@ -14,4 +14,15 @@ public enum MandazaScreenshot {
         #endif
         return current
     }
+
+    /// Whether to drive Music Mode's live indicator from a synthetic demo
+    /// signal instead of the microphone — set `MANDAZA_MUSIC_DEMO=1` when
+    /// capturing App Store screenshots so the shot is reproducible.
+    public static var isMusicDemoActive: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["MANDAZA_MUSIC_DEMO"] == "1"
+        #else
+        return false
+        #endif
+    }
 }
