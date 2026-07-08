@@ -28,6 +28,10 @@ public struct MandazaCanvas: View {
     /// built at the real screen size (so cell density is unchanged); this only
     /// scales the rendered drawing about the center and clips the empty border.
     let fill: CGSize
+    /// Optional live modulation feed (audio-reactive, etc.). Read per-frame
+    /// inside the timeline closure; nil or inactive renders identically to
+    /// an unmodulated canvas.
+    let modulationSource: MandazaModulationSource?
 
     /// Fires `true` when all loops finish drawing, `false` when a new pattern
     /// starts. Parents use this to schedule auto-regenerate in Zen mode.
@@ -48,7 +52,8 @@ public struct MandazaCanvas: View {
                 config: EngineConfig,
                 cadence: MandazaCadence = .smooth,
                 fill: CGSize = CGSize(width: 1, height: 1),
-                onIdleChange: ((Bool) -> Void)? = nil) {
+                onIdleChange: ((Bool) -> Void)? = nil,
+                modulationSource: MandazaModulationSource? = nil) {
         self.size = size
         self.seed = seed
         self.paletteId = paletteId
@@ -56,6 +61,7 @@ public struct MandazaCanvas: View {
         self.cadence = cadence
         self.fill = fill
         self.onIdleChange = onIdleChange
+        self.modulationSource = modulationSource
     }
 
     public var body: some View {
@@ -105,10 +111,13 @@ public struct MandazaCanvas: View {
     private func timeline<S: TimelineSchedule>(_ schedule: S) -> some View {
         TimelineView(schedule) { timeline in
             let elapsedMs = msSince(start: firstTimestamp, now: timeline.date)
+            // Reading these here registers the Observation dependency so
+            // frames pick up fresh modulation values.
+            let mod = (modulationSource?.isActive == true) ? modulationSource?.modulation : nil
             Canvas(opaque: true,
                    colorMode: .extendedLinear,
                    rendersAsynchronously: false) { ctx, canvasSize in
-                drawScene(in: &ctx, size: canvasSize, timeMs: elapsedMs)
+                drawScene(in: &ctx, size: canvasSize, timeMs: elapsedMs, mod: mod)
             }
             .onChange(of: timeline.date) { _, now in
                 advance(now: now)
@@ -161,7 +170,8 @@ public struct MandazaCanvas: View {
         return now.timeIntervalSince(start) * 1000
     }
 
-    private func drawScene(in ctx: inout GraphicsContext, size: CGSize, timeMs: Double) {
+    private func drawScene(in ctx: inout GraphicsContext, size: CGSize, timeMs: Double,
+                           mod: MandazaModulation?) {
         ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
         guard built else { return }
 
@@ -174,16 +184,29 @@ public struct MandazaCanvas: View {
         }
 
         let glowRadius = engine.radius / 5
-        let glowScale = min(max(config.glowStrength ?? 1.0, 0.18), 1.0)
-        let strokeWidth = (engine.radius / 30) * config.lineWidth
+        var glowScale = min(max(config.glowStrength ?? 1.0, 0.18), 1.0)
+        var strokeWidth = (engine.radius / 30) * config.lineWidth
+        var colorTimeMs = timeMs
+        var shadowOpacity = 0.55 + 0.30 * glowScale
+        if let mod {
+            strokeWidth *= min(max(1 + 0.30 * mod.level + 0.20 * mod.beatPulse, 1.0), 1.55)
+            glowScale = min(max(glowScale + 0.40 * mod.bass, 0.18), 1.0)
+            shadowOpacity = min(0.95, 0.55 + 0.30 * glowScale + 0.12 * mod.beatPulse)
+            colorTimeMs = timeMs + mod.colorPhaseMs
+        }
 
         for loop in engine.loops {
             let path = Path(engine.currentPath(for: loop))
-            let color = Color(cgColor: engine.color(for: loop, timeMs: timeMs))
+            let color = Color(cgColor: engine.color(for: loop, timeMs: colorTimeMs))
             var layer = ctx
             if config.glow {
-                layer.addFilter(.shadow(color: color.opacity(0.55 + 0.30 * glowScale),
+                layer.addFilter(.shadow(color: color.opacity(shadowOpacity),
                                         radius: glowRadius * glowScale))
+            } else if let mod, mod.bass > 0.001 || mod.level > 0.001 {
+                // Transient audio glow when the user has glow off: subtle,
+                // driven only by live energy, and gone when the signal is.
+                layer.addFilter(.shadow(color: color.opacity(0.35 * mod.level),
+                                        radius: glowRadius * 0.30 * mod.bass))
             }
             layer.stroke(path,
                          with: .color(color),
