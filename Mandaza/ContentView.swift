@@ -34,11 +34,10 @@ struct ContentView: View {
     @State private var showRecents = false
     private let recentsCap = 5
 
-    /// Music Mode: microphone-driven modulation of the live canvas. The
-    /// reactor is foreground-only; scenePhase handling stops and resumes it.
+    /// Music responsivity: microphone-driven modulation of the live canvas,
+    /// active only while Zen Mode is on and `settings.musicResponsivity` is
+    /// set. The reactor is foreground-only; scenePhase handling stops/resumes.
     @State private var reactor = AudioReactor()
-    /// Whether the pre-permission explainer has been shown once.
-    @AppStorage("music.hasPrimed") private var hasPrimed = false
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -145,7 +144,7 @@ struct ContentView: View {
             SettingsSheet(settings: settings,
                           loadFavorite: loadFavorite(_:),
                           reactor: reactor,
-                          hasPrimed: $hasPrimed)
+                          toggleReactor: applyMusicResponsivity)
         }
         .alert(item: $exportAlert) { alert in
             switch alert.kind {
@@ -195,12 +194,15 @@ struct ContentView: View {
             WatchSyncController.shared.activate()
             #if DEBUG
             if MandazaScreenshot.isMusicDemoActive {
+                // Screenshot hook: force Zen + synthetic reactivity so captures
+                // are reproducible without a live microphone.
+                settings.zenMode = true
                 reactor.source.startDemo()
-            } else if settings.musicMode, hasPrimed {
+            } else if settings.zenMode, settings.musicResponsivity, AudioReactor.micAvailable {
                 Task { await reactor.start() }
             }
             #else
-            if settings.musicMode, hasPrimed {
+            if settings.zenMode, settings.musicResponsivity, AudioReactor.micAvailable {
                 Task { await reactor.start() }
             }
             #endif
@@ -246,12 +248,6 @@ struct ContentView: View {
         !UIAccessibility.isVoiceOverRunning && !UIAccessibility.isSwitchControlRunning
     }
 
-    private var newPatternA11yHint: String {
-        let base = "Generates a new Mandaza and keeps the current one in Previous."
-        guard longPressEnabled else { return base }
-        return base + " Press and hold to toggle Music Mode."
-    }
-
     // MARK: - Control bar
 
     private var controlBar: some View {
@@ -273,19 +269,21 @@ struct ContentView: View {
             }
 
             Button {
+                toggleZen()
+            } label: {
+                zenCenterButton(accent: accent)
+            }
+            .accessibilityLabel(settings.zenMode ? "Exit Zen Mode" : "Enter Zen Mode")
+            .accessibilityHint("Shows a fullscreen clock over the mandala and, when Music responsivity is on, moves the artwork with nearby sound.")
+            .accessibilityValue(reactor.source.isActive ? "Music responsive" : "")
+            .buttonStyle(.plain)
+
+            dockButton(system: "sparkles",
+                       label: "New",
+                       accent: accent) {
                 noteInteraction()
                 regenerate()
-            } label: {
-                newPatternButton(accent: accent)
             }
-            .accessibilityLabel("New pattern")
-            .accessibilityHint(newPatternA11yHint)
-            .accessibilityValue(reactor.source.isActive ? "Music Mode on" : "")
-            .buttonStyle(.plain)
-            .musicModeLongPress(reactor: reactor,
-                                hasPrimed: $hasPrimed,
-                                enabled: longPressEnabled,
-                                onInteract: noteInteraction)
 
             dockButton(system: favoriteIcon,
                        label: settings.isFavorite(seed: seed) ? "Saved" : "Favorite",
@@ -430,14 +428,15 @@ struct ContentView: View {
         .contentShape(Rectangle())
     }
 
-    private func newPatternButton(accent: Color) -> some View {
-        VStack(spacing: 5) {
-            Image(systemName: "sparkles")
+    private func zenCenterButton(accent: Color) -> some View {
+        let on = settings.zenMode
+        return VStack(spacing: 5) {
+            Image(systemName: on ? "moon.stars.fill" : "moon.stars")
                 .font(.system(size: 24, weight: .semibold))
                 .foregroundStyle(accent)
                 .frame(height: 28)
                 .shadow(color: accent.opacity(0.55), radius: 10)
-            Text("New")
+            Text("Zen")
                 .font(.blMono(10, weight: .semibold))
                 .foregroundStyle(BL.highlight)
                 .lineLimit(1)
@@ -445,14 +444,38 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, minHeight: 52)
         .background(alignment: .top) {
             Capsule()
-                .fill(accent.opacity(0.10))
-                .overlay(Capsule().strokeBorder(accent.opacity(0.35), lineWidth: 1))
+                .fill(accent.opacity(on ? 0.18 : 0.10))
+                .overlay(Capsule().strokeBorder(accent.opacity(on ? 0.6 : 0.35), lineWidth: 1))
                 .frame(height: 50)
         }
         .overlay(alignment: .top) {
             MusicModePulseRing(reactor: reactor, accent: accent)
         }
         .contentShape(Rectangle())
+    }
+
+    // MARK: - Zen toggle
+
+    /// The center dock button owns Zen. Entering Zen starts the audio reactor
+    /// only when the user opted into Music responsivity AND the platform has a
+    /// microphone; leaving Zen always stops it.
+    private func toggleZen() {
+        noteInteraction()
+        withAnimation { settings.zenMode.toggle() }
+        applyMusicResponsivity()
+        selectionFeedback()
+    }
+
+    /// Reconciles the reactor with the current Zen + Music-responsivity state.
+    /// Called on Zen toggle and when the Settings toggle changes.
+    private func applyMusicResponsivity() {
+        if settings.zenMode, settings.musicResponsivity, AudioReactor.micAvailable {
+            if reactor.state == .idle || reactor.state == .interrupted {
+                Task { await reactor.start() }
+            }
+        } else {
+            reactor.stop()
+        }
     }
 
     private var favoriteIcon: String {
@@ -600,7 +623,7 @@ struct ContentView: View {
             if lastIdle, settings.zenMode, settings.zenAutoRegen, !reduceMotion {
                 handleIdleChange(true)
             }
-            if settings.musicMode, hasPrimed,
+            if settings.zenMode, settings.musicResponsivity, AudioReactor.micAvailable,
                reactor.state == .idle || reactor.state == .interrupted {
                 Task { await reactor.start() }
             }
@@ -744,27 +767,10 @@ private struct SettingsSheet: View {
     @Bindable var settings: MandazaSettings
     let loadFavorite: (MandazaSnapshot) -> Void
     var reactor: AudioReactor
-    @Binding var hasPrimed: Bool
+    /// Reconciles the live reactor with the current Zen + Music-responsivity
+    /// state — invoked by the host when the responsivity toggle changes.
+    let toggleReactor: () -> Void
     @Environment(\.dismiss) private var dismiss
-
-    /// Settings is always reachable, so this is the accessible fallback for
-    /// Music Mode when the dock button's long-press is disabled (VoiceOver /
-    /// Switch Control) — and a plain discoverable route for everyone else.
-    /// No priming alert here: an explicit Settings toggle is already the
-    /// user's considered choice, so the system mic prompt suffices.
-    private var musicModeBinding: Binding<Bool> {
-        Binding(
-            get: { reactor.source.isActive },
-            set: { on in
-                hasPrimed = true
-                if on {
-                    Task { await reactor.start() }
-                } else {
-                    reactor.stop()
-                }
-            }
-        )
-    }
 
     /// Turning Glow on from settings uses full-strength bloom; random New uses a softer band.
     /// Tracks explicit user intent so randomizePatternLook never re-enables glow against their preference.
@@ -928,11 +934,18 @@ private struct SettingsSheet: View {
                 } header: { blHeader("Motion", accent: accent) }
                 .listRowBackground(BL.deep)
 
+                #if !os(tvOS)
                 Section {
-                    Toggle("Music Mode", isOn: musicModeBinding)
+                    Toggle("Music responsivity", isOn: $settings.musicResponsivity)
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
-                        .disabled(reactor.state == .denied)
+                        .onChange(of: settings.musicResponsivity) { _, _ in toggleReactor() }
+                    LabeledSlider(title: "Reactivity",
+                                  value: $settings.reactivity,
+                                  range: 0.0 ... 1.0,
+                                  accent: accent,
+                                  format: { reactivityLabel(for: $0) })
+                        .disabled(!settings.musicResponsivity)
                     if reactor.state == .denied {
                         Button("Open Settings to Allow Microphone") {
                             guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
@@ -942,13 +955,14 @@ private struct SettingsSheet: View {
                         .foregroundStyle(accent)
                     }
                 } header: {
-                    blHeader("Music Mode", accent: accent)
+                    blHeader("Music responsivity", accent: accent)
                 } footer: {
-                    Text("Also: press and hold the New button. Mandaza listens through the microphone to make the mandala move with your music — audio is never recorded or stored.")
+                    Text("In Zen Mode, Mandaza listens through the microphone so the mandala moves with nearby music — audio is never recorded or stored. Reactivity sets how strongly it responds.")
                         .font(.bl(12))
                         .foregroundStyle(BL.muted)
                 }
                 .listRowBackground(BL.deep)
+                #endif
 
                 Section {
                     NavigationLink {
@@ -1027,6 +1041,15 @@ private struct SettingsSheet: View {
         case ..<0.5:  return "Loose"
         case ..<0.75: return "Tight"
         default:      return "Packed"
+        }
+    }
+
+    private func reactivityLabel(for v: Double) -> String {
+        switch v {
+        case ..<0.15: return "Subtle"
+        case ..<0.5:  return "Minimal"
+        case ..<0.8:  return "Lively"
+        default:      return "Bold"
         }
     }
 }

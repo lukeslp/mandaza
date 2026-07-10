@@ -29,6 +29,17 @@ public final class AudioReactor {
 
     public private(set) var state: State = .idle
 
+    /// Whether this platform has a microphone the reactor can listen through.
+    /// tvOS has no mic, so Zen there is always the clean fullscreen view.
+    /// (A real runtime permission/availability check can refine this later.)
+    public static var micAvailable: Bool {
+        #if os(tvOS)
+        false
+        #else
+        true
+        #endif
+    }
+
     /// Downstream views observe this for smoothed, main-actor modulation values.
     public let source = MandazaModulationSource()
 
