@@ -1,4 +1,34 @@
 import SwiftUI
+import Foundation
+
+// MARK: - Music reactivity (pure helpers)
+
+/// Clamp to the unit interval.
+@inline(__always) func clamp01(_ x: Double) -> Double { min(max(x, 0), 1) }
+
+/// Animation-speed multiplier from instantaneous loudness, scaled by the
+/// user's `reactivity`. Silence (`level` 0) or `reactivity` 0 returns 1.0
+/// (no speed-up). At full loudness and reactivity 1 the animation clock
+/// advances 2.5× real time. `level` is clamped to 0…1 so the clock never
+/// reverses or runs away on an out-of-range reading.
+func speedFactor(level: Double, reactivity r: Double) -> Double {
+    1 + r * 1.5 * clamp01(level)
+}
+
+/// Per-beat scale pump applied about the canvas center, scaled by
+/// `reactivity`. `reactivity` 0 is inert (1.0). At the default reactivity
+/// (0.35) a full beat peaks near 1.06×; at maximum reactivity (1.0) it peaks
+/// near 1.30×. `beatEnv` is a 0…1 decaying beat envelope. The pump only ever
+/// grows the mandala — it never pulls it below its resting size.
+///
+/// The `pow(r, 1.5)` shaping hits both design targets (≈1.06 at 0.35, 1.30
+/// at 1.0) while staying monotonic and never dipping below 1.0 for any
+/// reactivity in 0…1 — a plain linear `0.06 + r*0.24` blend overshoots the
+/// gentle-default target and can shrink the art at low reactivity.
+func scaleThrob(beatEnv: Double, reactivity r: Double) -> Double {
+    guard r > 0 else { return 1 }
+    return 1 + 0.30 * pow(clamp01(r), 1.5) * clamp01(beatEnv)
+}
 
 /// Animation cadence for `MandazaCanvas`.
 ///
@@ -28,6 +58,11 @@ public struct MandazaCanvas: View {
     /// built at the real screen size (so cell density is unchanged); this only
     /// scales the rendered drawing about the center and clips the empty border.
     let fill: CGSize
+    /// User-facing music-reactivity intensity (0…1). Scales the loudness
+    /// speed-up, the per-beat scale-throb, and the beat glow burst. 0 renders
+    /// identically to a non-reactive canvas even while a modulation source is
+    /// active. Only has a visible effect when `modulationSource` is feeding.
+    let reactivity: Double
     /// Optional live modulation feed (audio-reactive, etc.). Read per-frame
     /// inside the timeline closure; nil or inactive renders identically to
     /// an unmodulated canvas.
@@ -43,6 +78,13 @@ public struct MandazaCanvas: View {
     @State private var firstTimestamp: Date? = nil
     @State private var wasIdle: Bool? = nil
     @State private var lastAdvanceTimestamp: Date? = nil
+    /// Warped animation clock (ms). Advances by `real dt × speedFactor` each
+    /// frame so loud music quickens the mandala without disturbing geometry.
+    /// Equals real elapsed time when reactivity/level is 0.
+    @State private var animMs: Double = 0
+    /// Decaying 0…1 beat envelope (~250 ms release) driving the scale-throb
+    /// and glow burst. Snaps up on a fresh beat, eases down between.
+    @State private var beatEnv: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isLuminanceReduced) private var luminanceReduced
 
@@ -52,6 +94,7 @@ public struct MandazaCanvas: View {
                 config: EngineConfig,
                 cadence: MandazaCadence = .smooth,
                 fill: CGSize = CGSize(width: 1, height: 1),
+                reactivity: Double = 0.35,
                 onIdleChange: ((Bool) -> Void)? = nil,
                 modulationSource: MandazaModulationSource? = nil) {
         self.size = size
@@ -60,6 +103,7 @@ public struct MandazaCanvas: View {
         self.config = config
         self.cadence = cadence
         self.fill = fill
+        self.reactivity = reactivity
         self.onIdleChange = onIdleChange
         self.modulationSource = modulationSource
     }
@@ -110,14 +154,15 @@ public struct MandazaCanvas: View {
     @ViewBuilder
     private func timeline<S: TimelineSchedule>(_ schedule: S) -> some View {
         TimelineView(schedule) { timeline in
-            let elapsedMs = msSince(start: firstTimestamp, now: timeline.date)
             // Reading these here registers the Observation dependency so
-            // frames pick up fresh modulation values.
+            // frames pick up fresh modulation values. The warped `animMs`
+            // clock and `beatEnv` are advanced in `advance(now:)` on each
+            // timeline tick; drawing them one tick behind is imperceptible.
             let mod = (modulationSource?.isActive == true) ? modulationSource?.modulation : nil
             Canvas(opaque: true,
                    colorMode: .extendedLinear,
                    rendersAsynchronously: false) { ctx, canvasSize in
-                drawScene(in: &ctx, size: canvasSize, timeMs: elapsedMs, mod: mod)
+                drawScene(in: &ctx, size: canvasSize, timeMs: animMs, mod: mod)
             }
             .onChange(of: timeline.date) { _, now in
                 advance(now: now)
@@ -136,6 +181,8 @@ public struct MandazaCanvas: View {
         firstTimestamp = nil
         wasIdle = nil
         lastAdvanceTimestamp = nil
+        animMs = 0
+        beatEnv = 0
         if ok && reduceMotion {
             engine.completeAllPaths()
         }
@@ -143,31 +190,40 @@ public struct MandazaCanvas: View {
 
     private func advance(now: Date) {
         guard built else { return }
+        var dtSec = 0.0
         if let last = lastAdvanceTimestamp {
-            let gap = now.timeIntervalSince(last)
-            if gap < 0.0005 { return }
+            dtSec = now.timeIntervalSince(last)
+            if dtSec < 0.0005 { return }
             // Absorb long stalls (Always-On dimming, wrist-down, backgrounding)
-            // by sliding the start anchor forward, so elapsed time stays
-            // continuous and the animation doesn't jump ahead on resume. Normal
-            // per-frame gaps are well under this threshold and pass through.
-            if gap > 1.0, let first = firstTimestamp {
-                firstTimestamp = first.addingTimeInterval(gap)
-            }
+            // by treating the gap as a single frame, so the warped clock stays
+            // continuous and the animation doesn't lurch ahead on resume.
+            // Normal per-frame gaps are well under this threshold.
+            if dtSec > 1.0 { dtSec = 1.0 / 60.0 }
         }
         lastAdvanceTimestamp = now
-        if firstTimestamp == nil { firstTimestamp = now }
-        let t = msSince(start: firstTimestamp, now: now)
-        let alive = engine.advance(timeMs: t)
+        if firstTimestamp == nil {
+            firstTimestamp = now
+            dtSec = 0
+        }
+
+        // Live modulation (nil when no source / inactive → identity behavior).
+        let mod = (modulationSource?.isActive == true) ? modulationSource?.modulation : nil
+
+        // Loudness warps the animation clock; a decaying beat envelope drives
+        // the scale-throb + glow burst. Both collapse to identity at silence
+        // or when reactivity is 0.
+        let level = mod?.level ?? 0
+        animMs += dtSec * 1000 * speedFactor(level: level, reactivity: reactivity)
+        // ~250 ms release: snap up on a fresh beat, ease down between beats.
+        let pulse = clamp01(mod?.beatPulse ?? 0)
+        beatEnv = max(beatEnv * exp(-dtSec / 0.25), pulse)
+
+        let alive = engine.advance(timeMs: animMs)
         let idle = !alive
         if wasIdle != idle {
             wasIdle = idle
             onIdleChange?(idle)
         }
-    }
-
-    private func msSince(start: Date?, now: Date) -> Double {
-        guard let start = start else { return 0 }
-        return now.timeIntervalSince(start) * 1000
     }
 
     private func drawScene(in ctx: inout GraphicsContext, size: CGSize, timeMs: Double,
@@ -183,6 +239,17 @@ public struct MandazaCanvas: View {
             ctx.translateBy(x: -size.width / 2, y: -size.height / 2)
         }
 
+        // Music beat-throb: pump the whole drawing about center on each beat.
+        // A presentation-only transform — geometry (loop paths, grid) is
+        // untouched, so the mandala stays stable. Identity at reactivity 0
+        // or between beats (`beatEnv` 0).
+        let throb = scaleThrob(beatEnv: beatEnv, reactivity: reactivity)
+        if throb != 1 {
+            ctx.translateBy(x: size.width / 2, y: size.height / 2)
+            ctx.scaleBy(x: throb, y: throb)
+            ctx.translateBy(x: -size.width / 2, y: -size.height / 2)
+        }
+
         let glowRadius = engine.radius / 5
         var glowScale = min(max(config.glowStrength ?? 1.0, 0.18), 1.0)
         var strokeWidth = (engine.radius / 30) * config.lineWidth
@@ -193,6 +260,11 @@ public struct MandazaCanvas: View {
             glowScale = min(max(glowScale + 0.40 * mod.bass, 0.18), 1.0)
             shadowOpacity = min(0.95, 0.55 + 0.30 * glowScale + 0.12 * mod.beatPulse)
             colorTimeMs = timeMs + mod.colorPhaseMs
+        }
+        // Beat glow burst, scaled by reactivity. `beatEnv` is 0 at silence and
+        // between beats, so this is inert unless a beat is decaying.
+        if reactivity > 0 && beatEnv > 0.001 {
+            shadowOpacity = min(0.98, shadowOpacity + reactivity * 0.2 * beatEnv)
         }
 
         for loop in engine.loops {

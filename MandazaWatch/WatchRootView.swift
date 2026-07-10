@@ -71,6 +71,7 @@ struct WatchRootView: View {
                       config: settings.engineConfig(),
                       cadence: cadence,
                       fill: CGSize(width: 1.18, height: 1.18),
+                      reactivity: settings.reactivity,
                       onIdleChange: handleIdle,
                       modulationSource: reactor.source)
             .frame(width: screenSize.width, height: screenSize.height)

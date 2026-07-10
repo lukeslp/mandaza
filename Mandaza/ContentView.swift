@@ -55,6 +55,7 @@ struct ContentView: View {
                                   seed: UUID(uuidString: seed) ?? UUID(),
                                   paletteId: MandazaScreenshot.palette(settings.paletteId),
                                   config: settings.engineConfig(),
+                                  reactivity: settings.reactivity,
                                   onIdleChange: handleIdleChange(_:),
                                   modulationSource: reactor.source)
                 }
