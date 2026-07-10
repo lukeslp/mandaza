@@ -67,6 +67,10 @@ public struct MandazaCanvas: View {
     /// inside the timeline closure; nil or inactive renders identically to
     /// an unmodulated canvas.
     let modulationSource: MandazaModulationSource?
+    /// Optional tilt-parallax source. Read inside the Canvas draw path (not
+    /// via Observation) so motion samples never invalidate this TimelineView.
+    /// Per-stroke luminance scales the offset for layered depth.
+    let parallaxSource: TiltProvider?
 
     /// Fires `true` when all loops finish drawing, `false` when a new pattern
     /// starts. Parents use this to schedule auto-regenerate in Zen mode.
@@ -96,7 +100,8 @@ public struct MandazaCanvas: View {
                 fill: CGSize = CGSize(width: 1, height: 1),
                 reactivity: Double = 0.35,
                 onIdleChange: ((Bool) -> Void)? = nil,
-                modulationSource: MandazaModulationSource? = nil) {
+                modulationSource: MandazaModulationSource? = nil,
+                parallaxSource: TiltProvider? = nil) {
         self.size = size
         self.seed = seed
         self.paletteId = paletteId
@@ -106,6 +111,7 @@ public struct MandazaCanvas: View {
         self.reactivity = reactivity
         self.onIdleChange = onIdleChange
         self.modulationSource = modulationSource
+        self.parallaxSource = parallaxSource
     }
 
     public var body: some View {
@@ -267,21 +273,36 @@ public struct MandazaCanvas: View {
             shadowOpacity = min(0.98, shadowOpacity + reactivity * 0.2 * beatEnv)
         }
 
-        for loop in engine.loops {
-            let path = Path(engine.currentPath(for: loop))
-            let color = Color(cgColor: engine.color(for: loop, timeMs: colorTimeMs))
+        // Read tilt without Observation — TimelineView already redraws each
+        // frame, so parallax stays live without invalidating this view tree.
+        let parallax = parallaxSource?.offset ?? .zero
+
+        // Dark (far) first, bright (near) last so nearer strokes sit on top.
+        let strokes: [(path: Path, color: Color, depth: Double)] = engine.loops.map { loop in
+            let cg = engine.color(for: loop, timeMs: colorTimeMs)
+            let lum = relativeLuminance(cg)
+            return (Path(engine.currentPath(for: loop)),
+                    Color(cgColor: cg),
+                    parallaxDepth(luminance: lum))
+        }.sorted { $0.depth < $1.depth }
+
+        for stroke in strokes {
             var layer = ctx
+            if parallax != .zero {
+                layer.translateBy(x: parallax.width * stroke.depth,
+                                  y: parallax.height * stroke.depth)
+            }
             if config.glow {
-                layer.addFilter(.shadow(color: color.opacity(shadowOpacity),
+                layer.addFilter(.shadow(color: stroke.color.opacity(shadowOpacity),
                                         radius: glowRadius * glowScale))
             } else if let mod, mod.bass > 0.001 || mod.level > 0.001 {
                 // Transient audio glow when the user has glow off: subtle,
                 // driven only by live energy, and gone when the signal is.
-                layer.addFilter(.shadow(color: color.opacity(0.35 * mod.level),
+                layer.addFilter(.shadow(color: stroke.color.opacity(0.35 * mod.level),
                                         radius: glowRadius * 0.30 * mod.bass))
             }
-            layer.stroke(path,
-                         with: .color(color),
+            layer.stroke(stroke.path,
+                         with: .color(stroke.color),
                          style: StrokeStyle(lineWidth: strokeWidth,
                                             lineCap: .round,
                                             lineJoin: .round))

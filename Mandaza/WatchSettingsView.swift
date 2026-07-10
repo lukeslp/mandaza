@@ -140,17 +140,37 @@ struct WatchSettingsView: View {
             }
             .accessibilityLabel("Clock size")
             .accessibilityValue("\(Int(settings.zenClockSizeScale * 100)) percent")
-
-            Picker("Tilt", selection: $settings.zenTiltIntensityRaw) {
-                Text("Off").tag(ZenTiltIntensity.off.rawValue)
-                Text("Subtle").tag(ZenTiltIntensity.subtle.rawValue)
-                Text("Pronounced").tag(ZenTiltIntensity.pronounced.rawValue)
-            }
-            .pickerStyle(.menu)
-            .font(.bl(15))
-            .foregroundStyle(BL.paper)
         } header: {
             blHeader("Clock", accent: accent)
+        }
+        .listRowBackground(BL.deep)
+
+        Section {
+            Toggle("Tilt parallax", isOn: Binding(
+                get: { settings.zenTiltIntensity != .off },
+                set: { on in
+                    if on {
+                        if settings.zenTiltIntensity == .off {
+                            settings.zenTiltIntensity = .pronounced
+                        }
+                    } else {
+                        settings.zenTiltIntensity = .off
+                    }
+                }
+            ))
+            .font(.bl(15))
+            .foregroundStyle(BL.paper)
+            if settings.zenTiltIntensity != .off {
+                Picker("Intensity", selection: $settings.zenTiltIntensityRaw) {
+                    Text("Subtle").tag(ZenTiltIntensity.subtle.rawValue)
+                    Text("Pronounced").tag(ZenTiltIntensity.pronounced.rawValue)
+                }
+                .pickerStyle(.menu)
+                .font(.bl(15))
+                .foregroundStyle(BL.paper)
+            }
+        } header: {
+            blHeader("Parallax", accent: accent)
         }
         .listRowBackground(BL.deep)
     }

@@ -11,9 +11,10 @@ import CoreGraphics
 /// - `gravityZ`: device +Z (out of screen). 0 upright; −1 face-up flat.
 ///
 /// Returns `.zero` when tilt is `.off`. Offset saturates at a fraction of the
-/// shorter edge (`subtle` ≈ 6%, `pronounced` ≈ 14%) so depth reads clearly
-/// without sliding the mandala off-screen. The layer shifts *with* the tilt
-/// so rolling the device right nudges the artwork right.
+/// shorter edge (`subtle` ≈ 18%, `pronounced` ≈ 42%) so depth reads clearly.
+/// The layer shifts *with* the tilt so rolling the device right nudges the
+/// artwork right. Per-stroke luminance then scales that travel in the canvas
+/// (brighter nearer, darker farther).
 ///
 /// No upright-only fade: a normal reading angle already reclines past “perfect
 /// vertical,” and fading there made parallax feel frozen. Face-up flat simply
@@ -26,8 +27,8 @@ public func tiltOffset(gravityX: Double,
     let fraction: Double
     switch intensity {
     case .off:        return .zero
-    case .subtle:     fraction = 0.06
-    case .pronounced: fraction = 0.14
+    case .subtle:     fraction = 0.18
+    case .pronounced: fraction = 0.42
     }
 
     let maxOffset = fraction * Double(min(viewSize.width, viewSize.height))
@@ -39,6 +40,30 @@ public func tiltOffset(gravityX: Double,
     // toward face-up grows −Z. Using Z alone keeps left/right on X.
     let ny = max(-1.0, min(1.0, gravityZ / reference))
     return CGSize(width: nx * maxOffset, height: ny * maxOffset)
+}
+
+/// Relative luminance in 0…1 for an sRGB (or convertible) `CGColor`.
+/// Used to scale per-stroke parallax: brighter → nearer → more travel.
+public func relativeLuminance(_ color: CGColor) -> Double {
+    guard let rgb = color.converted(to: CGColorSpaceCreateDeviceRGB(),
+                                    intent: .defaultIntent,
+                                    options: nil),
+          let c = rgb.components, c.count >= 3 else {
+        return 0.5
+    }
+    func linearize(_ u: CGFloat) -> Double {
+        let x = Double(u)
+        return x <= 0.04045 ? x / 12.92 : pow((x + 0.055) / 1.055, 2.4)
+    }
+    let r = linearize(c[0]), g = linearize(c[1]), b = linearize(c[2])
+    return min(1, max(0, 0.2126 * r + 0.7152 * g + 0.0722 * b))
+}
+
+/// Maps luminance to a parallax depth multiplier. Dark strokes sit farther
+/// back (less shift); bright strokes sit nearer (more shift).
+public func parallaxDepth(luminance: Double) -> Double {
+    let lum = min(1, max(0, luminance))
+    return 0.22 + 0.78 * lum
 }
 
 #if os(tvOS) || os(macOS)

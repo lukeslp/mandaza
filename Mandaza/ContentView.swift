@@ -59,25 +59,25 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Layer 1 — edge-to-edge canvas. Parallax is a UIKit transform so
-            // CoreMotion samples never invalidate the SwiftUI TimelineView.
-            ParallaxHost(provider: tilt) {
-                GeometryReader { geo in
-                    ZStack {
-                        Color.black
-                        MandazaCanvas(size: geo.size,
-                                      seed: UUID(uuidString: seed) ?? UUID(),
-                                      paletteId: MandazaScreenshot.palette(settings.paletteId),
-                                      config: settings.engineConfig(),
-                                      reactivity: settings.reactivity,
-                                      onIdleChange: handleIdleChange(_:),
-                                      modulationSource: reactor.source)
-                    }
-                    .onAppear { canvasSize = geo.size; tilt.viewSize = geo.size }
-                    .onChange(of: geo.size) { _, new in canvasSize = new; tilt.viewSize = new }
+            // Layer 1 — edge-to-edge canvas. Parallax is applied per-stroke
+            // inside MandazaCanvas (luminance depth) so CoreMotion never
+            // invalidates the TimelineView host.
+            GeometryReader { geo in
+                ZStack {
+                    Color.black
+                    MandazaCanvas(size: geo.size,
+                                  seed: UUID(uuidString: seed) ?? UUID(),
+                                  paletteId: MandazaScreenshot.palette(settings.paletteId),
+                                  config: settings.engineConfig(),
+                                  reactivity: settings.reactivity,
+                                  onIdleChange: handleIdleChange(_:),
+                                  modulationSource: reactor.source,
+                                  parallaxSource: tilt)
                 }
-                .ignoresSafeArea()
+                .onAppear { canvasSize = geo.size; tilt.viewSize = geo.size }
+                .onChange(of: geo.size) { _, new in canvasSize = new; tilt.viewSize = new }
             }
+            .ignoresSafeArea()
             .contentShape(Rectangle())
             .gesture(
                 LongPressGesture(minimumDuration: 0.7)
@@ -93,9 +93,9 @@ struct ContentView: View {
             .accessibilityHint(canvasA11yHint)
             .accessibilityAddTraits(canvasA11yTraits)
 
-            // Layer 2 — clock overlay (tinted by current palette's phylum accent).
+            // Layer 2 — clock overlay (mid-depth UIKit parallax).
             if settings.zenMode, settings.zenShowClock {
-                ParallaxHost(provider: tilt, multiplier: 0.5) {
+                ParallaxHost(provider: tilt, multiplier: 0.55) {
                     ZenClockOverlay(showSeconds: settings.zenShowSeconds,
                                     showDate: settings.zenShowDate,
                                     accent: BL.accent(for: settings.paletteId),
@@ -834,6 +834,23 @@ private struct SettingsSheet: View {
         )
     }
 
+    /// Master parallax switch. Turning on restores Pronounced (or keeps the
+    /// current non-off intensity); turning off writes `.off`.
+    private var tiltEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { settings.zenTiltIntensity != .off },
+            set: { on in
+                if on {
+                    if settings.zenTiltIntensity == .off {
+                        settings.zenTiltIntensity = .pronounced
+                    }
+                } else {
+                    settings.zenTiltIntensity = .off
+                }
+            }
+        )
+    }
+
     /// Turning Glow on from settings uses full-strength bloom; random New uses a softer band.
     /// Tracks explicit user intent so randomizePatternLook never re-enables glow against their preference.
     private var glowToggleBinding: Binding<Bool> {
@@ -865,6 +882,59 @@ private struct SettingsSheet: View {
                     }
                 }
                 .listRowBackground(BL.deep)
+
+                #if !os(tvOS)
+                Section {
+                    Toggle("Music responsivity", isOn: $settings.musicResponsivity)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+                        .onChange(of: settings.musicResponsivity) { _, _ in toggleReactor() }
+                    if settings.musicResponsivity {
+                        LabeledSlider(title: "Reactivity",
+                                      value: $settings.reactivity,
+                                      range: 0.0 ... 1.0,
+                                      accent: accent,
+                                      format: { reactivityLabel(for: $0) })
+                    }
+                    if reactor.state == .denied {
+                        Button("Open Settings to Allow Microphone") {
+                            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                            UIApplication.shared.open(url)
+                        }
+                        .font(.bl(15))
+                        .foregroundStyle(accent)
+                    }
+                } header: {
+                    blHeader("Music", accent: accent)
+                } footer: {
+                    Text("In Zen Mode, Mandaza listens through the microphone so the mandala moves with nearby music — audio is never recorded or stored.")
+                        .font(.bl(12))
+                        .foregroundStyle(BL.muted)
+                }
+                .listRowBackground(BL.deep)
+
+                Section {
+                    Toggle("Tilt parallax", isOn: tiltEnabledBinding)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+                    if settings.zenTiltIntensity != .off {
+                        Picker("Intensity", selection: tiltIntensityBinding) {
+                            Text("Subtle").tag(ZenTiltIntensity.subtle)
+                            Text("Pronounced").tag(ZenTiltIntensity.pronounced)
+                        }
+                        .pickerStyle(.menu)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+                    }
+                } header: {
+                    blHeader("Parallax", accent: accent)
+                } footer: {
+                    Text("Tilt the device for layered depth — brighter strokes move more (nearer), darker strokes less (farther).")
+                        .font(.bl(12))
+                        .foregroundStyle(BL.muted)
+                }
+                .listRowBackground(BL.deep)
+                #endif
 
                 if settings.zenMode {
                     Section {
@@ -937,17 +1007,6 @@ private struct SettingsSheet: View {
                                       range: 0.5 ... 1.8,
                                       accent: accent,
                                       format: { "\(Int($0 * 100))%" })
-
-                        #if !os(tvOS)
-                        Picker("Tilt Parallax", selection: tiltIntensityBinding) {
-                            Text("Off").tag(ZenTiltIntensity.off)
-                            Text("Subtle").tag(ZenTiltIntensity.subtle)
-                            Text("Pronounced").tag(ZenTiltIntensity.pronounced)
-                        }
-                        .pickerStyle(.menu)
-                        .font(.bl(15))
-                        .foregroundStyle(BL.paper)
-                        #endif
 
                         Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
                             .font(.bl(15))
@@ -1028,36 +1087,6 @@ private struct SettingsSheet: View {
                                   format: { speedLabel(for: $0) })
                 } header: { blHeader("Motion", accent: accent) }
                 .listRowBackground(BL.deep)
-
-                #if !os(tvOS)
-                Section {
-                    Toggle("Music responsivity", isOn: $settings.musicResponsivity)
-                        .font(.bl(15))
-                        .foregroundStyle(BL.paper)
-                        .onChange(of: settings.musicResponsivity) { _, _ in toggleReactor() }
-                    LabeledSlider(title: "Reactivity",
-                                  value: $settings.reactivity,
-                                  range: 0.0 ... 1.0,
-                                  accent: accent,
-                                  format: { reactivityLabel(for: $0) })
-                        .disabled(!settings.musicResponsivity)
-                    if reactor.state == .denied {
-                        Button("Open Settings to Allow Microphone") {
-                            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                            UIApplication.shared.open(url)
-                        }
-                        .font(.bl(15))
-                        .foregroundStyle(accent)
-                    }
-                } header: {
-                    blHeader("Music responsivity", accent: accent)
-                } footer: {
-                    Text("In Zen Mode, Mandaza listens through the microphone so the mandala moves with nearby music — audio is never recorded or stored. Reactivity sets how strongly it responds.")
-                        .font(.bl(12))
-                        .foregroundStyle(BL.muted)
-                }
-                .listRowBackground(BL.deep)
-                #endif
 
                 Section {
                     NavigationLink {

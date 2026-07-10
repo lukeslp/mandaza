@@ -27,7 +27,7 @@ final class TiltTests: XCTestCase {
     func testFlatFaceUpClampsStably() {
         // Face-up on a table: gravity ≈ (0, 0, −1). Offset parks at the Y clamp
         // (no thrash — gravity is steady when flat).
-        let maxFrac = 0.14 * Double(min(size.width, size.height))
+        let maxFrac = 0.42 * Double(min(size.width, size.height))
         let flat = tiltOffset(gravityX: 0, gravityY: 0, gravityZ: -1,
                               intensity: .pronounced, viewSize: size)
         XCTAssertEqual(flat.width, 0, accuracy: 1e-9)
@@ -47,7 +47,7 @@ final class TiltTests: XCTestCase {
     }
 
     func testPronouncedClampsToMaxFractionWhenUpright() {
-        let maxFrac = 0.14 * Double(min(size.width, size.height))
+        let maxFrac = 0.42 * Double(min(size.width, size.height))
         let o = tiltOffset(gravityX: 1, gravityY: uprightY, gravityZ: 1,
                            intensity: .pronounced, viewSize: size)
         XCTAssertEqual(abs(o.width), maxFrac, accuracy: 1e-9)
@@ -60,7 +60,7 @@ final class TiltTests: XCTestCase {
         let p = tiltOffset(gravityX: 1, gravityY: uprightY, gravityZ: 1,
                            intensity: .pronounced, viewSize: size)
         XCTAssertLessThan(abs(s.width), abs(p.width))
-        XCTAssertEqual(abs(s.width), 0.06 * Double(min(size.width, size.height)), accuracy: 1e-9)
+        XCTAssertEqual(abs(s.width), 0.18 * Double(min(size.width, size.height)), accuracy: 1e-9)
     }
 
     func testOffsetFollowsLateralTilt() {
@@ -89,10 +89,16 @@ final class TiltTests: XCTestCase {
 
     func testClampScalesWithShorterEdge() {
         let wide = CGSize(width: 1000, height: 200)
-        let maxFrac = 0.14 * 200.0
+        let maxFrac = 0.42 * 200.0
         let o = tiltOffset(gravityX: 1, gravityY: uprightY, gravityZ: 1,
                            intensity: .pronounced, viewSize: wide)
         XCTAssertEqual(abs(o.width), maxFrac, accuracy: 1e-9)
+    }
+
+    func testParallaxDepthScalesWithLuminance() {
+        XCTAssertLessThan(parallaxDepth(luminance: 0.1), parallaxDepth(luminance: 0.9))
+        XCTAssertEqual(parallaxDepth(luminance: 0), 0.22, accuracy: 1e-9)
+        XCTAssertEqual(parallaxDepth(luminance: 1), 1.0, accuracy: 1e-9)
     }
 
     @MainActor
