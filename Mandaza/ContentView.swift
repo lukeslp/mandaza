@@ -86,7 +86,9 @@ struct ContentView: View {
                                 containerOpacity: settings.zenClockContainerOpacity,
                                 fontStyle: settings.zenClockFontStyle,
                                 fontWeight: settings.zenClockFontWeight,
-                                position: settings.zenClockPosition)
+                                position: settings.zenClockPosition,
+                                form: settings.zenClockForm,
+                                sizeScale: settings.zenClockSizeScale)
                     .allowsHitTesting(false)
                     .transition(.opacity)
             }
@@ -837,10 +839,21 @@ private struct SettingsSheet: View {
                                       accent: accent,
                                       format: { ZenClockTypography.weightLabel(for: $0) })
 
+                        Picker("Form", selection: $settings.zenClockFormRaw) {
+                            Text("Digital").tag(ZenClockForm.digital.rawValue)
+                            Text("Stacked").tag(ZenClockForm.stacked.rawValue)
+                            Text("Editorial").tag(ZenClockForm.editorial.rawValue)
+                        }
+                        .pickerStyle(.menu)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+
                         Picker("Font", selection: $settings.zenClockFontStyleRaw) {
                             Text("System").tag(ZenClockFontStyle.system.rawValue)
                             Text("Rounded").tag(ZenClockFontStyle.rounded.rawValue)
                             Text("Monospaced").tag(ZenClockFontStyle.monospaced.rawValue)
+                            Text("Serif").tag(ZenClockFontStyle.serif.rawValue)
+                            Text("Condensed").tag(ZenClockFontStyle.condensed.rawValue)
                         }
                         .pickerStyle(.menu)
                         .font(.bl(15))
@@ -850,10 +863,21 @@ private struct SettingsSheet: View {
                             Text("Top").tag(ZenClockPosition.top.rawValue)
                             Text("Upper Third").tag(ZenClockPosition.upperThird.rawValue)
                             Text("Center").tag(ZenClockPosition.center.rawValue)
+                            Text("Lower Third").tag(ZenClockPosition.lowerThird.rawValue)
+                            Text("Top Left").tag(ZenClockPosition.topLeading.rawValue)
+                            Text("Top Right").tag(ZenClockPosition.topTrailing.rawValue)
+                            Text("Bottom Left").tag(ZenClockPosition.bottomLeading.rawValue)
+                            Text("Bottom Right").tag(ZenClockPosition.bottomTrailing.rawValue)
                         }
                         .pickerStyle(.menu)
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
+
+                        LabeledSlider(title: "Size",
+                                      value: $settings.zenClockSizeScale,
+                                      range: 0.5 ... 1.8,
+                                      accent: accent,
+                                      format: { "\(Int($0 * 100))%" })
 
                         Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
                             .font(.bl(15))
@@ -1264,43 +1288,34 @@ private struct ZenClockOverlay: View {
     let fontStyle: ZenClockFontStyle
     let fontWeight: Double
     let position: ZenClockPosition
+    let form: ZenClockForm
+    let sizeScale: Double
+
+    /// Clamp the size slider so an extreme value can never push the clock off
+    /// screen or shrink it into illegibility.
+    private var scale: CGFloat { CGFloat(min(max(sizeScale, 0.5), 1.8)) }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: showSeconds ? 1 : 30)) { ctx in
             let now = ctx.date
             GeometryReader { geo in
-                VStack(spacing: 12) {
-                    Text(timeString(now))
-                        .font(clockFont())
-                        .tracking(-2)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.4)
-                        .foregroundStyle(BL.highlight)
-                        // Two-layer shadow: dark drop for legibility over the
-                        // Mandaza, plus a subtle phylum bloom.
-                        .shadow(color: .black.opacity(0.7), radius: 16)
-                        .shadow(color: accent.opacity(0.3), radius: 28)
-                    if showDate {
-                        Text(now, format: .dateTime.weekday(.wide).month(.wide).day())
-                            .font(dateFont())
-                            .tracking(1.2)
-                            .textCase(.uppercase)
-                            .foregroundStyle(BL.paper.opacity(0.7))
-                            .shadow(color: .black.opacity(0.7), radius: 6)
+                clockContent(now)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 12)
+                    .background {
+                        // Legibility scrim over the mandala, honoring the
+                        // persisted container-opacity setting.
+                        if containerOpacity > 0.001 {
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .fill(Color.black.opacity(min(max(containerOpacity, 0), 0.85)))
+                        }
                     }
-                }
-                .padding(.horizontal, 28)
-                .padding(.vertical, 12)
-                .background {
-                    if containerOpacity > 0.001 {
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .fill(Color.black.opacity(min(max(containerOpacity, 0), 0.85)))
-                    }
-                }
-                .opacity(min(max(clockOpacity, 0.2), 1.0))
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignmentForPosition())
-                .padding(.top, topPadding(height: geo.size.height))
+                    .opacity(min(max(clockOpacity, 0.2), 1.0))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity,
+                           alignment: ZenClockTypography.alignment(for: position))
+                    .padding(.top, topInset(height: geo.size.height))
+                    .padding(.bottom, bottomInset(height: geo.size.height))
+                    .padding(.horizontal, 20)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -1308,59 +1323,151 @@ private struct ZenClockOverlay: View {
         .accessibilityLabel("Clock")
     }
 
-    private func timeString(_ date: Date) -> String {
+    // MARK: Forms
+
+    @ViewBuilder
+    private func clockContent(_ now: Date) -> some View {
+        switch form {
+        case .digital:   digitalClock(now)
+        case .stacked:   stackedClock(now)
+        case .editorial: editorialClock(now)
+        }
+    }
+
+    /// Existing inline treatment: HH:MM (with AM/PM per locale) on one line.
+    @ViewBuilder
+    private func digitalClock(_ now: Date) -> some View {
+        VStack(spacing: 12) {
+            Text(inlineTimeString(now))
+                .font(clockFont(96))
+                .tracking(-2)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.4)
+                .foregroundStyle(BL.highlight)
+                .modifier(ClockShadow(accent: accent))
+            dateLine(now)
+        }
+    }
+
+    /// Hours over minutes, tall and centered — a poster-style block.
+    @ViewBuilder
+    private func stackedClock(_ now: Date) -> some View {
+        VStack(spacing: -12 * scale) {
+            Text(hourString(now))
+                .font(clockFont(112))
+            Text(minuteString(now))
+                .font(clockFont(112))
+        }
+        .tracking(-3)
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.4)
+        .foregroundStyle(BL.highlight)
+        .modifier(ClockShadow(accent: accent))
+        .overlay(alignment: .bottom) {
+            if showDate {
+                dateLine(now).offset(y: 34 * scale)
+            }
+        }
+    }
+
+    /// Oversized hour with a small stacked minute (and optional date) riding
+    /// the baseline — an editorial masthead look.
+    @ViewBuilder
+    private func editorialClock(_ now: Date) -> some View {
+        HStack(alignment: .lastTextBaseline, spacing: 10 * scale) {
+            Text(hourString(now))
+                .font(clockFont(140))
+                .tracking(-4)
+                .foregroundStyle(BL.highlight)
+                .modifier(ClockShadow(accent: accent))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(minuteString(now))
+                    .font(clockFont(46))
+                    .foregroundStyle(BL.highlight.opacity(0.92))
+                    .modifier(ClockShadow(accent: accent))
+                if showDate {
+                    Text(now, format: .dateTime.weekday(.abbreviated).month(.abbreviated).day())
+                        .font(minorFont(15))
+                        .tracking(1.0)
+                        .textCase(.uppercase)
+                        .foregroundStyle(BL.paper.opacity(0.7))
+                        .shadow(color: .black.opacity(0.6), radius: 6)
+                }
+            }
+        }
+        .monospacedDigit()
+        .lineLimit(1)
+        .minimumScaleFactor(0.4)
+    }
+
+    @ViewBuilder
+    private func dateLine(_ now: Date) -> some View {
+        if showDate {
+            Text(now, format: .dateTime.weekday(.wide).month(.wide).day())
+                .font(minorFont(14))
+                .tracking(1.2)
+                .textCase(.uppercase)
+                .foregroundStyle(BL.paper.opacity(0.7))
+                .shadow(color: .black.opacity(0.7), radius: 6)
+        }
+    }
+
+    // MARK: Time strings
+
+    private func inlineTimeString(_ date: Date) -> String {
         let style: Date.FormatStyle = showSeconds
             ? .dateTime.hour().minute().second()
             : .dateTime.hour().minute()
         return date.formatted(style)
     }
 
-    private func alignmentForPosition() -> Alignment {
+    private func hourString(_ date: Date) -> String {
+        date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)))
+    }
+
+    private func minuteString(_ date: Date) -> String {
+        if showSeconds {
+            return date.formatted(.dateTime.minute(.twoDigits).second(.twoDigits))
+        }
+        return date.formatted(.dateTime.minute(.twoDigits))
+    }
+
+    // MARK: Fonts & insets
+
+    private func clockFont(_ base: CGFloat) -> Font {
+        ZenClockTypography.clockFont(size: base * scale, style: fontStyle, weight: fontWeight)
+    }
+
+    private func minorFont(_ base: CGFloat) -> Font {
+        ZenClockTypography.clockFont(size: base * scale, style: fontStyle, weight: 0.28)
+    }
+
+    private func topInset(height: CGFloat) -> CGFloat {
         switch position {
-        case .top, .upperThird:
-            return .top
-        case .center:
-            return .center
-        case .lowerThird:
-            return .bottom
-        case .topLeading:
-            return .topLeading
-        case .topTrailing:
-            return .topTrailing
-        case .bottomLeading:
-            return .bottomLeading
-        case .bottomTrailing:
-            return .bottomTrailing
+        case .top, .topLeading, .topTrailing: return 44
+        case .upperThird:                      return max(44, height * 0.18)
+        case .center, .lowerThird, .bottomLeading, .bottomTrailing: return 0
         }
     }
 
-    private func topPadding(height: CGFloat) -> CGFloat {
+    private func bottomInset(height: CGFloat) -> CGFloat {
         switch position {
-        case .top, .topLeading, .topTrailing:
-            return 44
-        case .upperThird:
-            return max(44, height * 0.18)
-        case .center, .lowerThird, .bottomLeading, .bottomTrailing:
-            return 0
+        case .lowerThird, .bottomLeading, .bottomTrailing: return 44
+        case .top, .upperThird, .center, .topLeading, .topTrailing: return 0
         }
     }
+}
 
-    private func clockFont() -> Font {
-        .system(size: 96, weight: ZenClockTypography.fontWeight(for: fontWeight), design: mappedDesign(fontStyle))
-    }
-
-    private func dateFont() -> Font {
-        .system(size: 14, weight: .light, design: mappedDesign(fontStyle))
-    }
-
-    private func mappedDesign(_ style: ZenClockFontStyle) -> Font.Design {
-        switch style {
-        case .system: return .default
-        case .rounded: return .rounded
-        case .monospaced: return .monospaced
-        case .serif: return .serif
-        case .condensed: return .default
-        }
+/// Always-on two-layer shadow: a dark drop for legibility over the mandala,
+/// plus a subtle phylum-accent bloom.
+private struct ClockShadow: ViewModifier {
+    let accent: Color
+    func body(content: Content) -> some View {
+        content
+            .shadow(color: .black.opacity(0.7), radius: 16)
+            .shadow(color: accent.opacity(0.3), radius: 28)
     }
 }
 

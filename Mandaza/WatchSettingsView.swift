@@ -19,6 +19,7 @@ struct WatchSettingsView: View {
         return Form {
             statusSection(accent: accent)
             controlsSection(accent: accent)
+            clockSection(accent: accent)
         }
         .scrollContentBackground(.hidden)
         .background(BL.void.ignoresSafeArea())
@@ -118,6 +119,31 @@ struct WatchSettingsView: View {
         .listRowBackground(BL.deep)
         .disabled(!isAvailable)
         .opacity(isAvailable ? 1 : 0.45)
+    }
+
+    /// Compact clock controls: the two highest-impact choices (form + size)
+    /// backed by the shared settings store.
+    @ViewBuilder
+    private func clockSection(accent: Color) -> some View {
+        Section {
+            Picker("Form", selection: $settings.zenClockFormRaw) {
+                Text("Digital").tag(ZenClockForm.digital.rawValue)
+                Text("Stacked").tag(ZenClockForm.stacked.rawValue)
+                Text("Editorial").tag(ZenClockForm.editorial.rawValue)
+            }
+            .pickerStyle(.menu)
+            .font(.bl(15))
+            .foregroundStyle(BL.paper)
+
+            Slider(value: $settings.zenClockSizeScale, in: 0.5 ... 1.8) {
+                Text("Size")
+            }
+            .accessibilityLabel("Clock size")
+            .accessibilityValue("\(Int(settings.zenClockSizeScale * 100)) percent")
+        } header: {
+            blHeader("Clock", accent: accent)
+        }
+        .listRowBackground(BL.deep)
     }
 
     // MARK: - Rows

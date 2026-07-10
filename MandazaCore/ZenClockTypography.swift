@@ -38,4 +38,52 @@ public enum ZenClockTypography {
         default: return "Bold"
         }
     }
+
+    // MARK: - Layout & style maps
+    //
+    // Pure maps so iOS, tvOS, watchOS, and tests all resolve position and
+    // font style identically. The overlay pairs `alignment(for:)` with a
+    // safe-area-aware padding, so these only decide the anchor corner/edge.
+
+    /// Where the clock block anchors inside the full-screen overlay frame.
+    public static func alignment(for position: ZenClockPosition) -> Alignment {
+        switch position {
+        case .top, .upperThird: return .top
+        case .center:           return .center
+        case .lowerThird:       return .bottom
+        case .topLeading:       return .topLeading
+        case .topTrailing:      return .topTrailing
+        case .bottomLeading:    return .bottomLeading
+        case .bottomTrailing:   return .bottomTrailing
+        }
+    }
+
+    /// Font design for a style. `condensed` is not a design — it returns `nil`
+    /// and is expressed through `fontWidth(for:)` instead.
+    public static func fontDesign(for style: ZenClockFontStyle) -> Font.Design? {
+        switch style {
+        case .system:     return .default
+        case .rounded:    return .rounded
+        case .monospaced: return .monospaced
+        case .serif:      return .serif
+        case .condensed:  return nil
+        }
+    }
+
+    /// Font width for a style. Only `condensed` narrows the glyphs; everything
+    /// else keeps the standard width.
+    public static func fontWidth(for style: ZenClockFontStyle) -> Font.Width {
+        style == .condensed ? .condensed : .standard
+    }
+
+    /// A resolved `Font` for a clock at `size`, honoring style (design + width)
+    /// and the persisted weight slider.
+    public static func clockFont(size: CGFloat,
+                                 style: ZenClockFontStyle,
+                                 weight: Double) -> Font {
+        let base = Font.system(size: size,
+                               weight: fontWeight(for: weight),
+                               design: fontDesign(for: style) ?? .default)
+        return base.width(fontWidth(for: style))
+    }
 }
