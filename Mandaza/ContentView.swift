@@ -1,3 +1,11 @@
+// File Purpose: Hosts Mandaza's primary iOS experience, including the live canvas,
+// Zen controls, settings, export flow, recents, favorites, and watch handoff.
+// Primary Components: ContentView, SettingsSheet, FavoritesGrid, ZenClockOverlay,
+// Toast, and small reusable control views.
+// I/O: Reads and writes MandazaSettings, user gestures, scene phase, motion/audio
+// sources, and export requests; outputs SwiftUI UI, saved images, widget reloads,
+// toasts, accessibility announcements, and watch sync messages.
+
 import SwiftUI
 import UIKit
 #if canImport(WidgetKit)
@@ -67,7 +75,7 @@ struct ContentView: View {
                 .onChange(of: geo.size) { _, new in canvasSize = new; tilt.viewSize = new }
             }
             .ignoresSafeArea()
-            .offset(tilt.offset)
+            .parallaxOffset(from: tilt)
             .contentShape(Rectangle())
             .gesture(
                 LongPressGesture(minimumDuration: 0.7)
@@ -77,6 +85,7 @@ struct ContentView: View {
                 TapGesture()
                     .onEnded { canvasTapped() }
             )
+            .allowsHitTesting(!showSettings && !exportInProgress)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Mandaza canvas")
             .accessibilityHint(canvasA11yHint)
@@ -94,8 +103,7 @@ struct ContentView: View {
                                 position: MandazaScreenshot.clockPosition(settings.zenClockPosition),
                                 form: MandazaScreenshot.clockForm(settings.zenClockForm),
                                 sizeScale: settings.zenClockSizeScale)
-                    .offset(CGSize(width: tilt.offset.width * 0.5,
-                                   height: tilt.offset.height * 0.5))
+                    .parallaxOffset(from: tilt, multiplier: 0.5)
                     .allowsHitTesting(false)
                     .transition(.opacity)
             }
@@ -513,6 +521,7 @@ struct ContentView: View {
     /// Once the shelf has faded, the transparent tap catcher above handles
     /// the first tap so the artwork is not accidentally replaced.
     private func canvasTapped() {
+        guard !showSettings, !exportInProgress else { return }
         guard !controlsFaded else {
             restoreControls()
             return
@@ -526,6 +535,7 @@ struct ContentView: View {
     /// disabled when VoiceOver or Switch Control is active so AT users get
     /// only the explicit Regenerate button.
     private func canvasLongPressed() {
+        guard !showSettings, !exportInProgress else { return }
         guard longPressEnabled else { return }
         noteInteraction()
         regenerate()
@@ -793,6 +803,34 @@ private struct SettingsSheet: View {
     let toggleReactor: () -> Void
     @Environment(\.dismiss) private var dismiss
 
+    private var clockFormBinding: Binding<ZenClockForm> {
+        Binding(
+            get: { settings.zenClockForm },
+            set: { settings.zenClockForm = $0 }
+        )
+    }
+
+    private var clockFontStyleBinding: Binding<ZenClockFontStyle> {
+        Binding(
+            get: { settings.zenClockFontStyle },
+            set: { settings.zenClockFontStyle = $0 }
+        )
+    }
+
+    private var clockPositionBinding: Binding<ZenClockPosition> {
+        Binding(
+            get: { settings.zenClockPosition },
+            set: { settings.zenClockPosition = $0 }
+        )
+    }
+
+    private var tiltIntensityBinding: Binding<ZenTiltIntensity> {
+        Binding(
+            get: { settings.zenTiltIntensity },
+            set: { settings.zenTiltIntensity = $0 }
+        )
+    }
+
     /// Turning Glow on from settings uses full-strength bloom; random New uses a softer band.
     /// Tracks explicit user intent so randomizePatternLook never re-enables glow against their preference.
     private var glowToggleBinding: Binding<Bool> {
@@ -857,35 +895,35 @@ private struct SettingsSheet: View {
                                       accent: accent,
                                       format: { ZenClockTypography.weightLabel(for: $0) })
 
-                        Picker("Form", selection: $settings.zenClockFormRaw) {
-                            Text("Digital").tag(ZenClockForm.digital.rawValue)
-                            Text("Stacked").tag(ZenClockForm.stacked.rawValue)
-                            Text("Editorial").tag(ZenClockForm.editorial.rawValue)
+                        Picker("Form", selection: clockFormBinding) {
+                            Text("Digital").tag(ZenClockForm.digital)
+                            Text("Stacked").tag(ZenClockForm.stacked)
+                            Text("Editorial").tag(ZenClockForm.editorial)
                         }
                         .pickerStyle(.menu)
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
 
-                        Picker("Font", selection: $settings.zenClockFontStyleRaw) {
-                            Text("System").tag(ZenClockFontStyle.system.rawValue)
-                            Text("Rounded").tag(ZenClockFontStyle.rounded.rawValue)
-                            Text("Monospaced").tag(ZenClockFontStyle.monospaced.rawValue)
-                            Text("Serif").tag(ZenClockFontStyle.serif.rawValue)
-                            Text("Condensed").tag(ZenClockFontStyle.condensed.rawValue)
+                        Picker("Font", selection: clockFontStyleBinding) {
+                            Text("System").tag(ZenClockFontStyle.system)
+                            Text("Rounded").tag(ZenClockFontStyle.rounded)
+                            Text("Monospaced").tag(ZenClockFontStyle.monospaced)
+                            Text("Serif").tag(ZenClockFontStyle.serif)
+                            Text("Condensed").tag(ZenClockFontStyle.condensed)
                         }
                         .pickerStyle(.menu)
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
 
-                        Picker("Position", selection: $settings.zenClockPositionRaw) {
-                            Text("Top").tag(ZenClockPosition.top.rawValue)
-                            Text("Upper Third").tag(ZenClockPosition.upperThird.rawValue)
-                            Text("Center").tag(ZenClockPosition.center.rawValue)
-                            Text("Lower Third").tag(ZenClockPosition.lowerThird.rawValue)
-                            Text("Top Left").tag(ZenClockPosition.topLeading.rawValue)
-                            Text("Top Right").tag(ZenClockPosition.topTrailing.rawValue)
-                            Text("Bottom Left").tag(ZenClockPosition.bottomLeading.rawValue)
-                            Text("Bottom Right").tag(ZenClockPosition.bottomTrailing.rawValue)
+                        Picker("Position", selection: clockPositionBinding) {
+                            Text("Top").tag(ZenClockPosition.top)
+                            Text("Upper Third").tag(ZenClockPosition.upperThird)
+                            Text("Center").tag(ZenClockPosition.center)
+                            Text("Lower Third").tag(ZenClockPosition.lowerThird)
+                            Text("Top Left").tag(ZenClockPosition.topLeading)
+                            Text("Top Right").tag(ZenClockPosition.topTrailing)
+                            Text("Bottom Left").tag(ZenClockPosition.bottomLeading)
+                            Text("Bottom Right").tag(ZenClockPosition.bottomTrailing)
                         }
                         .pickerStyle(.menu)
                         .font(.bl(15))
@@ -898,10 +936,10 @@ private struct SettingsSheet: View {
                                       format: { "\(Int($0 * 100))%" })
 
                         #if !os(tvOS)
-                        Picker("Tilt Parallax", selection: $settings.zenTiltIntensityRaw) {
-                            Text("Off").tag(ZenTiltIntensity.off.rawValue)
-                            Text("Subtle").tag(ZenTiltIntensity.subtle.rawValue)
-                            Text("Pronounced").tag(ZenTiltIntensity.pronounced.rawValue)
+                        Picker("Tilt Parallax", selection: tiltIntensityBinding) {
+                            Text("Off").tag(ZenTiltIntensity.off)
+                            Text("Subtle").tag(ZenTiltIntensity.subtle)
+                            Text("Pronounced").tag(ZenTiltIntensity.pronounced)
                         }
                         .pickerStyle(.menu)
                         .font(.bl(15))
@@ -1526,6 +1564,13 @@ private struct Toast: View {
 }
 
 private extension View {
+    /// Keeps high-frequency CoreMotion observation out of `ContentView` itself.
+    /// Parallax movement should be a presentation transform only; it must not
+    /// restart the mandala drawing timeline or inherit unrelated animations.
+    func parallaxOffset(from tilt: TiltProvider, multiplier: CGFloat = 1) -> some View {
+        modifier(ParallaxOffsetModifier(tilt: tilt, multiplier: multiplier))
+    }
+
     @ViewBuilder
     func mandazaScrollContentBackgroundHidden() -> some View {
         #if os(tvOS)
@@ -1542,6 +1587,21 @@ private extension View {
         #else
         self.navigationBarTitleDisplayMode(.inline)
         #endif
+    }
+}
+
+private struct ParallaxOffsetModifier: ViewModifier {
+    let tilt: TiltProvider
+    let multiplier: CGFloat
+
+    func body(content: Content) -> some View {
+        let offset = tilt.offset
+        content
+            .offset(x: offset.width * multiplier,
+                    y: offset.height * multiplier)
+            .transaction { transaction in
+                transaction.animation = nil
+            }
     }
 }
 
