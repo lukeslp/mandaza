@@ -38,8 +38,11 @@ targets:
         excludes:
           - Package.swift
           - ".swiftpm"
+          - ".swiftpm/**"
           - ".build"
+          - ".build/**"
           - Tests
+          - "Tests/**"
     info:
       path: Mandaza/Info.plist
       properties:
@@ -99,8 +102,11 @@ targets:
         excludes:
           - Package.swift
           - ".swiftpm"
+          - ".swiftpm/**"
           - ".build"
+          - ".build/**"
           - Tests
+          - "Tests/**"
     info:
       path: MandazaTV/Info.plist
       properties:
@@ -132,8 +138,11 @@ targets:
         excludes:
           - Package.swift
           - ".swiftpm"
+          - ".swiftpm/**"
           - ".build"
+          - ".build/**"
           - Tests
+          - "Tests/**"
     info:
       path: MandazaWidgets/Info.plist
       properties:
@@ -161,8 +170,11 @@ targets:
         excludes:
           - Package.swift
           - ".swiftpm"
+          - ".swiftpm/**"
           - ".build"
+          - ".build/**"
           - Tests
+          - "Tests/**"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.tests
@@ -184,8 +196,11 @@ targets:
         excludes:
           - Package.swift
           - ".swiftpm"
+          - ".swiftpm/**"
           - ".build"
+          - ".build/**"
           - Tests
+          - "Tests/**"
     info:
       path: MandazaWatch/Info.plist
       properties:
