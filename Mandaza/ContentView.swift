@@ -72,7 +72,8 @@ struct ContentView: View {
                                   reactivity: settings.reactivity,
                                   onIdleChange: handleIdleChange(_:),
                                   modulationSource: reactor.source,
-                                  parallaxSource: tilt,
+                                  parallaxSource: (settings.zenTiltEnabled && !reduceMotion)
+                                      ? tilt : nil,
                                   parallaxDepthContrast: settings.zenTiltDepth,
                                   parallaxInvertDepth: settings.zenTiltInvertDepth,
                                   theme: settings.canvasTheme)
@@ -193,6 +194,7 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
         .onChange(of: settings.zenMode) { _, on in
+            applyTilt()
             if !on || !settings.zenAutoRegen {
                 autoRegenTask?.cancel()
             } else if lastIdle {
@@ -492,12 +494,15 @@ struct ContentView: View {
 
     /// Reconciles the tilt provider with current parallax settings. Parallax
     /// runs whenever enabled — in Zen or on the normal canvas. Respects
-    /// Reduce Motion by stopping sampling.
+    /// Reduce Motion by stopping sampling. In Zen, a faint ambient sway keeps
+    /// depth layers drifting while the device is still.
     private func applyTilt() {
         if settings.zenTiltEnabled, !reduceMotion {
             tilt.viewSize = canvasSize
+            tilt.ambientSway = settings.zenMode
             tilt.start(amount: settings.zenTiltAmount, axes: settings.zenTiltAxes)
         } else {
+            tilt.ambientSway = false
             tilt.stop()
         }
     }
@@ -940,8 +945,8 @@ private struct SettingsSheet: View {
                     blHeader("Parallax", accent: accent)
                 } footer: {
                     Text(settings.zenTiltInvertDepth
-                         ? "Tilt for layered depth — darker strokes move more (nearer), brighter less (farther)."
-                         : "Tilt for layered depth — brighter strokes move more (nearer), darker less (farther). Depth layers controls how separated those planes feel.")
+                         ? "Tilt for layered depth — darker strokes move more (nearer), brighter less (farther). In Zen, a faint ambient sway keeps the layers drifting at rest."
+                         : "Tilt for layered depth — brighter strokes move more (nearer), darker less (farther). In Zen, a faint ambient sway keeps the layers drifting at rest.")
                         .font(.bl(12))
                         .foregroundStyle(BL.muted)
                 }

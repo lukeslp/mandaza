@@ -70,6 +70,7 @@ public struct MandazaCanvas: View {
     /// Optional tilt-parallax source. Read inside the Canvas draw path (not
     /// via Observation) so motion samples never invalidate this TimelineView.
     /// Per-stroke luminance scales the offset for layered depth.
+    /// Pass `nil` when parallax is off so at-rest framing matches exactly.
     let parallaxSource: TiltProvider?
     /// How strongly luminance separates near/far layers (0…1).
     let parallaxDepthContrast: Double

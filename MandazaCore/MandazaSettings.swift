@@ -113,7 +113,7 @@ public final class MandazaSettings {
 
     /// Master parallax switch. When false, motion sampling stops.
     public var zenTiltEnabled: Bool { didSet { write(zenTiltEnabled, .zenTiltEnabled) } }
-    /// 0…1 travel strength. 1.0 ≈ 48% of the shorter edge; legacy Subtle ≈ 0.375.
+    /// 0…1 travel strength. 1.0 ≈ 12% of the shorter edge; Subtle ≈ 0.5.
     public var zenTiltAmount: Double { didSet { write(zenTiltAmount, .zenTiltAmount) } }
     /// 0…1 how strongly luminance separates near/far layers. 0 = flat shift.
     public var zenTiltDepth: Double { didSet { write(zenTiltDepth, .zenTiltDepth) } }

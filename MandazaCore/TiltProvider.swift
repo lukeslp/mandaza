@@ -2,7 +2,8 @@ import Foundation
 import CoreGraphics
 
 /// Maximum travel as a fraction of the shorter view edge when amount is 1.0.
-public let tiltMaxTravelFraction: Double = 0.48
+/// Kept modest so everyday tilts read as depth without cropping the OFF frame.
+public let tiltMaxTravelFraction: Double = 0.12
 
 /// Pure mapping from device gravity to a layered-parallax offset.
 ///
@@ -31,13 +32,16 @@ public func tiltOffset(gravityX: Double,
     guard a > 0.001 else { return .zero }
 
     let maxOffset = a * tiltMaxTravelFraction * Double(min(viewSize.width, viewSize.height))
-    // Fraction of g at which the parallax reaches its clamp (~16°). Lower than
-    // a strict upright reference so everyday tilts use more of the travel.
-    let reference = 0.28
-    var nx = max(-1.0, min(1.0, gravityX / reference))
+    // Fraction of g at which each axis reaches its clamp. Horizontal (roll)
+    // swings gravityX far for a small wrist twist, so it needs a *larger*
+    // reference than the longitudinal axis or it reads disproportionately
+    // strong. These pull the two axes into visual balance.
+    let referenceX = 0.46
+    let referenceZ = 0.26
+    var nx = max(-1.0, min(1.0, gravityX / referenceX))
     // Longitudinal: deviation from upright. Upright ≈ (0, −1, 0); reclining
     // toward face-up grows −Z. Using Z alone keeps left/right on X.
-    var ny = max(-1.0, min(1.0, gravityZ / reference))
+    var ny = max(-1.0, min(1.0, gravityZ / referenceZ))
     switch axes {
     case .both: break
     case .horizontal: ny = 0
@@ -46,13 +50,36 @@ public func tiltOffset(gravityX: Double,
     return CGSize(width: nx * maxOffset, height: ny * maxOffset)
 }
 
-/// Legacy intensity → continuous amount. Kept so older call sites and tests
-/// keep their exact travel fractions (subtle 18%, pronounced 42%).
+/// Faint Zen-mode ambient sway. Dual incommensurate sines per axis so the
+/// loop is long enough to read as endless drift rather than a short cycle.
+/// `amount` is the same 0…1 travel strength as tilt; sway peaks at ~30% of
+/// that max travel so it shows depth layers without competing with real tilts.
+public func ambientParallaxOffset(time: TimeInterval,
+                                  amount: Double,
+                                  axes: ZenTiltAxes = .both,
+                                  viewSize: CGSize) -> CGSize {
+    let a = min(1, max(0, amount))
+    guard a > 0.001 else { return .zero }
+    let maxTravel = a * tiltMaxTravelFraction * 0.30
+        * Double(min(viewSize.width, viewSize.height))
+    let twoPi = Double.pi * 2
+    // Coprime-ish periods (seconds): 13×17×19×23 ≈ 97k s before near-repeat.
+    var x = sin(time * twoPi / 13.0) * 0.62 + sin(time * twoPi / 23.0 + 0.9) * 0.38
+    var y = sin(time * twoPi / 17.0 + 1.2) * 0.58 + sin(time * twoPi / 29.0 + 0.35) * 0.42
+    switch axes {
+    case .both: break
+    case .horizontal: y = 0
+    case .vertical:   x = 0
+    }
+    return CGSize(width: x * maxTravel, height: y * maxTravel)
+}
+
+/// Legacy intensity → continuous amount. Subtle ≈ half travel, pronounced = full.
 public func tiltAmount(for intensity: ZenTiltIntensity) -> Double {
     switch intensity {
     case .off:        return 0
-    case .subtle:     return 0.18 / tiltMaxTravelFraction
-    case .pronounced: return 0.42 / tiltMaxTravelFraction
+    case .subtle:     return 0.5
+    case .pronounced: return 1.0
     }
 }
 
@@ -109,6 +136,9 @@ public func parallaxDepth(luminance: Double,
 public final class TiltProvider {
     public private(set) var offset: CGSize = .zero
     public var viewSize: CGSize = CGSize(width: 1, height: 1)
+    /// When true (Zen + parallax), a faint long-period sway is mixed into
+    /// `offset` so depth layers keep drifting while the device is still.
+    public var ambientSway: Bool = false
 
     public init() {}
     public func start(intensity: ZenTiltIntensity) {}
@@ -148,12 +178,24 @@ public final class TiltProvider {
     /// when the canvas resizes so the offset tracks the current geometry.
     public var viewSize: CGSize = CGSize(width: 1, height: 1)
 
+    /// When true (Zen + parallax), mix a faint long-period sway into `offset`
+    /// so luminance depth keeps drifting while the device is still.
+    public var ambientSway: Bool = false
+
     private let motion = CMMotionManager()
     private var amount: Double = 0
     private var axes: ZenTiltAxes = .both
     private var smoothedX = 0.0
     private var smoothedY = -1.0
     private var smoothedZ = 0.0
+    // Slow "washout" baseline. The offset is computed from how far the current
+    // pose has *moved* from this baseline, and the baseline eases toward the
+    // current pose (~1 s). So parallax reacts to tilts but recenters to
+    // whatever angle you actually hold the phone — it never sits parked
+    // off-center when reclined.
+    private var baseX = 0.0
+    private var baseZ = 0.0
+    private var needsRecenter = true
     private var listeners: [UUID: (CGSize) -> Void] = [:]
 
     public init() {}
@@ -180,6 +222,7 @@ public final class TiltProvider {
     public func start(amount: Double, axes: ZenTiltAxes = .both) {
         self.amount = min(1, max(0, amount))
         self.axes = axes
+        needsRecenter = true
         guard self.amount > 0.001 else { stop(); return }
         guard motion.isDeviceMotionAvailable else { return }
         guard !motion.isDeviceMotionActive else { return }
@@ -201,23 +244,59 @@ public final class TiltProvider {
         smoothedX = 0
         smoothedY = -1
         smoothedZ = 0
+        baseX = 0
+        baseZ = 0
+        needsRecenter = true
         publish(.zero)
     }
 
     private func consume(x: Double, y: Double, z: Double) {
         guard amount > 0.001 else { return }
-        let a = 0.18
+
+        // On (re)start, snap smoothing + baseline to the first real pose so
+        // the layer begins dead-centered wherever the phone is held.
+        if needsRecenter {
+            smoothedX = x; smoothedY = y; smoothedZ = z
+            baseX = x; baseZ = z
+            needsRecenter = false
+            publish(.zero)
+            return
+        }
+
+        // Higher = more responsive. 0.18 felt "underwater"; 0.4 tracks the
+        // wrist closely while still filtering hand tremor at 60 Hz.
+        let a = 0.4
         smoothedX += a * (x - smoothedX)
         smoothedY += a * (y - smoothedY)
         smoothedZ += a * (z - smoothedZ)
-        let next = tiltOffset(gravityX: smoothedX,
+
+        // Washout: baseline eases toward the current pose (~1 s at 60 Hz), so
+        // a held angle recenters instead of parking the art off-screen.
+        let b = 0.016
+        baseX += b * (smoothedX - baseX)
+        baseZ += b * (smoothedZ - baseZ)
+
+        let tilt = tiltOffset(gravityX: smoothedX - baseX,
                               gravityY: smoothedY,
-                              gravityZ: smoothedZ,
+                              gravityZ: smoothedZ - baseZ,
                               amount: amount,
                               axes: axes,
                               viewSize: viewSize)
-        // Sub-pixel skip: avoid transform spam while the phone is still.
-        if hypot(next.width - offset.width, next.height - offset.height) < 0.25 {
+        var next = tilt
+        if ambientSway {
+            // Wall-clock sway so depth layers keep drifting at rest. Mixed
+            // after washout so it never parks the art off-center.
+            let amb = ambientParallaxOffset(time: Date().timeIntervalSinceReferenceDate,
+                                            amount: amount,
+                                            axes: axes,
+                                            viewSize: viewSize)
+            next = CGSize(width: tilt.width + amb.width,
+                          height: tilt.height + amb.height)
+        }
+        // Sub-pixel skip while still — but never while ambient sway is on,
+        // or the slow sine steps (~0.1pt/frame) would freeze the drift.
+        if !ambientSway,
+           hypot(next.width - offset.width, next.height - offset.height) < 0.25 {
             return
         }
         publish(next)
