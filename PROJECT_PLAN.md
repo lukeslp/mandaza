@@ -22,7 +22,7 @@
 - Upload ASC metadata + `screenshots/en-US/` hero set (1320×2868) and Watch faces (422×514); keep [APP_STORE_PACK.md](APP_STORE_PACK.md) current.
 - TestFlight / privacy questionnaire / beta review items in [TESTFLIGHT.md](TESTFLIGHT.md).
 - iOS settings: Zen controls prominent; website link at bottom of Settings.
-- Zen presentation: opacity, container, font style/weight, form, position, size; music responsivity + tilt.
+- Zen presentation: opacity, container, font style/weight, form, position, size; music responsivity + continuous tilt controls (amount / depth / axes / invert) + Void/Paper canvas theme.
 - tvOS controls are intentionally two-tier: slim quick rail for frequent actions and Ambient Options for deeper tuning.
 - iOS icon + launch splash and tvOS brand assets derive from `scripts/apply-brand-assets.py`; rerun when refreshing store art.
 - **Device signing:** follow [PROVISIONING.md](PROVISIONING.md) to register Apple TV + App ID (`com.lukesteuber.mandaza.tv`) with App Groups for on-device tvOS runs.

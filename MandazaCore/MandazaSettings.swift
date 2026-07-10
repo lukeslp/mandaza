@@ -32,6 +32,22 @@ public enum ZenTiltIntensity: String, CaseIterable, Codable, Sendable {
     case pronounced
 }
 
+/// Which tilt axes drive parallax travel.
+public enum ZenTiltAxes: String, CaseIterable, Codable, Sendable {
+    case both
+    case horizontal
+    case vertical
+}
+
+/// Live canvas ground + stroke depth language.
+///
+/// - `void`: deep black with neon glow (default).
+/// - `paper`: warm parchment with soft ink shadows — a light-theme stab.
+public enum CanvasTheme: String, CaseIterable, Codable, Sendable {
+    case void
+    case paper
+}
+
 /// Single source of truth for user-editable state, shared between the app
 /// and the widget extension via an App Group `UserDefaults` suite.
 ///
@@ -95,8 +111,24 @@ public final class MandazaSettings {
 
     // MARK: - Tilt
 
-    /// Raw value of the tilt-parallax intensity; use `zenTiltIntensity` for typed access.
+    /// Master parallax switch. When false, motion sampling stops.
+    public var zenTiltEnabled: Bool { didSet { write(zenTiltEnabled, .zenTiltEnabled) } }
+    /// 0…1 travel strength. 1.0 ≈ 48% of the shorter edge; legacy Subtle ≈ 0.375.
+    public var zenTiltAmount: Double { didSet { write(zenTiltAmount, .zenTiltAmount) } }
+    /// 0…1 how strongly luminance separates near/far layers. 0 = flat shift.
+    public var zenTiltDepth: Double { didSet { write(zenTiltDepth, .zenTiltDepth) } }
+    /// When true, darker strokes sit nearer (more travel).
+    public var zenTiltInvertDepth: Bool { didSet { write(zenTiltInvertDepth, .zenTiltInvertDepth) } }
+    /// Raw value of tilt axes; use `zenTiltAxes` for typed access.
+    public var zenTiltAxesRaw: String { didSet { write(zenTiltAxesRaw, .zenTiltAxesRaw) } }
+    /// Legacy intensity raw — kept for migration / older readers. Prefer
+    /// `zenTiltEnabled` + `zenTiltAmount`.
     public var zenTiltIntensityRaw: String { didSet { write(zenTiltIntensityRaw, .zenTiltIntensityRaw) } }
+
+    // MARK: - Canvas theme
+
+    /// Raw canvas theme; use `canvasTheme` for typed access.
+    public var canvasThemeRaw: String { didSet { write(canvasThemeRaw, .canvasThemeRaw) } }
 
     // MARK: - Favorites
 
@@ -158,7 +190,27 @@ public final class MandazaSettings {
 
         self.musicResponsivity = Self.readBool(suite, .musicResponsivity, default: true)
         self.reactivity = Self.readDouble(suite, .reactivity, default: 0.35)
-        self.zenTiltIntensityRaw = suite.string(forKey: Key.zenTiltIntensityRaw.rawValue) ?? ZenTiltIntensity.subtle.rawValue
+
+        let legacyTilt = ZenTiltIntensity(
+            rawValue: suite.string(forKey: Key.zenTiltIntensityRaw.rawValue)
+                ?? ZenTiltIntensity.subtle.rawValue
+        ) ?? .subtle
+        self.zenTiltIntensityRaw = legacyTilt.rawValue
+        self.zenTiltEnabled = Self.readBool(suite, .zenTiltEnabled, default: legacyTilt != .off)
+        if suite.object(forKey: Key.zenTiltAmount.rawValue) == nil {
+            // Map legacy presets onto the continuous slider.
+            switch legacyTilt {
+            case .off:        self.zenTiltAmount = 0.55
+            case .subtle:     self.zenTiltAmount = tiltAmount(for: .subtle)
+            case .pronounced: self.zenTiltAmount = tiltAmount(for: .pronounced)
+            }
+        } else {
+            self.zenTiltAmount = Self.readDouble(suite, .zenTiltAmount, default: 0.55)
+        }
+        self.zenTiltDepth = Self.readDouble(suite, .zenTiltDepth, default: 0.85)
+        self.zenTiltInvertDepth = Self.readBool(suite, .zenTiltInvertDepth, default: false)
+        self.zenTiltAxesRaw = suite.string(forKey: Key.zenTiltAxesRaw.rawValue) ?? ZenTiltAxes.both.rawValue
+        self.canvasThemeRaw = suite.string(forKey: Key.canvasThemeRaw.rawValue) ?? CanvasTheme.void.rawValue
 
         self.widgetRotationMinutes = Self.readInt(suite, .widgetRotationMinutes, default: 60)
 
@@ -278,9 +330,36 @@ public final class MandazaSettings {
         set { zenClockFormRaw = newValue.rawValue }
     }
 
+    public var zenTiltAxes: ZenTiltAxes {
+        get { ZenTiltAxes(rawValue: zenTiltAxesRaw) ?? .both }
+        set { zenTiltAxesRaw = newValue.rawValue }
+    }
+
+    public var canvasTheme: CanvasTheme {
+        get { CanvasTheme(rawValue: canvasThemeRaw) ?? .void }
+        set { canvasThemeRaw = newValue.rawValue }
+    }
+
+    /// Legacy intensity bridge. Reading synthesizes from enabled + amount;
+    /// writing updates enabled/amount so older call sites still work.
     public var zenTiltIntensity: ZenTiltIntensity {
-        get { ZenTiltIntensity(rawValue: zenTiltIntensityRaw) ?? .subtle }
-        set { zenTiltIntensityRaw = newValue.rawValue }
+        get {
+            guard zenTiltEnabled else { return .off }
+            return zenTiltAmount < 0.6 ? .subtle : .pronounced
+        }
+        set {
+            zenTiltIntensityRaw = newValue.rawValue
+            switch newValue {
+            case .off:
+                zenTiltEnabled = false
+            case .subtle:
+                zenTiltEnabled = true
+                zenTiltAmount = tiltAmount(for: .subtle)
+            case .pronounced:
+                zenTiltEnabled = true
+                zenTiltAmount = tiltAmount(for: .pronounced)
+            }
+        }
     }
 
     /// Typed accessor over `pinnedSnapshotData` — the snapshot the watch face
@@ -310,7 +389,9 @@ public final class MandazaSettings {
         case zenClockFontStyleRaw, zenClockFontWeight, zenClockPositionRaw
         case zenClockSizeScale, zenClockFormRaw
         case musicResponsivity, reactivity
-        case zenTiltIntensityRaw
+        case zenTiltEnabled, zenTiltAmount, zenTiltDepth, zenTiltInvertDepth
+        case zenTiltAxesRaw, zenTiltIntensityRaw
+        case canvasThemeRaw
         case favorites
         case widgetRotationMinutes
         case watchAutoRegen, watchAutoRegenSeconds

@@ -50,13 +50,16 @@ struct TVContentView: View {
         ZStack {
             GeometryReader { geo in
                 ZStack {
-                    Color.black
+                    BL.canvasGround(for: settings.canvasTheme)
                     MandazaCanvas(
                         size: geo.size,
                         seed: UUID(uuidString: seed) ?? UUID(),
                         paletteId: MandazaScreenshot.palette(settings.paletteId),
                         config: engineConfigForTV(),
-                        onIdleChange: handleIdleChange(_:)
+                        onIdleChange: handleIdleChange(_:),
+                        parallaxDepthContrast: settings.zenTiltDepth,
+                        parallaxInvertDepth: settings.zenTiltInvertDepth,
+                        theme: settings.canvasTheme
                     )
                 }
                 .onAppear { canvasSize = geo.size }
@@ -642,6 +645,14 @@ private struct TVZenOptionsSheet: View {
                     Toggle("Randomize Palette on New", isOn: $settings.randomizePaletteOnRegenerate)
                         .accessibilityHint("When on, Play Pause or New picks a different palette.")
                     Toggle("Glow", isOn: glowToggleBinding)
+                    Picker("Canvas", selection: Binding(
+                        get: { settings.canvasTheme },
+                        set: { settings.canvasTheme = $0 }
+                    )) {
+                        Text("Void").tag(CanvasTheme.void)
+                        Text("Paper").tag(CanvasTheme.paper)
+                    }
+                    .pickerStyle(.segmented)
                 } header: {
                     Text("Pattern")
                 }

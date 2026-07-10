@@ -20,7 +20,7 @@ final class TiltTests: XCTestCase {
             .zero)
         XCTAssertEqual(
             tiltOffset(gravityX: 10, gravityY: uprightY, gravityZ: -10,
-                       intensity: .off, viewSize: size),
+                       amount: 0, axes: .both, viewSize: size),
             .zero)
     }
 
@@ -63,6 +63,27 @@ final class TiltTests: XCTestCase {
         XCTAssertEqual(abs(s.width), 0.18 * Double(min(size.width, size.height)), accuracy: 1e-9)
     }
 
+    func testAmountOneUsesMaxTravelFraction() {
+        let maxFrac = tiltMaxTravelFraction * Double(min(size.width, size.height))
+        let o = tiltOffset(gravityX: 1, gravityY: uprightY, gravityZ: 1,
+                           amount: 1, axes: .both, viewSize: size)
+        XCTAssertEqual(abs(o.width), maxFrac, accuracy: 1e-9)
+    }
+
+    func testHorizontalAxesZeroesVertical() {
+        let o = tiltOffset(gravityX: 1, gravityY: uprightY, gravityZ: 1,
+                           amount: 1, axes: .horizontal, viewSize: size)
+        XCTAssertGreaterThan(abs(o.width), 0)
+        XCTAssertEqual(o.height, 0, accuracy: 1e-9)
+    }
+
+    func testVerticalAxesZeroesHorizontal() {
+        let o = tiltOffset(gravityX: 1, gravityY: uprightY, gravityZ: 1,
+                           amount: 1, axes: .vertical, viewSize: size)
+        XCTAssertEqual(o.width, 0, accuracy: 1e-9)
+        XCTAssertGreaterThan(abs(o.height), 0)
+    }
+
     func testOffsetFollowsLateralTilt() {
         let right = tiltOffset(gravityX: 0.3, gravityY: uprightY, gravityZ: 0,
                                intensity: .pronounced, viewSize: size)
@@ -101,12 +122,27 @@ final class TiltTests: XCTestCase {
         XCTAssertEqual(parallaxDepth(luminance: 1), 1.0, accuracy: 1e-9)
     }
 
+    func testParallaxDepthContrastFlattens() {
+        let a = parallaxDepth(luminance: 0.1, contrast: 0)
+        let b = parallaxDepth(luminance: 0.9, contrast: 0)
+        XCTAssertEqual(a, b, accuracy: 1e-9)
+        XCTAssertEqual(a, 0.22 + 0.78 * 0.5, accuracy: 1e-9)
+    }
+
+    func testParallaxDepthInvertSwapsNearFar() {
+        let bright = parallaxDepth(luminance: 0.9, invert: false)
+        let darkNear = parallaxDepth(luminance: 0.1, invert: true)
+        XCTAssertEqual(bright, darkNear, accuracy: 1e-9)
+        XCTAssertGreaterThan(parallaxDepth(luminance: 0.1, invert: true),
+                             parallaxDepth(luminance: 0.9, invert: true))
+    }
+
     @MainActor
     func testProviderStartsAtZeroAndStopsClean() {
         let provider = TiltProvider()
         XCTAssertEqual(provider.offset, .zero)
         provider.viewSize = size
-        provider.start(intensity: .off)
+        provider.start(amount: 0)
         XCTAssertEqual(provider.offset, .zero)
         provider.stop()
         XCTAssertEqual(provider.offset, .zero)

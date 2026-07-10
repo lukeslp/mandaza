@@ -71,6 +71,12 @@ public struct MandazaCanvas: View {
     /// via Observation) so motion samples never invalidate this TimelineView.
     /// Per-stroke luminance scales the offset for layered depth.
     let parallaxSource: TiltProvider?
+    /// How strongly luminance separates near/far layers (0…1).
+    let parallaxDepthContrast: Double
+    /// When true, darker strokes travel more (nearer).
+    let parallaxInvertDepth: Bool
+    /// Ground + stroke shadow language (void glow vs paper ink).
+    let theme: CanvasTheme
 
     /// Fires `true` when all loops finish drawing, `false` when a new pattern
     /// starts. Parents use this to schedule auto-regenerate in Zen mode.
@@ -101,7 +107,10 @@ public struct MandazaCanvas: View {
                 reactivity: Double = 0.35,
                 onIdleChange: ((Bool) -> Void)? = nil,
                 modulationSource: MandazaModulationSource? = nil,
-                parallaxSource: TiltProvider? = nil) {
+                parallaxSource: TiltProvider? = nil,
+                parallaxDepthContrast: Double = 1,
+                parallaxInvertDepth: Bool = false,
+                theme: CanvasTheme = .void) {
         self.size = size
         self.seed = seed
         self.paletteId = paletteId
@@ -112,6 +121,9 @@ public struct MandazaCanvas: View {
         self.onIdleChange = onIdleChange
         self.modulationSource = modulationSource
         self.parallaxSource = parallaxSource
+        self.parallaxDepthContrast = parallaxDepthContrast
+        self.parallaxInvertDepth = parallaxInvertDepth
+        self.theme = theme
     }
 
     public var body: some View {
@@ -234,7 +246,8 @@ public struct MandazaCanvas: View {
 
     private func drawScene(in ctx: inout GraphicsContext, size: CGSize, timeMs: Double,
                            mod: MandazaModulation?) {
-        ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black))
+        ctx.fill(Path(CGRect(origin: .zero, size: size)),
+                 with: .color(BL.canvasGround(for: theme)))
         guard built else { return }
 
         // Zoom about the center to crop the grid's natural margin so the
@@ -278,21 +291,43 @@ public struct MandazaCanvas: View {
         let parallax = parallaxSource?.offset ?? .zero
 
         // Dark (far) first, bright (near) last so nearer strokes sit on top.
+        // (Invert depth flips which luminance is nearer.)
         let strokes: [(path: Path, color: Color, depth: Double)] = engine.loops.map { loop in
             let cg = engine.color(for: loop, timeMs: colorTimeMs)
             let lum = relativeLuminance(cg)
             return (Path(engine.currentPath(for: loop)),
                     Color(cgColor: cg),
-                    parallaxDepth(luminance: lum))
+                    parallaxDepth(luminance: lum,
+                                  contrast: parallaxDepthContrast,
+                                  invert: parallaxInvertDepth))
         }.sorted { $0.depth < $1.depth }
 
+        let paperTheme = theme == .paper
         for stroke in strokes {
             var layer = ctx
             if parallax != .zero {
                 layer.translateBy(x: parallax.width * stroke.depth,
                                   y: parallax.height * stroke.depth)
             }
-            if config.glow {
+            if paperTheme {
+                // Soft ink contact shadow — depth cue on parchment. Stronger
+                // when Glow is on; always a whisper so strokes lift off paper.
+                let inkOpacity = config.glow
+                    ? min(0.55, 0.22 + 0.28 * glowScale)
+                    : 0.16
+                let inkRadius = config.glow
+                    ? glowRadius * 0.55 * glowScale
+                    : glowRadius * 0.22
+                layer.addFilter(.shadow(color: BL.ink.opacity(inkOpacity),
+                                        radius: inkRadius,
+                                        x: 0,
+                                        y: inkRadius * 0.35))
+                if config.glow {
+                    // Colored bloom under the ink shadow for a print-shop feel.
+                    layer.addFilter(.shadow(color: stroke.color.opacity(shadowOpacity * 0.45),
+                                            radius: glowRadius * glowScale * 0.7))
+                }
+            } else if config.glow {
                 layer.addFilter(.shadow(color: stroke.color.opacity(shadowOpacity),
                                         radius: glowRadius * glowScale))
             } else if let mod, mod.bass > 0.001 || mod.level > 0.001 {

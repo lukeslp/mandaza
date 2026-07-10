@@ -22,6 +22,19 @@ public enum BL {
     /// Hairline rule color (1px borders).
     public static let rule      = Color.white.opacity(0.08)
 
+    /// Warm parchment ground for the light canvas theme.
+    public static let parchment = Color(hex: "#efe8dc")
+    /// Soft ink for paper-theme stroke shadows.
+    public static let ink       = Color(hex: "#1c1812")
+
+    /// Fill color for the live mandala canvas.
+    public static func canvasGround(for theme: CanvasTheme) -> Color {
+        switch theme {
+        case .void:  return .black
+        case .paper: return parchment
+        }
+    }
+
     // MARK: - Phylum palette
 
     public static let cyan   = Color(hex: "#00ffff")

@@ -73,7 +73,10 @@ struct WatchRootView: View {
                       fill: CGSize(width: 1.18, height: 1.18),
                       reactivity: settings.reactivity,
                       onIdleChange: handleIdle,
-                      modulationSource: reactor.source)
+                      modulationSource: reactor.source,
+                      parallaxDepthContrast: settings.zenTiltDepth,
+                      parallaxInvertDepth: settings.zenTiltInvertDepth,
+                      theme: settings.canvasTheme)
             .frame(width: screenSize.width, height: screenSize.height)
             .focusable()
             .digitalCrownRotation($crown,
@@ -94,7 +97,7 @@ struct WatchRootView: View {
                     .exclusively(before: TapGesture().onEnded { regenerate() })
             )
             .contentShape(Rectangle())
-            .background(Color.black)
+            .background(BL.canvasGround(for: settings.canvasTheme))
             .ignoresSafeArea()
             .overlay(alignment: .top) {
                 if showFromPhone {

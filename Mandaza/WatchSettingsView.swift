@@ -146,24 +146,25 @@ struct WatchSettingsView: View {
         .listRowBackground(BL.deep)
 
         Section {
-            Toggle("Tilt parallax", isOn: Binding(
-                get: { settings.zenTiltIntensity != .off },
-                set: { on in
-                    if on {
-                        if settings.zenTiltIntensity == .off {
-                            settings.zenTiltIntensity = .pronounced
-                        }
-                    } else {
-                        settings.zenTiltIntensity = .off
-                    }
+            Toggle("Tilt parallax", isOn: $settings.zenTiltEnabled)
+                .font(.bl(15))
+                .foregroundStyle(BL.paper)
+            if settings.zenTiltEnabled {
+                Slider(value: $settings.zenTiltAmount, in: 0.05 ... 1.0) {
+                    Text("Amount")
                 }
-            ))
-            .font(.bl(15))
-            .foregroundStyle(BL.paper)
-            if settings.zenTiltIntensity != .off {
-                Picker("Intensity", selection: $settings.zenTiltIntensityRaw) {
-                    Text("Subtle").tag(ZenTiltIntensity.subtle.rawValue)
-                    Text("Pronounced").tag(ZenTiltIntensity.pronounced.rawValue)
+                .accessibilityLabel("Parallax amount")
+                Slider(value: $settings.zenTiltDepth, in: 0 ... 1) {
+                    Text("Depth")
+                }
+                .accessibilityLabel("Depth layers")
+                Toggle("Invert depth", isOn: $settings.zenTiltInvertDepth)
+                    .font(.bl(15))
+                    .foregroundStyle(BL.paper)
+                Picker("Axes", selection: $settings.zenTiltAxesRaw) {
+                    Text("Both").tag(ZenTiltAxes.both.rawValue)
+                    Text("Horizontal").tag(ZenTiltAxes.horizontal.rawValue)
+                    Text("Vertical").tag(ZenTiltAxes.vertical.rawValue)
                 }
                 .pickerStyle(.menu)
                 .font(.bl(15))
@@ -171,6 +172,17 @@ struct WatchSettingsView: View {
             }
         } header: {
             blHeader("Parallax", accent: accent)
+        }
+        .listRowBackground(BL.deep)
+
+        Section {
+            Picker("Canvas", selection: $settings.canvasThemeRaw) {
+                Text("Void").tag(CanvasTheme.void.rawValue)
+                Text("Paper").tag(CanvasTheme.paper.rawValue)
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            blHeader("Look", accent: accent)
         }
         .listRowBackground(BL.deep)
     }

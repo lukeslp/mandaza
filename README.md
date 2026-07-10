@@ -22,8 +22,11 @@ WidgetKit surface).
   editorial clock forms; opacity, type, size, and eight positions.
 - **Music responsivity** — in Zen, optional microphone-driven beat pump and
   speed-up (Reactivity slider). Audio is never recorded or stored.
-- **Tilt parallax** — Off / Subtle / Pronounced device-tilt depth on iPhone
-  and Apple Watch.
+- **Tilt parallax** — Amount slider, depth-layer contrast, invert depth,
+  and axis lock (both / horizontal / vertical). Brighter strokes sit nearer
+  by default; Reduce Motion disables sampling.
+- **Canvas look** — Void (neon on black) or Paper (warm parchment with soft
+  ink shadows — light-theme experiment).
 - **Footer** — History · Favorites · Zen · Settings · Save.
 - **Favorites** — heart any mandala to keep it; favorites cycle into widget
   rotation automatically. Loading a favorite or **Previous** snapshot also

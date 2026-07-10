@@ -64,7 +64,7 @@ struct ContentView: View {
             // invalidates the TimelineView host.
             GeometryReader { geo in
                 ZStack {
-                    Color.black
+                    BL.canvasGround(for: settings.canvasTheme)
                     MandazaCanvas(size: geo.size,
                                   seed: UUID(uuidString: seed) ?? UUID(),
                                   paletteId: MandazaScreenshot.palette(settings.paletteId),
@@ -72,7 +72,10 @@ struct ContentView: View {
                                   reactivity: settings.reactivity,
                                   onIdleChange: handleIdleChange(_:),
                                   modulationSource: reactor.source,
-                                  parallaxSource: tilt)
+                                  parallaxSource: tilt,
+                                  parallaxDepthContrast: settings.zenTiltDepth,
+                                  parallaxInvertDepth: settings.zenTiltInvertDepth,
+                                  theme: settings.canvasTheme)
                 }
                 .onAppear { canvasSize = geo.size; tilt.viewSize = geo.size }
                 .onChange(of: geo.size) { _, new in canvasSize = new; tilt.viewSize = new }
@@ -95,7 +98,7 @@ struct ContentView: View {
 
             // Layer 2 — clock overlay (mid-depth UIKit parallax).
             if settings.zenMode, settings.zenShowClock {
-                ParallaxHost(provider: tilt, multiplier: 0.55) {
+                ParallaxHost(provider: tilt, multiplier: CGFloat(0.35 + 0.45 * settings.zenTiltAmount)) {
                     ZenClockOverlay(showSeconds: settings.zenShowSeconds,
                                     showDate: settings.zenShowDate,
                                     accent: BL.accent(for: settings.paletteId),
@@ -203,7 +206,9 @@ struct ContentView: View {
                 handleIdleChange(true)
             }
         }
-        .onChange(of: settings.zenTiltIntensityRaw) { _, _ in applyTilt() }
+        .onChange(of: settings.zenTiltEnabled) { _, _ in applyTilt() }
+        .onChange(of: settings.zenTiltAmount) { _, _ in applyTilt() }
+        .onChange(of: settings.zenTiltAxesRaw) { _, _ in applyTilt() }
         .onChange(of: showSettings) { _, isPresented in
             if !isPresented { noteInteraction() }
         }
@@ -485,12 +490,13 @@ struct ContentView: View {
         selectionFeedback()
     }
 
-    /// Reconciles the tilt provider with the current intensity setting. Parallax
-    /// runs whenever the intensity is not off — in Zen or on the normal canvas.
+    /// Reconciles the tilt provider with current parallax settings. Parallax
+    /// runs whenever enabled — in Zen or on the normal canvas. Respects
+    /// Reduce Motion by stopping sampling.
     private func applyTilt() {
-        if settings.zenTiltIntensity != .off {
+        if settings.zenTiltEnabled, !reduceMotion {
             tilt.viewSize = canvasSize
-            tilt.start(intensity: settings.zenTiltIntensity)
+            tilt.start(amount: settings.zenTiltAmount, axes: settings.zenTiltAxes)
         } else {
             tilt.stop()
         }
@@ -827,27 +833,17 @@ private struct SettingsSheet: View {
         )
     }
 
-    private var tiltIntensityBinding: Binding<ZenTiltIntensity> {
+    private var tiltAxesBinding: Binding<ZenTiltAxes> {
         Binding(
-            get: { settings.zenTiltIntensity },
-            set: { settings.zenTiltIntensity = $0 }
+            get: { settings.zenTiltAxes },
+            set: { settings.zenTiltAxes = $0 }
         )
     }
 
-    /// Master parallax switch. Turning on restores Pronounced (or keeps the
-    /// current non-off intensity); turning off writes `.off`.
-    private var tiltEnabledBinding: Binding<Bool> {
+    private var canvasThemeBinding: Binding<CanvasTheme> {
         Binding(
-            get: { settings.zenTiltIntensity != .off },
-            set: { on in
-                if on {
-                    if settings.zenTiltIntensity == .off {
-                        settings.zenTiltIntensity = .pronounced
-                    }
-                } else {
-                    settings.zenTiltIntensity = .off
-                }
-            }
+            get: { settings.canvasTheme },
+            set: { settings.canvasTheme = $0 }
         )
     }
 
@@ -914,13 +910,27 @@ private struct SettingsSheet: View {
                 .listRowBackground(BL.deep)
 
                 Section {
-                    Toggle("Tilt parallax", isOn: tiltEnabledBinding)
+                    Toggle("Tilt parallax", isOn: $settings.zenTiltEnabled)
                         .font(.bl(15))
                         .foregroundStyle(BL.paper)
-                    if settings.zenTiltIntensity != .off {
-                        Picker("Intensity", selection: tiltIntensityBinding) {
-                            Text("Subtle").tag(ZenTiltIntensity.subtle)
-                            Text("Pronounced").tag(ZenTiltIntensity.pronounced)
+                    if settings.zenTiltEnabled {
+                        LabeledSlider(title: "Amount",
+                                      value: $settings.zenTiltAmount,
+                                      range: 0.05 ... 1.0,
+                                      accent: accent,
+                                      format: { parallaxAmountLabel(for: $0) })
+                        LabeledSlider(title: "Depth layers",
+                                      value: $settings.zenTiltDepth,
+                                      range: 0.0 ... 1.0,
+                                      accent: accent,
+                                      format: { parallaxDepthLabel(for: $0) })
+                        Toggle("Invert depth", isOn: $settings.zenTiltInvertDepth)
+                            .font(.bl(15))
+                            .foregroundStyle(BL.paper)
+                        Picker("Axes", selection: tiltAxesBinding) {
+                            Text("Both").tag(ZenTiltAxes.both)
+                            Text("Horizontal").tag(ZenTiltAxes.horizontal)
+                            Text("Vertical").tag(ZenTiltAxes.vertical)
                         }
                         .pickerStyle(.menu)
                         .font(.bl(15))
@@ -929,12 +939,32 @@ private struct SettingsSheet: View {
                 } header: {
                     blHeader("Parallax", accent: accent)
                 } footer: {
-                    Text("Tilt the device for layered depth — brighter strokes move more (nearer), darker strokes less (farther).")
+                    Text(settings.zenTiltInvertDepth
+                         ? "Tilt for layered depth — darker strokes move more (nearer), brighter less (farther)."
+                         : "Tilt for layered depth — brighter strokes move more (nearer), darker less (farther). Depth layers controls how separated those planes feel.")
                         .font(.bl(12))
                         .foregroundStyle(BL.muted)
                 }
                 .listRowBackground(BL.deep)
                 #endif
+
+                Section {
+                    Picker("Canvas", selection: canvasThemeBinding) {
+                        Text("Void").tag(CanvasTheme.void)
+                        Text("Paper").tag(CanvasTheme.paper)
+                    }
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                } header: {
+                    blHeader("Look", accent: accent)
+                } footer: {
+                    Text(settings.canvasTheme == .paper
+                         ? "Warm parchment with soft ink shadows — a light-theme experiment. Glow adds a colored bloom under the ink."
+                         : "Deep black with neon glow. Switch to Paper for ink-on-parchment depth.")
+                        .font(.bl(12))
+                        .foregroundStyle(BL.muted)
+                }
+                .listRowBackground(BL.deep)
 
                 if settings.zenMode {
                     Section {
@@ -1174,6 +1204,25 @@ private struct SettingsSheet: View {
         case ..<0.5:  return "Minimal"
         case ..<0.8:  return "Lively"
         default:      return "Bold"
+        }
+    }
+
+    private func parallaxAmountLabel(for v: Double) -> String {
+        switch v {
+        case ..<0.25: return "Whisper"
+        case ..<0.45: return "Subtle"
+        case ..<0.7:  return "Present"
+        case ..<0.9:  return "Pronounced"
+        default:      return "Dramatic"
+        }
+    }
+
+    private func parallaxDepthLabel(for v: Double) -> String {
+        switch v {
+        case ..<0.15: return "Flat"
+        case ..<0.45: return "Soft"
+        case ..<0.75: return "Layered"
+        default:      return "Deep"
         }
     }
 }

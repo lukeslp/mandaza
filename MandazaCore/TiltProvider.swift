@@ -1,6 +1,9 @@
 import Foundation
 import CoreGraphics
 
+/// Maximum travel as a fraction of the shorter view edge when amount is 1.0.
+public let tiltMaxTravelFraction: Double = 0.48
+
 /// Pure mapping from device gravity to a layered-parallax offset.
 ///
 /// Uses the gravity vector (not Euler pitch/roll) so upright holding stays
@@ -10,11 +13,10 @@ import CoreGraphics
 /// - `gravityY`: device +Y (top). ≈ −1 when upright in portrait, ≈ 0 flat.
 /// - `gravityZ`: device +Z (out of screen). 0 upright; −1 face-up flat.
 ///
-/// Returns `.zero` when tilt is `.off`. Offset saturates at a fraction of the
-/// shorter edge (`subtle` ≈ 18%, `pronounced` ≈ 42%) so depth reads clearly.
-/// The layer shifts *with* the tilt so rolling the device right nudges the
-/// artwork right. Per-stroke luminance then scales that travel in the canvas
-/// (brighter nearer, darker farther).
+/// `amount` is 0…1 travel strength (0 ⇒ no motion). Offset saturates at
+/// `amount × tiltMaxTravelFraction` of the shorter edge. The layer shifts
+/// *with* the tilt so rolling the device right nudges the artwork right.
+/// Per-stroke luminance then scales that travel in the canvas.
 ///
 /// No upright-only fade: a normal reading angle already reclines past “perfect
 /// vertical,” and fading there made parallax feel frozen. Face-up flat simply
@@ -22,24 +24,49 @@ import CoreGraphics
 public func tiltOffset(gravityX: Double,
                        gravityY: Double,
                        gravityZ: Double,
-                       intensity: ZenTiltIntensity,
+                       amount: Double,
+                       axes: ZenTiltAxes = .both,
                        viewSize: CGSize) -> CGSize {
-    let fraction: Double
-    switch intensity {
-    case .off:        return .zero
-    case .subtle:     fraction = 0.18
-    case .pronounced: fraction = 0.42
-    }
+    let a = min(1, max(0, amount))
+    guard a > 0.001 else { return .zero }
 
-    let maxOffset = fraction * Double(min(viewSize.width, viewSize.height))
+    let maxOffset = a * tiltMaxTravelFraction * Double(min(viewSize.width, viewSize.height))
     // Fraction of g at which the parallax reaches its clamp (~16°). Lower than
     // a strict upright reference so everyday tilts use more of the travel.
     let reference = 0.28
-    let nx = max(-1.0, min(1.0, gravityX / reference))
+    var nx = max(-1.0, min(1.0, gravityX / reference))
     // Longitudinal: deviation from upright. Upright ≈ (0, −1, 0); reclining
     // toward face-up grows −Z. Using Z alone keeps left/right on X.
-    let ny = max(-1.0, min(1.0, gravityZ / reference))
+    var ny = max(-1.0, min(1.0, gravityZ / reference))
+    switch axes {
+    case .both: break
+    case .horizontal: ny = 0
+    case .vertical:   nx = 0
+    }
     return CGSize(width: nx * maxOffset, height: ny * maxOffset)
+}
+
+/// Legacy intensity → continuous amount. Kept so older call sites and tests
+/// keep their exact travel fractions (subtle 18%, pronounced 42%).
+public func tiltAmount(for intensity: ZenTiltIntensity) -> Double {
+    switch intensity {
+    case .off:        return 0
+    case .subtle:     return 0.18 / tiltMaxTravelFraction
+    case .pronounced: return 0.42 / tiltMaxTravelFraction
+    }
+}
+
+public func tiltOffset(gravityX: Double,
+                       gravityY: Double,
+                       gravityZ: Double,
+                       intensity: ZenTiltIntensity,
+                       viewSize: CGSize) -> CGSize {
+    tiltOffset(gravityX: gravityX,
+               gravityY: gravityY,
+               gravityZ: gravityZ,
+               amount: tiltAmount(for: intensity),
+               axes: .both,
+               viewSize: viewSize)
 }
 
 /// Relative luminance in 0…1 for an sRGB (or convertible) `CGColor`.
@@ -59,11 +86,18 @@ public func relativeLuminance(_ color: CGColor) -> Double {
     return min(1, max(0, 0.2126 * r + 0.7152 * g + 0.0722 * b))
 }
 
-/// Maps luminance to a parallax depth multiplier. Dark strokes sit farther
-/// back (less shift); bright strokes sit nearer (more shift).
-public func parallaxDepth(luminance: Double) -> Double {
-    let lum = min(1, max(0, luminance))
-    return 0.22 + 0.78 * lum
+/// Maps luminance to a parallax depth multiplier.
+///
+/// - `contrast` 0…1: 0 flattens all strokes to mid-depth; 1 uses full near/far.
+/// - `invert`: when true, darker strokes sit nearer (more travel).
+public func parallaxDepth(luminance: Double,
+                          contrast: Double = 1,
+                          invert: Bool = false) -> Double {
+    var t = min(1, max(0, luminance))
+    if invert { t = 1 - t }
+    let c = min(1, max(0, contrast))
+    let layered = 0.5 + (t - 0.5) * c
+    return 0.22 + 0.78 * layered
 }
 
 #if os(tvOS) || os(macOS)
@@ -78,6 +112,7 @@ public final class TiltProvider {
 
     public init() {}
     public func start(intensity: ZenTiltIntensity) {}
+    public func start(amount: Double, axes: ZenTiltAxes = .both) {}
     public func stop() {}
 
     @discardableResult
@@ -114,7 +149,8 @@ public final class TiltProvider {
     public var viewSize: CGSize = CGSize(width: 1, height: 1)
 
     private let motion = CMMotionManager()
-    private var intensity: ZenTiltIntensity = .off
+    private var amount: Double = 0
+    private var axes: ZenTiltAxes = .both
     private var smoothedX = 0.0
     private var smoothedY = -1.0
     private var smoothedZ = 0.0
@@ -138,8 +174,13 @@ public final class TiltProvider {
     }
 
     public func start(intensity: ZenTiltIntensity) {
-        self.intensity = intensity
-        guard intensity != .off else { stop(); return }
+        start(amount: tiltAmount(for: intensity), axes: .both)
+    }
+
+    public func start(amount: Double, axes: ZenTiltAxes = .both) {
+        self.amount = min(1, max(0, amount))
+        self.axes = axes
+        guard self.amount > 0.001 else { stop(); return }
         guard motion.isDeviceMotionAvailable else { return }
         guard !motion.isDeviceMotionActive else { return }
         motion.deviceMotionUpdateInterval = 1.0 / 60.0
@@ -153,6 +194,7 @@ public final class TiltProvider {
     }
 
     public func stop() {
+        amount = 0
         if motion.isDeviceMotionActive {
             motion.stopDeviceMotionUpdates()
         }
@@ -163,7 +205,7 @@ public final class TiltProvider {
     }
 
     private func consume(x: Double, y: Double, z: Double) {
-        guard intensity != .off else { return }
+        guard amount > 0.001 else { return }
         let a = 0.18
         smoothedX += a * (x - smoothedX)
         smoothedY += a * (y - smoothedY)
@@ -171,7 +213,8 @@ public final class TiltProvider {
         let next = tiltOffset(gravityX: smoothedX,
                               gravityY: smoothedY,
                               gravityZ: smoothedZ,
-                              intensity: intensity,
+                              amount: amount,
+                              axes: axes,
                               viewSize: viewSize)
         // Sub-pixel skip: avoid transform spam while the phone is still.
         if hypot(next.width - offset.width, next.height - offset.height) < 0.25 {
