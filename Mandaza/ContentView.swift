@@ -59,23 +59,25 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Layer 1 — edge-to-edge canvas.
-            GeometryReader { geo in
-                ZStack {
-                    Color.black
-                    MandazaCanvas(size: geo.size,
-                                  seed: UUID(uuidString: seed) ?? UUID(),
-                                  paletteId: MandazaScreenshot.palette(settings.paletteId),
-                                  config: settings.engineConfig(),
-                                  reactivity: settings.reactivity,
-                                  onIdleChange: handleIdleChange(_:),
-                                  modulationSource: reactor.source)
+            // Layer 1 — edge-to-edge canvas. Parallax is a UIKit transform so
+            // CoreMotion samples never invalidate the SwiftUI TimelineView.
+            ParallaxHost(provider: tilt) {
+                GeometryReader { geo in
+                    ZStack {
+                        Color.black
+                        MandazaCanvas(size: geo.size,
+                                      seed: UUID(uuidString: seed) ?? UUID(),
+                                      paletteId: MandazaScreenshot.palette(settings.paletteId),
+                                      config: settings.engineConfig(),
+                                      reactivity: settings.reactivity,
+                                      onIdleChange: handleIdleChange(_:),
+                                      modulationSource: reactor.source)
+                    }
+                    .onAppear { canvasSize = geo.size; tilt.viewSize = geo.size }
+                    .onChange(of: geo.size) { _, new in canvasSize = new; tilt.viewSize = new }
                 }
-                .onAppear { canvasSize = geo.size; tilt.viewSize = geo.size }
-                .onChange(of: geo.size) { _, new in canvasSize = new; tilt.viewSize = new }
+                .ignoresSafeArea()
             }
-            .ignoresSafeArea()
-            .parallaxOffset(from: tilt)
             .contentShape(Rectangle())
             .gesture(
                 LongPressGesture(minimumDuration: 0.7)
@@ -93,19 +95,20 @@ struct ContentView: View {
 
             // Layer 2 — clock overlay (tinted by current palette's phylum accent).
             if settings.zenMode, settings.zenShowClock {
-                ZenClockOverlay(showSeconds: settings.zenShowSeconds,
-                                showDate: settings.zenShowDate,
-                                accent: BL.accent(for: settings.paletteId),
-                                clockOpacity: settings.zenClockOpacity,
-                                containerOpacity: settings.zenClockContainerOpacity,
-                                fontStyle: settings.zenClockFontStyle,
-                                fontWeight: settings.zenClockFontWeight,
-                                position: MandazaScreenshot.clockPosition(settings.zenClockPosition),
-                                form: MandazaScreenshot.clockForm(settings.zenClockForm),
-                                sizeScale: settings.zenClockSizeScale)
-                    .parallaxOffset(from: tilt, multiplier: 0.5)
-                    .allowsHitTesting(false)
-                    .transition(.opacity)
+                ParallaxHost(provider: tilt, multiplier: 0.5) {
+                    ZenClockOverlay(showSeconds: settings.zenShowSeconds,
+                                    showDate: settings.zenShowDate,
+                                    accent: BL.accent(for: settings.paletteId),
+                                    clockOpacity: settings.zenClockOpacity,
+                                    containerOpacity: settings.zenClockContainerOpacity,
+                                    fontStyle: settings.zenClockFontStyle,
+                                    fontWeight: settings.zenClockFontWeight,
+                                    position: MandazaScreenshot.clockPosition(settings.zenClockPosition),
+                                    form: MandazaScreenshot.clockForm(settings.zenClockForm),
+                                    sizeScale: settings.zenClockSizeScale)
+                }
+                .allowsHitTesting(false)
+                .transition(.opacity)
             }
 
             // Layer 3 — grounded controls. The shelf remains a continuous
@@ -1564,13 +1567,6 @@ private struct Toast: View {
 }
 
 private extension View {
-    /// Keeps high-frequency CoreMotion observation out of `ContentView` itself.
-    /// Parallax movement should be a presentation transform only; it must not
-    /// restart the mandala drawing timeline or inherit unrelated animations.
-    func parallaxOffset(from tilt: TiltProvider, multiplier: CGFloat = 1) -> some View {
-        modifier(ParallaxOffsetModifier(tilt: tilt, multiplier: multiplier))
-    }
-
     @ViewBuilder
     func mandazaScrollContentBackgroundHidden() -> some View {
         #if os(tvOS)
@@ -1590,18 +1586,77 @@ private extension View {
     }
 }
 
-private struct ParallaxOffsetModifier: ViewModifier {
-    let tilt: TiltProvider
-    let multiplier: CGFloat
+/// Applies tilt as a UIKit `CGAffineTransform` so motion samples never
+/// invalidate SwiftUI bodies (which was freezing the canvas TimelineView).
+private struct ParallaxHost<Content: View>: UIViewControllerRepresentable {
+    var provider: TiltProvider
+    var multiplier: CGFloat = 1
+    var content: Content
 
-    func body(content: Content) -> some View {
-        let offset = tilt.offset
-        content
-            .offset(x: offset.width * multiplier,
-                    y: offset.height * multiplier)
-            .transaction { transaction in
-                transaction.animation = nil
+    init(provider: TiltProvider,
+         multiplier: CGFloat = 1,
+         @ViewBuilder content: () -> Content) {
+        self.provider = provider
+        self.multiplier = multiplier
+        self.content = content()
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIViewController(context: Context) -> UIHostingController<Content> {
+        let host = UIHostingController(rootView: content)
+        host.view.backgroundColor = .clear
+        host.safeAreaRegions = []
+        context.coordinator.bind(provider: provider, view: host.view, multiplier: multiplier)
+        return host
+    }
+
+    func updateUIViewController(_ host: UIHostingController<Content>, context: Context) {
+        host.rootView = content
+        context.coordinator.bind(provider: provider, view: host.view, multiplier: multiplier)
+    }
+
+    static func dismantleUIViewController(_ host: UIHostingController<Content>,
+                                          coordinator: Coordinator) {
+        coordinator.unbind()
+    }
+
+    @MainActor
+    final class Coordinator {
+        private var listenerID: UUID?
+        private weak var provider: TiltProvider?
+        private weak var view: UIView?
+        private var multiplier: CGFloat = 1
+
+        func bind(provider: TiltProvider, view: UIView, multiplier: CGFloat) {
+            self.multiplier = multiplier
+            self.view = view
+            if listenerID == nil || self.provider !== provider {
+                unbind()
+                self.provider = provider
+                listenerID = provider.addListener { [weak self] offset in
+                    self?.apply(offset)
+                }
+            } else {
+                apply(provider.offset)
             }
+        }
+
+        func unbind() {
+            if let listenerID, let provider {
+                provider.removeListener(listenerID)
+            }
+            listenerID = nil
+            provider = nil
+            view?.transform = .identity
+            view = nil
+        }
+
+        private func apply(_ offset: CGSize) {
+            view?.transform = CGAffineTransform(
+                translationX: offset.width * multiplier,
+                y: offset.height * multiplier)
+        }
     }
 }
 

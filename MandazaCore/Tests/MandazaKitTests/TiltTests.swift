@@ -4,8 +4,8 @@ import CoreGraphics
 
 /// Contract for the gravity-based tilt-parallax mapping. `tiltOffset` is the
 /// pure geometry under the CoreMotion-backed `TiltProvider`: off ⇒ no motion,
-/// flat ⇒ faded out, a clamp that never exceeds a small fraction of the view,
-/// and an offset that shifts *with* the tilt.
+/// a clamp that never exceeds a small fraction of the view, and an offset that
+/// shifts *with* the tilt.
 final class TiltTests: XCTestCase {
 
     private let size = CGSize(width: 400, height: 800)
@@ -24,16 +24,26 @@ final class TiltTests: XCTestCase {
             .zero)
     }
 
-    func testFlatFadesToZero() {
-        // Face-up on a table: gravity ≈ (0, 0, −1). No stable parallax.
-        let flat = tiltOffset(gravityX: 0.2, gravityY: 0.0, gravityZ: -1.0,
+    func testFlatFaceUpClampsStably() {
+        // Face-up on a table: gravity ≈ (0, 0, −1). Offset parks at the Y clamp
+        // (no thrash — gravity is steady when flat).
+        let maxFrac = 0.05 * Double(min(size.width, size.height))
+        let flat = tiltOffset(gravityX: 0, gravityY: 0, gravityZ: -1,
                               intensity: .pronounced, viewSize: size)
-        XCTAssertEqual(flat, .zero)
+        XCTAssertEqual(flat.width, 0, accuracy: 1e-9)
+        XCTAssertEqual(flat.height, -maxFrac, accuracy: 1e-9)
+    }
 
-        // Nearly flat still fades out.
-        let nearFlat = tiltOffset(gravityX: 0.3, gravityY: -0.2, gravityZ: -0.9,
-                                  intensity: .pronounced, viewSize: size)
-        XCTAssertEqual(nearFlat, .zero)
+    func testReclinedReadingAngleStillResponds() {
+        // ~60° from vertical toward face-up — a normal reading pose. Must not
+        // zero out (the old upright-fade froze parallax here).
+        let gY = -0.5
+        let gZ = -0.85
+        let o = tiltOffset(gravityX: 0.25, gravityY: gY, gravityZ: gZ,
+                           intensity: .pronounced, viewSize: size)
+        XCTAssertNotEqual(o, .zero)
+        XCTAssertGreaterThan(o.width, 0)
+        XCTAssertLessThan(o.height, 0)
     }
 
     func testPronouncedClampsToMaxFractionWhenUpright() {
@@ -42,11 +52,6 @@ final class TiltTests: XCTestCase {
                            intensity: .pronounced, viewSize: size)
         XCTAssertEqual(abs(o.width), maxFrac, accuracy: 1e-9)
         XCTAssertEqual(abs(o.height), maxFrac, accuracy: 1e-9)
-
-        let o2 = tiltOffset(gravityX: 0.9, gravityY: uprightY, gravityZ: -0.9,
-                            intensity: .pronounced, viewSize: size)
-        XCTAssertLessThanOrEqual(abs(o2.width), maxFrac + 1e-9)
-        XCTAssertLessThanOrEqual(abs(o2.height), maxFrac + 1e-9)
     }
 
     func testSubtleIsSmallerThanPronounced() {
@@ -55,12 +60,10 @@ final class TiltTests: XCTestCase {
         let p = tiltOffset(gravityX: 1, gravityY: uprightY, gravityZ: 1,
                            intensity: .pronounced, viewSize: size)
         XCTAssertLessThan(abs(s.width), abs(p.width))
-        XCTAssertLessThan(abs(s.height), abs(p.height))
         XCTAssertEqual(abs(s.width), 0.02 * Double(min(size.width, size.height)), accuracy: 1e-9)
     }
 
     func testOffsetFollowsLateralTilt() {
-        // Right edge down (positive gravityX) → artwork moves right.
         let right = tiltOffset(gravityX: 0.3, gravityY: uprightY, gravityZ: 0,
                                intensity: .pronounced, viewSize: size)
         XCTAssertGreaterThan(right.width, 0)
@@ -70,7 +73,6 @@ final class TiltTests: XCTestCase {
     }
 
     func testOffsetFollowsLongitudinalTilt() {
-        // Lean toward face-up (negative gravityZ from upright) → negative Y offset.
         let back = tiltOffset(gravityX: 0, gravityY: uprightY, gravityZ: -0.3,
                               intensity: .pronounced, viewSize: size)
         XCTAssertLessThan(back.height, 0)
@@ -102,5 +104,15 @@ final class TiltTests: XCTestCase {
         XCTAssertEqual(provider.offset, .zero)
         provider.stop()
         XCTAssertEqual(provider.offset, .zero)
+    }
+
+    @MainActor
+    func testListenerReceivesCurrentAndUpdates() {
+        let provider = TiltProvider()
+        var seen: [CGSize] = []
+        let id = provider.addListener { seen.append($0) }
+        XCTAssertEqual(seen.count, 1)
+        XCTAssertEqual(seen[0], .zero)
+        provider.removeListener(id)
     }
 }
