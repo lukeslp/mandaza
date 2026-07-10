@@ -20,7 +20,7 @@ Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.
 | TestFlight beta review | ❌ Submitted after first upload |
 | Public TestFlight link | ❌ Generated after beta review passes |
 | **tvOS app** (`com.lukesteuber.mandaza.tv`) | ⏳ Separate App Store Connect record + upload (see below) |
-| Microphone permission usage string (1.3, Music Mode) | ✅ On iOS + watchOS targets |
+| Microphone permission usage string (1.3, music responsivity) | ✅ On iOS + watchOS targets |
 | Apple Watch companion app | ✅ Ships embedded in the iOS build (`WKCompanionAppBundleIdentifier` set); gets its own `APP_WATCH_ULTRA` screenshot set in the iOS listing, not a separate record |
 
 ## tvOS (MandazaTV) — App Store Connect & upload
