@@ -265,6 +265,8 @@ struct ContentView: View {
     private var controlBar: some View {
         let accent = BL.accent(for: settings.paletteId)
         return HStack(alignment: .center, spacing: 10) {
+            // Footer order: History · Favorites · Zen (center) · Settings · Save.
+            // "New" is gone — tapping the canvas generates a fresh mandala.
             dockButton(system: recents.isEmpty ? "clock" : "clock.arrow.circlepath",
                        label: "Previous",
                        accent: accent,
@@ -273,11 +275,11 @@ struct ContentView: View {
                 toggleRecents()
             }
 
-            dockButton(system: "slider.horizontal.3",
-                       label: "Tune",
-                       accent: accent) {
+            dockButton(system: favoriteIcon,
+                       label: settings.isFavorite(seed: seed) ? "Saved" : "Favorite",
+                       accent: settings.isFavorite(seed: seed) ? BL.pink : accent) {
                 noteInteraction()
-                showSettings = true
+                toggleFavorite()
             }
 
             Button {
@@ -290,18 +292,11 @@ struct ContentView: View {
             .accessibilityValue(reactor.source.isActive ? "Music responsive" : "")
             .buttonStyle(.plain)
 
-            dockButton(system: "sparkles",
-                       label: "New",
+            dockButton(system: "slider.horizontal.3",
+                       label: "Tune",
                        accent: accent) {
                 noteInteraction()
-                regenerate()
-            }
-
-            dockButton(system: favoriteIcon,
-                       label: settings.isFavorite(seed: seed) ? "Saved" : "Favorite",
-                       accent: settings.isFavorite(seed: seed) ? BL.pink : accent) {
-                noteInteraction()
-                toggleFavorite()
+                showSettings = true
             }
 
             Menu {
@@ -479,10 +474,10 @@ struct ContentView: View {
         selectionFeedback()
     }
 
-    /// Reconciles the tilt provider with the current Zen + intensity state.
-    /// Motion runs only while Zen is visible and the intensity is not off.
+    /// Reconciles the tilt provider with the current intensity setting. Parallax
+    /// runs whenever the intensity is not off — in Zen or on the normal canvas.
     private func applyTilt() {
-        if settings.zenMode, settings.zenTiltIntensity != .off {
+        if settings.zenTiltIntensity != .off {
             tilt.viewSize = canvasSize
             tilt.start(intensity: settings.zenTiltIntensity)
         } else {
