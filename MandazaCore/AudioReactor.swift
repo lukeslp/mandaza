@@ -157,7 +157,13 @@ public final class AudioReactor {
         smoothed.bass   = ema(smoothed.bass,   toward: Double(bands.bass))
         smoothed.mid    = ema(smoothed.mid,    toward: Double(bands.mid))
         smoothed.treble = ema(smoothed.treble, toward: Double(bands.treble))
-        smoothed.beatPulse = max(smoothed.beatPulse * exp(-dt / 0.18), onset ? 1.0 : 0.0)
+        // Decay between hits, then ease *toward* a beat instead of snapping to
+        // 1.0 — abrupt pulse jumps were stalling the live canvas TimelineView.
+        let decayed = smoothed.beatPulse * exp(-dt / 0.22)
+        let beatTarget = onset ? 1.0 : decayed
+        smoothed.beatPulse = onset
+            ? ema(decayed, toward: beatTarget, attack: 0.55, release: 0.55)
+            : decayed
 
         // Always accumulates internally; rides along on the next gated write.
         colorPhaseMs += dt * 1000 * (2.5 * smoothed.mid)
@@ -180,8 +186,9 @@ public final class AudioReactor {
 
     /// Asymmetric EMA: fast attack so hits register, slow release so the
     /// artwork breathes down instead of flickering.
-    private func ema(_ current: Double, toward target: Double) -> Double {
-        let coefficient = target > current ? 0.35 : 0.08
+    private func ema(_ current: Double, toward target: Double,
+                     attack: Double = 0.35, release: Double = 0.08) -> Double {
+        let coefficient = target > current ? attack : release
         return current + (target - current) * coefficient
     }
 

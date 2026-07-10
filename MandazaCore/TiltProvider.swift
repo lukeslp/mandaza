@@ -10,9 +10,10 @@ import CoreGraphics
 /// - `gravityY`: device +Y (top). ≈ −1 when upright in portrait, ≈ 0 flat.
 /// - `gravityZ`: device +Z (out of screen). 0 upright; −1 face-up flat.
 ///
-/// Returns `.zero` when tilt is `.off`. Offset saturates at a small fraction
-/// of the shorter edge (`subtle` ≈ 2%, `pronounced` ≈ 5%). The layer shifts
-/// *with* the tilt so rolling the device right nudges the artwork right.
+/// Returns `.zero` when tilt is `.off`. Offset saturates at a fraction of the
+/// shorter edge (`subtle` ≈ 6%, `pronounced` ≈ 14%) so depth reads clearly
+/// without sliding the mandala off-screen. The layer shifts *with* the tilt
+/// so rolling the device right nudges the artwork right.
 ///
 /// No upright-only fade: a normal reading angle already reclines past “perfect
 /// vertical,” and fading there made parallax feel frozen. Face-up flat simply
@@ -25,13 +26,14 @@ public func tiltOffset(gravityX: Double,
     let fraction: Double
     switch intensity {
     case .off:        return .zero
-    case .subtle:     fraction = 0.02
-    case .pronounced: fraction = 0.05
+    case .subtle:     fraction = 0.06
+    case .pronounced: fraction = 0.14
     }
 
     let maxOffset = fraction * Double(min(viewSize.width, viewSize.height))
-    // Fraction of g at which the parallax reaches its clamp (~23°).
-    let reference = 0.40
+    // Fraction of g at which the parallax reaches its clamp (~16°). Lower than
+    // a strict upright reference so everyday tilts use more of the travel.
+    let reference = 0.28
     let nx = max(-1.0, min(1.0, gravityX / reference))
     // Longitudinal: deviation from upright. Upright ≈ (0, −1, 0); reclining
     // toward face-up grows −Z. Using Z alone keeps left/right on X.
