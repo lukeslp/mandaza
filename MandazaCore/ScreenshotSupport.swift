@@ -25,4 +25,27 @@ public enum MandazaScreenshot {
         return false
         #endif
     }
+
+    /// Pin the Zen clock form for a capture: `MANDAZA_CLOCK_FORM=stacked|editorial|digital`.
+    /// Inert in release and when unset/invalid.
+    public static func clockForm(_ current: ZenClockForm) -> ZenClockForm {
+        #if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["MANDAZA_CLOCK_FORM"],
+           let pinned = ZenClockForm(rawValue: raw) {
+            return pinned
+        }
+        #endif
+        return current
+    }
+
+    /// Pin the Zen clock position for a capture: `MANDAZA_CLOCK_POSITION=center|upperThird|…`.
+    public static func clockPosition(_ current: ZenClockPosition) -> ZenClockPosition {
+        #if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["MANDAZA_CLOCK_POSITION"],
+           let pinned = ZenClockPosition(rawValue: raw) {
+            return pinned
+        }
+        #endif
+        return current
+    }
 }

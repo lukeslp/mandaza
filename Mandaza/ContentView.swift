@@ -91,8 +91,8 @@ struct ContentView: View {
                                 containerOpacity: settings.zenClockContainerOpacity,
                                 fontStyle: settings.zenClockFontStyle,
                                 fontWeight: settings.zenClockFontWeight,
-                                position: settings.zenClockPosition,
-                                form: settings.zenClockForm,
+                                position: MandazaScreenshot.clockPosition(settings.zenClockPosition),
+                                form: MandazaScreenshot.clockForm(settings.zenClockForm),
                                 sizeScale: settings.zenClockSizeScale)
                     .offset(CGSize(width: tilt.offset.width * 0.5,
                                    height: tilt.offset.height * 0.5))
