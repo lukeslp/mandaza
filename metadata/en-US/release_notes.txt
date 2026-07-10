@@ -1,1 +1,7 @@
-Mandaza 1.3 adds Music Mode: press and hold the New button and the mandala's stroke width, glow, and color pulse live with the ambient sound in the room. Nothing is recorded — it's a live visual reaction, entirely on-device. This update also brings a fuller Apple Watch companion: tap to regenerate, turn the Digital Crown to cycle palettes, and use Send to Watch from your iPhone to push any design straight to your wrist. Your iPhone's look now mirrors to the watch automatically.
+Zen mode grew up.
+
+• Music that moves it — the mandala now pumps on the beat and quickens with the music. Dial in exactly how much with a Reactivity slider.
+• A living clock — new stacked and editorial layouts, serif and condensed type, eight positions, and a size you choose.
+• Tilt for depth — the art drifts with a gentle parallax as you tilt your iPhone or Apple Watch. Subtle or pronounced, your call.
+
+Tap the center button to drop into Zen. Nothing is collected, ever.
