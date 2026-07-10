@@ -30,11 +30,11 @@ public func tiltOffset(pitch: Double,
     return CGSize(width: -nx * maxOffset, height: -ny * maxOffset)
 }
 
-#if os(tvOS)
+#if os(tvOS) || os(macOS)
 
-/// tvOS has no motion sensors: the provider is inert. `offset` never moves off
-/// `.zero`, so the parallax layer is a no-op and no CoreMotion symbols are
-/// referenced on this platform.
+/// tvOS (and the macOS unit-test host) have no device-motion sensors: the
+/// provider is inert. `offset` never moves off `.zero`, so the parallax layer
+/// is a no-op and no CoreMotion symbols are referenced on these platforms.
 @MainActor
 @Observable
 public final class TiltProvider {
