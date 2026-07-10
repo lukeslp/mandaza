@@ -15,7 +15,12 @@ let package = Package(
         .target(
             name: "MandazaKit",
             path: ".",
-            exclude: ["Package.swift"]
+            exclude: ["Package.swift", "Tests"]
+        ),
+        .testTarget(
+            name: "MandazaKitTests",
+            dependencies: ["MandazaKit"],
+            path: "Tests/MandazaKitTests"
         )
     ]
 )

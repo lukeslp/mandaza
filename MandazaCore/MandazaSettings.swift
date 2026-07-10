@@ -5,12 +5,31 @@ public enum ZenClockFontStyle: String, CaseIterable, Codable, Sendable {
     case system
     case rounded
     case monospaced
+    case serif
+    case condensed
 }
 
 public enum ZenClockPosition: String, CaseIterable, Codable, Sendable {
     case top
     case upperThird
     case center
+    case lowerThird
+    case topLeading
+    case topTrailing
+    case bottomLeading
+    case bottomTrailing
+}
+
+public enum ZenClockForm: String, CaseIterable, Codable, Sendable {
+    case digital
+    case stacked
+    case editorial
+}
+
+public enum ZenTiltIntensity: String, CaseIterable, Codable, Sendable {
+    case off
+    case subtle
+    case pronounced
 }
 
 /// Single source of truth for user-editable state, shared between the app
@@ -62,6 +81,22 @@ public final class MandazaSettings {
     public var zenClockFontStyleRaw: String { didSet { write(zenClockFontStyleRaw, .zenClockFontStyleRaw) } }
     public var zenClockFontWeight: Double { didSet { write(zenClockFontWeight, .zenClockFontWeight) } }
     public var zenClockPositionRaw: String { didSet { write(zenClockPositionRaw, .zenClockPositionRaw) } }
+    /// Multiplier applied to the Zen clock's base point size. Default 1.0.
+    public var zenClockSizeScale: Double { didSet { write(zenClockSizeScale, .zenClockSizeScale) } }
+    /// Raw value of the Zen clock layout form; use `zenClockForm` for typed access.
+    public var zenClockFormRaw: String { didSet { write(zenClockFormRaw, .zenClockFormRaw) } }
+
+    // MARK: - Music responsivity
+
+    /// When true (default on iOS/watchOS), entering Zen starts the audio reactor.
+    public var musicResponsivity: Bool { didSet { write(musicResponsivity, .musicResponsivity) } }
+    /// 0…1 — how strongly the mandala responds to music. Default 0.35.
+    public var reactivity: Double { didSet { write(reactivity, .reactivity) } }
+
+    // MARK: - Tilt
+
+    /// Raw value of the tilt-parallax intensity; use `zenTiltIntensity` for typed access.
+    public var zenTiltIntensityRaw: String { didSet { write(zenTiltIntensityRaw, .zenTiltIntensityRaw) } }
 
     // MARK: - Favorites
 
@@ -118,6 +153,12 @@ public final class MandazaSettings {
         self.zenClockFontStyleRaw = suite.string(forKey: Key.zenClockFontStyleRaw.rawValue) ?? ZenClockFontStyle.system.rawValue
         self.zenClockFontWeight = Self.readDouble(suite, .zenClockFontWeight, default: 0.1)
         self.zenClockPositionRaw = suite.string(forKey: Key.zenClockPositionRaw.rawValue) ?? ZenClockPosition.upperThird.rawValue
+        self.zenClockSizeScale = Self.readDouble(suite, .zenClockSizeScale, default: 1.0)
+        self.zenClockFormRaw = suite.string(forKey: Key.zenClockFormRaw.rawValue) ?? ZenClockForm.digital.rawValue
+
+        self.musicResponsivity = Self.readBool(suite, .musicResponsivity, default: true)
+        self.reactivity = Self.readDouble(suite, .reactivity, default: 0.35)
+        self.zenTiltIntensityRaw = suite.string(forKey: Key.zenTiltIntensityRaw.rawValue) ?? ZenTiltIntensity.subtle.rawValue
 
         self.widgetRotationMinutes = Self.readInt(suite, .widgetRotationMinutes, default: 60)
 
@@ -232,6 +273,16 @@ public final class MandazaSettings {
         set { zenClockPositionRaw = newValue.rawValue }
     }
 
+    public var zenClockForm: ZenClockForm {
+        get { ZenClockForm(rawValue: zenClockFormRaw) ?? .digital }
+        set { zenClockFormRaw = newValue.rawValue }
+    }
+
+    public var zenTiltIntensity: ZenTiltIntensity {
+        get { ZenTiltIntensity(rawValue: zenTiltIntensityRaw) ?? .subtle }
+        set { zenTiltIntensityRaw = newValue.rawValue }
+    }
+
     /// Typed accessor over `pinnedSnapshotData` — the snapshot the watch face
     /// keeps showing while auto-regeneration is paused.
     public var pinnedSnapshot: MandazaSnapshot? {
@@ -257,6 +308,9 @@ public final class MandazaSettings {
         case zenAutoRegen, zenAutoRegenSeconds
         case zenClockOpacity, zenClockContainerOpacity
         case zenClockFontStyleRaw, zenClockFontWeight, zenClockPositionRaw
+        case zenClockSizeScale, zenClockFormRaw
+        case musicResponsivity, reactivity
+        case zenTiltIntensityRaw
         case favorites
         case widgetRotationMinutes
         case watchAutoRegen, watchAutoRegenSeconds

@@ -872,16 +872,26 @@ private struct TVZenClockOverlay: View {
             return .top
         case .center:
             return .center
+        case .lowerThird:
+            return .bottom
+        case .topLeading:
+            return .topLeading
+        case .topTrailing:
+            return .topTrailing
+        case .bottomLeading:
+            return .bottomLeading
+        case .bottomTrailing:
+            return .bottomTrailing
         }
     }
 
     private func topPadding(height: CGFloat) -> CGFloat {
         switch position {
-        case .top:
+        case .top, .topLeading, .topTrailing:
             return 72
         case .upperThird:
             return max(72, height * 0.16)
-        case .center:
+        case .center, .lowerThird, .bottomLeading, .bottomTrailing:
             return 0
         }
     }
@@ -899,6 +909,8 @@ private struct TVZenClockOverlay: View {
         case .system: return .default
         case .rounded: return .rounded
         case .monospaced: return .monospaced
+        case .serif: return .serif
+        case .condensed: return .default
         }
     }
 }
