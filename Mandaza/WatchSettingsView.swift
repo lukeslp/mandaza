@@ -140,6 +140,15 @@ struct WatchSettingsView: View {
             }
             .accessibilityLabel("Clock size")
             .accessibilityValue("\(Int(settings.zenClockSizeScale * 100)) percent")
+
+            Picker("Tilt", selection: $settings.zenTiltIntensityRaw) {
+                Text("Off").tag(ZenTiltIntensity.off.rawValue)
+                Text("Subtle").tag(ZenTiltIntensity.subtle.rawValue)
+                Text("Pronounced").tag(ZenTiltIntensity.pronounced.rawValue)
+            }
+            .pickerStyle(.menu)
+            .font(.bl(15))
+            .foregroundStyle(BL.paper)
         } header: {
             blHeader("Clock", accent: accent)
         }

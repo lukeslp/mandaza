@@ -39,6 +39,10 @@ struct ContentView: View {
     /// set. The reactor is foreground-only; scenePhase handling stops/resumes.
     @State private var reactor = AudioReactor()
 
+    /// Device-tilt parallax source. Runs only while Zen is visible and the
+    /// intensity setting is not off; drives layered `.offset`s below.
+    @State private var tilt = TiltProvider()
+
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.displayScale) private var displayScale
@@ -59,10 +63,11 @@ struct ContentView: View {
                                   onIdleChange: handleIdleChange(_:),
                                   modulationSource: reactor.source)
                 }
-                .onAppear { canvasSize = geo.size }
-                .onChange(of: geo.size) { _, new in canvasSize = new }
+                .onAppear { canvasSize = geo.size; tilt.viewSize = geo.size }
+                .onChange(of: geo.size) { _, new in canvasSize = new; tilt.viewSize = new }
             }
             .ignoresSafeArea()
+            .offset(tilt.offset)
             .contentShape(Rectangle())
             .gesture(
                 LongPressGesture(minimumDuration: 0.7)
@@ -89,6 +94,8 @@ struct ContentView: View {
                                 position: settings.zenClockPosition,
                                 form: settings.zenClockForm,
                                 sizeScale: settings.zenClockSizeScale)
+                    .offset(CGSize(width: tilt.offset.width * 0.5,
+                                   height: tilt.offset.height * 0.5))
                     .allowsHitTesting(false)
                     .transition(.opacity)
             }
@@ -185,6 +192,7 @@ struct ContentView: View {
                 handleIdleChange(true)
             }
         }
+        .onChange(of: settings.zenTiltIntensityRaw) { _, _ in applyTilt() }
         .onChange(of: showSettings) { _, isPresented in
             if !isPresented { noteInteraction() }
         }
@@ -194,6 +202,7 @@ struct ContentView: View {
         .onOpenURL { handleIncomingURL($0) }
         .onAppear {
             scheduleControlsFade()
+            applyTilt()
             WatchSyncController.shared.activate()
             #if DEBUG
             if MandazaScreenshot.isMusicDemoActive {
@@ -466,7 +475,19 @@ struct ContentView: View {
         noteInteraction()
         withAnimation { settings.zenMode.toggle() }
         applyMusicResponsivity()
+        applyTilt()
         selectionFeedback()
+    }
+
+    /// Reconciles the tilt provider with the current Zen + intensity state.
+    /// Motion runs only while Zen is visible and the intensity is not off.
+    private func applyTilt() {
+        if settings.zenMode, settings.zenTiltIntensity != .off {
+            tilt.viewSize = canvasSize
+            tilt.start(intensity: settings.zenTiltIntensity)
+        } else {
+            tilt.stop()
+        }
     }
 
     /// Reconciles the reactor with the current Zen + Music-responsivity state.
@@ -633,9 +654,11 @@ struct ContentView: View {
             if watchAvailable {
                 WatchSyncController.shared.pushSettings(settings)
             }
+            applyTilt()
         case .background, .inactive:
             autoRegenTask?.cancel()
             reactor.stop()
+            tilt.stop()
         @unknown default:
             break
         }
@@ -878,6 +901,17 @@ private struct SettingsSheet: View {
                                       range: 0.5 ... 1.8,
                                       accent: accent,
                                       format: { "\(Int($0 * 100))%" })
+
+                        #if !os(tvOS)
+                        Picker("Tilt Parallax", selection: $settings.zenTiltIntensityRaw) {
+                            Text("Off").tag(ZenTiltIntensity.off.rawValue)
+                            Text("Subtle").tag(ZenTiltIntensity.subtle.rawValue)
+                            Text("Pronounced").tag(ZenTiltIntensity.pronounced.rawValue)
+                        }
+                        .pickerStyle(.menu)
+                        .font(.bl(15))
+                        .foregroundStyle(BL.paper)
+                        #endif
 
                         Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
                             .font(.bl(15))
