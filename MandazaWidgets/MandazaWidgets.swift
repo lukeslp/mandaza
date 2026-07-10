@@ -51,65 +51,6 @@ private struct StandByMandazaView: View {
     }
 }
 
-// MARK: - Lock Screen
-
-struct LockMandazaWidget: Widget {
-    let kind: String = "LockMandaza"
-
-    var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind,
-                               intent: MandazaWidgetIntent.self,
-                               provider: MandazaProvider()) { entry in
-            LockMandazaView(entry: entry)
-                .containerBackground(.black, for: .widget)
-        }
-        .supportedFamilies([.accessoryRectangular, .accessoryCircular, .accessoryInline])
-        .configurationDisplayName("Mandaza — Lock")
-        .description("A glimpse of a generative mandaza on your Lock Screen.")
-    }
-}
-
-private struct LockMandazaView: View {
-    @Environment(\.widgetFamily) private var family
-    let entry: MandazaEntry
-
-    var body: some View {
-        switch family {
-        case .accessoryInline:
-            Text("✦ Mandaza")
-        case .accessoryCircular:
-            GeometryReader { geo in
-                MandazaImageView(snapshot: entry.snapshot,
-                                 size: geo.size,
-                                 scale: 2)
-                    .clipShape(Circle())
-            }
-            .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
-        default:
-            // Rectangular
-            HStack(spacing: 8) {
-                GeometryReader { geo in
-                    MandazaImageView(snapshot: entry.snapshot,
-                                     size: geo.size,
-                                     scale: 2)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
-                .frame(width: 56)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.date, style: .time)
-                        .font(.headline)
-                        .monospacedDigit()
-                    Text("Mandaza")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 0)
-            }
-            .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
-        }
-    }
-}
-
 // MARK: - Home Screen (small / medium)
 
 struct HomeMandazaWidget: Widget {
