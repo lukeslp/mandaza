@@ -1,30 +1,30 @@
 # Mandaza
 
-A native iOS and tvOS app that draws animated hexagonal-loop mandalas in
-real time. On iPhone and iPad it ships Lock Screen / StandBy / Home Screen
-widgets and exports wallpaper-resolution images. On Apple TV it runs as a
-fullscreen ambient experience with on-screen quick controls (Apple
-TV has no third-party WidgetKit surface).
+A native iOS, watchOS, and tvOS app that draws animated hexagonal-loop
+mandalas in real time. On iPhone and iPad it ships Home Screen / StandBy
+widgets and exports wallpaper-resolution images. On Apple Watch it runs as
+a live companion face. On Apple TV it runs as a fullscreen ambient
+experience with on-screen quick controls (Apple TV has no third-party
+WidgetKit surface).
 
 100% on-device. No network. No analytics. No account.
 
 ## Features
 
 - **Animated canvas.** SwiftUI `Canvas` + `TimelineView` renders a fresh
-  hexagonal-loop pattern on every tap, stroking each loop progressively with
-  optional glow (off by default; **New** may turn on a soft bloom less than half the time).
+  hexagonal-loop pattern on every canvas tap, stroking each loop
+  progressively with optional glow (off by default; regenerate may turn on a
+  soft bloom less than half the time).
 - **11 palettes** — Aurora, Sunset, Ember, Bioluminescent, Vaporwave,
   Cyberpunk, Risograph, Oxblood, Arctic, Dichromat, Amber.
-- **Zen Mode** — large ultra-light digital clock floating over the mandala,
-  auto-regenerating patterns at a user-set interval. Calm by default,
-  customizable for nightstand or desk display.
-- **Zen presentation controls** — clock/container opacity, font style and
-  weight, and position presets (top / upper-third / center), with tvOS-first
-  tuning mirrored on iOS. Weight **labels** and rendered `Font.Weight` share
-  one `ZenClockTypography` table in `MandazaCore` so the slider never disagrees
-  with the clock.
-- **Settings streamlined** — Zen Mode toggle is surfaced at the top; settings
-  footer now links directly to `dr.eamer.dev`.
+- **Zen Mode** — center footer button drops into Zen: large clock over the
+  mandala, optional auto-regenerating patterns. Digital, stacked, and
+  editorial clock forms; opacity, type, size, and eight positions.
+- **Music responsivity** — in Zen, optional microphone-driven beat pump and
+  speed-up (Reactivity slider). Audio is never recorded or stored.
+- **Tilt parallax** — Off / Subtle / Pronounced device-tilt depth on iPhone
+  and Apple Watch.
+- **Footer** — History · Favorites · Zen · Settings · Save.
 - **Favorites** — heart any mandala to keep it; favorites cycle into widget
   rotation automatically. Loading a favorite or **Previous** snapshot also
   restores density, geometry, and stroke look from the saved `EngineConfig`.
@@ -32,11 +32,11 @@ TV has no third-party WidgetKit surface).
   feel slipping.
 - **Widgets**
   - StandBy (`.systemLarge` / `.systemExtraLarge`) with time HUD
-  - Lock Screen (`.accessoryRectangular` / `.accessoryCircular` /
-    `.accessoryInline`)
   - Home Screen (`.systemSmall` / `.systemMedium`)
-  - Each widget instance is configurable via long-press → Edit Widget:
-    palette, rotation interval, show-time toggle.
+  - Each widget instance is configurable via Edit Widget: palette, rotation
+    interval, show-time toggle.
+- **Apple Watch companion** — live face, tap to regenerate, Digital Crown
+  for palettes, long-press settings, auto-mirror from iPhone, Send to Watch.
 - **`mandaza://`** URL scheme — tap a widget to open the app at that exact
   seed.
 - **Export** to Photos at iPhone Pro / Standard / iPad / Square 4K presets.
@@ -100,8 +100,8 @@ For paste-ready App Store metadata, review notes, privacy/compliance checklist, 
 you that **Menu** restores controls (the art stays primary). Zen clock type is
 scaled for 10-foot viewing.
 
-The tvOS target shares `MandazaCore` and `Mandaza/MandazaCanvas.swift` only (no
-Photos, no WidgetKit). Bundle id: `com.lukesteuber.mandaza.tv`.
+The tvOS target shares `MandazaCore` only (no Photos, no WidgetKit). Bundle id:
+`com.lukesteuber.mandaza.tv`.
 
 **Physical Apple TV:** Xcode needs a **registered device** and matching **App ID** (with App Groups). Step-by-step: [PROVISIONING.md](PROVISIONING.md).
 
@@ -111,7 +111,6 @@ Photos, no WidgetKit). Bundle id: `com.lukesteuber.mandaza.tv`.
 Mandaza/                      iOS app
   MandazaApp.swift            App entry
   ContentView.swift           Top-level UI: canvas + control bar + settings + favorites
-  MandazaCanvas.swift         SwiftUI Canvas + TimelineView animation host
   ExportService.swift         PHPhotoLibrary save + wallpaper presets
   Mandaza.entitlements        App Group: group.com.lukesteuber.mandaza
   Assets.xcassets/            AppIcon, AccentColor, LaunchSplashIOS
@@ -119,22 +118,28 @@ Mandaza/                      iOS app
 
 MandazaCore/                  Sources shared between app and widget targets
   MandazaEngine.swift         Algorithm port: cells, dots, loops, beziers + off-main renderImage
+  MandazaCanvas.swift         SwiftUI Canvas + TimelineView animation host
   Palettes.swift              11 palettes, CGColor + SwiftUI Color representations
   MandazaSnapshot.swift       Value-type record of one mandala (used by widgets + favorites)
   MandazaSettings.swift       @Observable, App Group-backed persistence + applyLook(from:)
   ZenClockTypography.swift    Shared zen clock weight → Font.Weight + label mapping
   MandazaImageView.swift      Still-image renderer used by widgets and favorites grid
+  TiltProvider.swift          CoreMotion parallax (inert on tvOS / macOS host)
 
 MandazaWidgets/               WidgetKit app extension
-  MandazaWidgetsBundle.swift  @main bundle
-  MandazaWidgets.swift        StandBy / Lock Screen / Home Screen widget definitions
+  MandazaWidgetsBundle.swift  @main bundle (Home + StandBy)
+  MandazaWidgets.swift        StandBy / Home Screen widget definitions
   MandazaProvider.swift       Timeline provider (MainActor-isolated settings reads) + rotation logic
-  MandazaWidgetIntent.swift   AppIntent for long-press configuration
+  MandazaWidgetIntent.swift   AppIntent for Edit Widget configuration
+
+MandazaWatch/                 watchOS companion face
+  WatchRootView.swift         Live canvas + gestures
+  WatchSettingsView.swift     On-wrist settings
 
 MandazaTests/                 Unit tests
-  EngineTests.swift           8 tests on engine determinism + renderImage + palette
+  EngineTests.swift           Engine determinism + renderImage + palette
   SettingsTests.swift         Settings → engine-config, favorites, typography, applyLook
-  SnapshotTests.swift         3 tests on MandazaSnapshot + EngineConfig Codable round-trip
+  SnapshotTests.swift         MandazaSnapshot + EngineConfig Codable round-trip
 
 MandazaTV/                    tvOS app (ambient / screensaver-style while open)
   MandazaTVApp.swift          App entry
@@ -145,7 +150,7 @@ MandazaTV/                    tvOS app (ambient / screensaver-style while open)
 
 project.yml                   xcodegen spec (authoritative project source)
 scripts/
-  apply-brand-assets.py       Resize supplied icon + splash into iOS/tvOS catalog slots (`--tv-icon` for tv icon art, `--tv-store-backdrop` for App Store depth backdrop, `--tv-splash` for wide tv-only launch/top-shelf art)
+  apply-brand-assets.py       Resize supplied icon + splash into iOS/tvOS catalog slots
   archive.sh / archive-tvos.sh
 ```
 
@@ -158,9 +163,10 @@ building on David Siaw's Hexlife. Truchet tile mathematics is public domain
 
 ## License
 
-TBD.
+MIT — see [LICENSE](LICENSE).
 
 ## Status
 
-Pre-release. Engine, settings, widgets, and tests are all in. Next: App Store
-assets, accessibility soak test, App Review submission.
+Version **1.3** — music responsivity, clock forms, tilt parallax, Watch
+companion, Home/StandBy widgets. Next: App Store Connect upload of metadata
+and screenshots, TestFlight beta review.

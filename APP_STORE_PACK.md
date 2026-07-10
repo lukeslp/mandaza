@@ -33,28 +33,29 @@ Both iOS and tvOS require separate app records in App Store Connect because they
 
 #### Promotional Text (170 chars max)
 
-`Generate luminous procedural mandalas, let Music Mode pulse them to the sound in the room, and send any design straight to your Apple Watch face.`
+`Generate luminous procedural mandalas, let Zen pulse them to the sound in the room, and send any design straight to your Apple Watch face.`
 
 #### Full Description
 
 Mandaza creates procedural ambient mandalas on your device in real time.
 
-Tap to generate a new pattern, tune the look, and save high-resolution images for wallpapers. Keep favorites and let your widgets rotate through them automatically.
+Tap the canvas for a new pattern, tune the look, and save high-resolution images for wallpapers. Keep favorites and let your widgets rotate through them automatically.
 
 Features:
 - Real-time generative canvas with smooth animated loop drawing
 - 11 curated color palettes
-- Zen Mode with optional clock overlay and style controls (opacity, container, font, position)
-- Favorites with quick recall
-- Lock Screen, Home Screen, and StandBy widgets
+- Zen Mode from the center footer button — optional clock overlay with digital, stacked, and editorial forms, plus opacity, type, size, and eight positions
+- Music responsivity in Zen: the mandala pumps on the beat and quickens with nearby sound (Reactivity slider). Audio is never recorded or stored
+- Tilt parallax for gentle depth on iPhone and Apple Watch
+- Favorites with quick recall and Previous history
+- Home Screen and StandBy widgets
 - Export presets for iPhone, iPad, and Square 4K
 - Deterministic seeds for reproducible visuals
-- Music Mode: press and hold the New button and the mandala listens — stroke width, glow, and color pulse live with the ambient sound in the room
 - Apple Watch companion: a full watch face with tap to regenerate, Digital Crown to cycle palettes, and long-press for settings — your iPhone's look mirrors to the watch automatically, and Send to Watch pushes the current or any favorited design to your wrist instantly
 
 Privacy first:
 Mandaza runs on-device, with no account and no analytics.
-Photos access is requested only when you choose Save. Microphone access is requested only if you turn on Music Mode, to read ambient sound levels for the live visual pulse — audio is processed in memory and is never recorded, stored, or sent anywhere.
+Photos access is requested only when you choose Save. Microphone access is requested only if you turn on Music responsivity, to read ambient sound levels for the live visual pulse — audio is processed in memory and is never recorded, stored, or sent anywhere.
 
 Questions or feedback: luke@lukesteuber.com
 
@@ -66,20 +67,20 @@ Questions or feedback: luke@lukesteuber.com
 
 #### What to Test (TestFlight)
 
-- Tap canvas or New button to generate patterns.
-- Open Settings to adjust palette, density, geometry, and speed.
+- Tap the canvas to generate patterns; use the center Zen button to enter/exit Zen.
+- Open Settings to adjust palette, density, geometry, speed, clock form, tilt, and music responsivity.
 - Save an image to Photos and verify success path + permission prompts.
-- Favorite/unfavorite a pattern and confirm it appears in Favorites.
-- Verify widget behavior (Home, Lock, StandBy): seed rotation and deep-link opening.
+- Favorite/unfavorite a pattern and confirm it appears in Favorites; use Previous history.
+- Verify widget behavior (Home, StandBy): seed rotation and deep-link opening.
 - Confirm deep-link format: `mandaza://seed/<UUID>`.
-- Long-press the New button to enable Music Mode; confirm the priming explanation appears before the system mic prompt.
-- Deny microphone access and confirm Music Mode fails gracefully (no crash, clear guidance in Settings > Music Mode).
-- Grant microphone access and confirm the New button's live ring pulses with real ambient sound.
-- Background the app while Music Mode is active; confirm the mic stops and resumes correctly on return.
+- Enable Music responsivity in Settings (or enter Zen with it already on); confirm the system mic prompt and that the Zen button's live ring pulses with ambient sound.
+- Deny microphone access and confirm music responsivity fails gracefully (no crash, clear guidance in Settings).
+- Background the app while the reactor is active; confirm the mic stops and resumes correctly on return.
+- Enable tilt parallax and confirm the canvas drifts without restarting the draw animation.
 - Open Settings > Apple Watch and confirm pairing status reflects reality (paired/unpaired, watch app installed/not).
 - Trigger "Send to Watch" (Save menu, and from a Favorite) with the Watch app open and confirm the design appears immediately; with it closed, confirm it's waiting on next open.
 - Change palette, density, glow, or line width on iPhone and confirm the watch face auto-syncs without manual action.
-- With VoiceOver or Switch Control on, confirm Music Mode is reachable via Settings even though the New button's long-press is disabled.
+- With VoiceOver or Switch Control on, confirm music responsivity is reachable via Settings.
 
 ### tvOS Listing
 
@@ -191,33 +192,27 @@ Prepare and upload these per-store listing:
   - Apple TV screenshots (unchanged in 1.3 — reuse existing set)
   - Optional tvOS app preview video
 
-Use short, legible overlays with one core message per frame. Staging directory: `screenshots/en-US/` (see `NOTES.md` there for capture provenance and outstanding recaptures).
+Use short, legible overlays with one core message per frame. Staging directory: `screenshots/en-US/` (see `NOTES.md` there — iPhone 1320×2868 heroes and four Watch Ultra faces are ASC-ready).
 
-#### Apple Watch screenshot set (new in 1.3, 5-6 frames)
+#### Apple Watch screenshot set (1.3)
 
-1. **Hero** — the watch face itself, full mandala fill. Caption: "A generative mandala face for Apple Watch."
-2. **Tap to regenerate** — face mid-transition between two seeds. Caption: "Tap the face for a new pattern."
-3. **Digital Crown palette cycling** — Crown highlighted, two palette swatches shown. Caption: "Turn the Crown to cycle palettes."
-4. **Long-press settings** — the settings sheet open (Music Mode toggle, sync status). Caption: "Long-press for quick settings."
-5. **Send to Watch** — iPhone with a favorited design and "Send to Watch," watch face updating to match. Caption: "Send any design straight to your wrist."
-6. **Automatic mirroring (CTA)** — iPhone Settings (palette/density/glow/line width) next to the matching watch face. Caption: "Your look, mirrored automatically."
+Staged face variants: `watch_1_aurora.png` … `watch_4_ember.png` (422×514). Optional later: tap-to-regenerate transition, Digital Crown cycle, Send to Watch side-by-side.
 
-#### iPhone screenshot additions (2 new frames, slot after the core canvas/widget shots)
+#### iPhone screenshot set (1.3)
 
-- **Music Mode active** — canvas with the New button's live pulse ring visible mid-glow. Caption: "Music Mode listens and the mandala pulses."
-- **Apple Watch settings** — Settings > Apple Watch screen (pairing status, auto-mirror toggle, Send to Watch). Caption: "One look, everywhere you wear it."
+Staged heroes at 1320×2868: mandalas, music-reactive Zen, digital clock, stacked clock, calm/editorial. Optional later: Settings > Apple Watch pairing status.
 
 ## App Review Notes Pack
 
 ### iOS Review Notes (paste-ready)
 
 - Mandaza is an on-device procedural art app with no sign-in and no analytics.
-- Main flow: tap New or canvas to regenerate ambient mandala patterns.
+- Main flow: tap the canvas to regenerate ambient mandala patterns; the center footer button enters Zen Mode.
 - Save uses Photos add permission only.
-- Widgets support Home Screen, Lock Screen, and StandBy with configurable palette/rotation.
+- Widgets support Home Screen and StandBy with configurable palette/rotation (no Lock Screen accessory families).
 - Deep link format: `mandaza://seed/<UUID>`.
-- If assistive technologies are enabled, long-press behavior may differ; New button is canonical.
-- Long-press the New button to toggle **Music Mode**: microphone access is used only for local, on-device audio-reactive visuals (stroke width, glow, and color pulse react to ambient sound levels in real time). Audio is never recorded, saved, or uploaded, and there is no integration with any streaming or third-party audio service. The permission is requested only when the user turns it on, with a priming explanation shown first. With VoiceOver/Switch Control active, the long-press is disabled and Music Mode is reachable instead via Settings > Music Mode (an ordinary Toggle).
+- **Music responsivity** (Settings toggle, active in Zen): microphone access is used only for local, on-device audio-reactive visuals (beat pump, speed, stroke/glow). Audio is never recorded, saved, or uploaded, and there is no integration with any streaming or third-party audio service. The permission is requested only when the user turns it on.
+- **Tilt parallax** is optional (Off / Subtle / Pronounced) and is a presentation offset only.
 - Mandaza includes an Apple Watch companion app that syncs over WatchConnectivity. The iPhone app mirrors its current look (palette, density, glow, line width) to the paired watch automatically, and includes a "Send to Watch" action (Save menu, and on any Favorite) that pushes a design to the watch immediately. This paired-device sync is expected behavior between the two apps under the same Team ID / App Group and is not unexpected background networking.
 
 ### tvOS Review Notes (paste-ready)
@@ -230,7 +225,13 @@ Use short, legible overlays with one core message per frame. Staging directory: 
 
 ## What's New in 1.3 (Release Notes)
 
-Mandaza 1.3 adds Music Mode: press and hold the New button and the mandala's stroke width, glow, and color pulse live with the ambient sound in the room. Nothing is recorded — it's a live visual reaction, entirely on-device. This update also brings a fuller Apple Watch companion: tap to regenerate, turn the Digital Crown to cycle palettes, and use Send to Watch from your iPhone to push any design straight to your wrist. Your iPhone's look now mirrors to the watch automatically.
+Zen mode grew up.
+
+• Music that moves it — the mandala now pumps on the beat and quickens with the music. Dial in exactly how much with a Reactivity slider.
+• A living clock — new stacked and editorial layouts, serif and condensed type, eight positions, and a size you choose.
+• Tilt for depth — the art drifts with a gentle parallax as you tilt your iPhone or Apple Watch. Subtle or pronounced, your call.
+
+Tap the center button to drop into Zen. Nothing is collected, ever.
 
 ## Submission Runbook
 

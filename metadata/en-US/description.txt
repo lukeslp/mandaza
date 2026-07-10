@@ -1,20 +1,21 @@
 Mandaza creates procedural ambient mandalas on your device in real time.
 
-Tap to generate a new pattern, tune the look, and save high-resolution images for wallpapers. Keep favorites and let your widgets rotate through them automatically.
+Tap the canvas for a new pattern, tune the look, and save high-resolution images for wallpapers. Keep favorites and let your widgets rotate through them automatically.
 
 Features:
 - Real-time generative canvas with smooth animated loop drawing
 - 11 curated color palettes
-- Zen Mode with optional clock overlay and style controls (opacity, container, font, position)
-- Favorites with quick recall
-- Lock Screen, Home Screen, and StandBy widgets
+- Zen Mode from the center footer button — optional clock overlay with digital, stacked, and editorial forms, plus opacity, type, size, and eight positions
+- Music responsivity in Zen: the mandala pumps on the beat and quickens with nearby sound (Reactivity slider). Audio is never recorded or stored
+- Tilt parallax for gentle depth on iPhone and Apple Watch
+- Favorites with quick recall and Previous history
+- Home Screen and StandBy widgets
 - Export presets for iPhone, iPad, and Square 4K
 - Deterministic seeds for reproducible visuals
-- Music Mode: press and hold the New button and the mandala listens — stroke width, glow, and color pulse live with the ambient sound in the room
 - Apple Watch companion: a full watch face with tap to regenerate, Digital Crown to cycle palettes, and long-press for settings — your iPhone's look mirrors to the watch automatically, and Send to Watch pushes the current or any favorited design to your wrist instantly
 
 Privacy first:
 Mandaza runs on-device, with no account and no analytics.
-Photos access is requested only when you choose Save. Microphone access is requested only if you turn on Music Mode, to read ambient sound levels for the live visual pulse — audio is processed in memory and is never recorded, stored, or sent anywhere.
+Photos access is requested only when you choose Save. Microphone access is requested only if you turn on Music responsivity, to read ambient sound levels for the live visual pulse — audio is processed in memory and is never recorded, stored, or sent anywhere.
 
 Questions or feedback: luke@lukesteuber.com
