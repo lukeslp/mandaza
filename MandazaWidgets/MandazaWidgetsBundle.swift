@@ -5,6 +5,7 @@ import WidgetKit
 struct MandazaWidgetsBundle: WidgetBundle {
     var body: some Widget {
         StandByMandazaWidget()
+        LockMandazaWidget()
         HomeMandazaWidget()
     }
 }

@@ -20,6 +20,7 @@ import UIKit
 struct TVContentView: View {
 
     @State private var settings = MandazaSettings.shared
+    @State private var configOverride: EngineConfig?
     @State private var seed = UUID().uuidString
     @State private var canvasSize: CGSize = .zero
 
@@ -47,6 +48,10 @@ struct TVContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var assistiveTechnologyRunning: Bool {
+        UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning
+    }
+
     var body: some View {
         ZStack {
             GeometryReader { geo in
@@ -54,7 +59,7 @@ struct TVContentView: View {
                     BL.canvasGround(for: settings.canvasTheme)
                     MandazaCanvas(
                         size: geo.size,
-                        seed: UUID(uuidString: seed) ?? UUID(),
+                        seed: seed,
                         paletteId: MandazaScreenshot.palette(settings.paletteId),
                         config: engineConfigForTV(),
                         onIdleChange: handleIdleChange(_:),
@@ -71,6 +76,8 @@ struct TVContentView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Mandaza canvas")
             .accessibilityHint("Shows animated patterns. Click the touch surface for a new pattern. Press Play Pause for a new pattern. Press Menu to show or hide controls.")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { regenerate() }
 
             if settings.zenMode && settings.zenShowClock {
                 VStack(spacing: 0) {
@@ -142,6 +149,12 @@ struct TVContentView: View {
             ambientHintTask?.cancel()
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIAccessibility.voiceOverStatusDidChangeNotification
+        )) { _ in handleAssistiveTechnologyChange() }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIAccessibility.switchControlStatusDidChangeNotification
+        )) { _ in handleAssistiveTechnologyChange() }
         .onChange(of: settings.zenMode) { _, on in
             if !on || !settings.zenAutoRegen {
                 autoRegenTask?.cancel()
@@ -153,6 +166,13 @@ struct TVContentView: View {
             if !on || !settings.zenMode {
                 autoRegenTask?.cancel()
             } else if lastIdle {
+                handleIdleChange(true)
+            }
+        }
+        .onChange(of: reduceMotion) { _, reduced in
+            if reduced {
+                autoRegenTask?.cancel()
+            } else if lastIdle, settings.zenMode, settings.zenAutoRegen {
                 handleIdleChange(true)
             }
         }
@@ -186,6 +206,7 @@ struct TVContentView: View {
         }
         .onChange(of: showZenSheet) { _, open in
             if open {
+                configOverride = nil
                 ambientSurfaceFocused = false
                 dockIdleTask?.cancel()
             } else if showDock {
@@ -438,10 +459,11 @@ struct TVContentView: View {
 
     private func resetDockIdleTimerIfNeeded() {
         dockIdleTask?.cancel()
-        guard showDock, !showZenSheet else { return }
+        guard showDock, !showZenSheet, !assistiveTechnologyRunning else { return }
         dockIdleTask = Task { @MainActor in
             try? await Task.sleep(for: dockAutoHideDelay)
-            guard !Task.isCancelled, showDock, !showZenSheet else { return }
+            guard !Task.isCancelled, showDock, !showZenSheet,
+                  !assistiveTechnologyRunning else { return }
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.35)) {
                 showDock = false
             }
@@ -449,10 +471,19 @@ struct TVContentView: View {
         }
     }
 
+    private func handleAssistiveTechnologyChange() {
+        guard assistiveTechnologyRunning else {
+            resetDockIdleTimerIfNeeded()
+            return
+        }
+        dockIdleTask?.cancel()
+        if !showDock { showControls() }
+    }
+
     // MARK: - Engine config
 
     private func engineConfigForTV() -> EngineConfig {
-        settings.engineConfig()
+        configOverride ?? settings.engineConfig()
     }
 
     private func applyTVAmbientDefaultsIfNeeded() {
@@ -467,6 +498,7 @@ struct TVContentView: View {
     // MARK: - Actions
 
     private func regenerate() {
+        configOverride = nil
         seed = UUID().uuidString
         settings.randomizePatternLook(includePalette: settings.randomizePaletteOnRegenerate)
         if showDock { resetDockIdleTimerIfNeeded() }
@@ -479,7 +511,7 @@ struct TVContentView: View {
         let wait = settings.zenAutoRegenSeconds
         autoRegenTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(wait))
-            if !Task.isCancelled { regenerate() }
+            if !Task.isCancelled, !reduceMotion { regenerate() }
         }
     }
 
@@ -500,12 +532,18 @@ struct TVContentView: View {
     }
 
     private func handleIncomingURL(_ url: URL) {
-        guard url.scheme == "mandaza" else { return }
-        let parts = url.pathComponents.filter { $0 != "/" }
-        if url.host == "seed", let uuidString = parts.first {
-            seed = uuidString
+        if let snapshot = MandazaDeepLink.snapshot(from: url) {
+            seed = snapshot.seed
+            settings.paletteId = snapshot.paletteId
+            settings.applyLook(from: snapshot.config)
+            configOverride = snapshot.config
             noteUserInteraction()
+            return
         }
+        guard let incomingSeed = MandazaDeepLink.seed(from: url) else { return }
+        configOverride = nil
+        seed = incomingSeed
+        noteUserInteraction()
     }
 }
 
@@ -524,6 +562,7 @@ private struct TVZenOptionsSheet: View {
 
     @Bindable var settings: MandazaSettings
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// Preset seconds for loop interval (matches living-room tuning).
     private static let intervalPresets: [Double] = [6, 15, 30, 60, 120]
@@ -614,7 +653,7 @@ private struct TVZenOptionsSheet: View {
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(showZenDetails ? 0 : -90))
-                    .animation(.default, value: showZenDetails)
+                    .animation(reduceMotion ? nil : .default, value: showZenDetails)
             }
             .contentShape(Rectangle())
         }
@@ -854,10 +893,10 @@ private struct TVZenClockOverlay: View {
                 .opacity(min(max(clockOpacity, 0.2), 1.0))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignmentForPosition())
                 .padding(.top, topPadding(height: geo.size.height))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(clockAccessibilityLabel(now))
             }
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(clockAccessibilityLabel())
     }
 
     private func timeString(_ date: Date) -> String {
@@ -867,13 +906,10 @@ private struct TVZenClockOverlay: View {
         return date.formatted(style)
     }
 
-    private func clockAccessibilityLabel() -> String {
-        var parts = ["Clock"]
+    private func clockAccessibilityLabel(_ date: Date) -> String {
+        var parts = [timeString(date)]
         if showDate {
-            parts.append("with date")
-        }
-        if showSeconds {
-            parts.append("with seconds")
+            parts.append(date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
         }
         return parts.joined(separator: ", ")
     }

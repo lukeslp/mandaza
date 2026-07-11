@@ -3,9 +3,28 @@ import XCTest
 
 @MainActor
 final class SettingsTests: XCTestCase {
+    private var suiteName = ""
+    private var defaults: UserDefaults!
+
+    override func setUp() {
+        super.setUp()
+        suiteName = "Mandaza.SettingsTests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suiteName)
+        defaults.removePersistentDomain(forName: suiteName)
+    }
+
+    override func tearDown() {
+        defaults.removePersistentDomain(forName: suiteName)
+        defaults = nil
+        super.tearDown()
+    }
+
+    private func makeSettings() -> MandazaSettings {
+        MandazaSettings(defaults: defaults, migrate: false)
+    }
 
     func testEngineConfigReflectsLookValues() {
-        let s = MandazaSettings.shared
+        let s = makeSettings()
         s.drawSpeed = 0.8
         s.lineWidth = 2.5
         s.glow = false
@@ -23,7 +42,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testEngineConfigMapsDensityToCellSize() {
-        let s = MandazaSettings.shared
+        let s = makeSettings()
         s.density = 0.0
         XCTAssertEqual(s.engineConfig().cellSize, 1.0, accuracy: 0.0001)
         s.density = 1.0
@@ -33,7 +52,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testEngineConfigGeometryPresets() {
-        let s = MandazaSettings.shared
+        let s = makeSettings()
         s.geometryPreset = "auto"
         XCTAssertTrue(s.engineConfig().randomPattern)
         s.geometryPreset = "sparse"
@@ -44,7 +63,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testFavoritesToggleAddsAndRemoves() {
-        let s = MandazaSettings.shared
+        let s = makeSettings()
         s.favorites = []   // clean slate
 
         let added = s.toggleFavorite(seed: "test-favorite-1",
@@ -63,7 +82,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testFavoritesCappedAt50() {
-        let s = MandazaSettings.shared
+        let s = makeSettings()
         s.favorites = []
         for i in 0..<60 {
             s.toggleFavorite(seed: "seed-\(i)",
@@ -84,21 +103,7 @@ final class SettingsTests: XCTestCase {
     }
 
     func testApplyLookRestoresEngineFields() {
-        let s = MandazaSettings.shared
-        let savedDensity = s.density
-        let savedGeometry = s.geometryPreset
-        let savedDraw = s.drawSpeed
-        let savedLine = s.lineWidth
-        let savedGlow = s.glow
-        let savedGlowStrength = s.glowStrength
-        defer {
-            s.density = savedDensity
-            s.geometryPreset = savedGeometry
-            s.drawSpeed = savedDraw
-            s.lineWidth = savedLine
-            s.glow = savedGlow
-            s.glowStrength = savedGlowStrength
-        }
+        let s = makeSettings()
         var cfg = EngineConfig()
         cfg.randomPattern = false
         cfg.geometry = 1

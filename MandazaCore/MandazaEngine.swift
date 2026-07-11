@@ -25,6 +25,33 @@ public struct EngineConfig: Equatable, Codable, Hashable, Sendable {
     public var lineWidth: Double = 1.2
 
     public init() {}
+
+    /// Returns true only when a change affects generated grid/loop geometry.
+    /// Stroke animation and presentation fields can update in place.
+    public func requiresRebuild(comparedTo other: EngineConfig) -> Bool {
+        cellSizeRandom != other.cellSizeRandom ||
+        cellSize != other.cellSize ||
+        randomPattern != other.randomPattern ||
+        geometry != other.geometry ||
+        withMargin != other.withMargin ||
+        concentric != other.concentric ||
+        centered != other.centered ||
+        regularity != other.regularity
+    }
+
+    /// Bounds externally supplied snapshot values before they reach geometry
+    /// allocation or rendering calculations.
+    public var isValidForExternalRendering: Bool {
+        guard cellSize.isFinite, (0 ... 1).contains(cellSize),
+              (0 ... 6).contains(geometry),
+              regularity.isFinite, (0 ... 100).contains(regularity),
+              drawSpeed.isFinite, (0 ... 1).contains(drawSpeed),
+              lineWidth.isFinite, (0.1 ... 10).contains(lineWidth) else {
+            return false
+        }
+        guard let glowStrength else { return true }
+        return glowStrength.isFinite && (0.18 ... 1).contains(glowStrength)
+    }
 }
 
 // MARK: - Geometry constants (mirrors Cell.xs / Cell.ys / Cell.xperp / Cell.yperp)

@@ -18,7 +18,7 @@ public enum BL {
     /// Emphasis text — display titles, active values.
     public static let highlight = Color(hex: "#e0e6ed")
     /// Secondary / supporting text.
-    public static let muted     = Color(red: 160/255, green: 176/255, blue: 192/255).opacity(0.55)
+    public static let muted     = Color(red: 160/255, green: 176/255, blue: 192/255).opacity(0.78)
     /// Hairline rule color (1px borders).
     public static let rule      = Color.white.opacity(0.08)
 

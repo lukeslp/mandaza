@@ -28,6 +28,7 @@ private struct StandByMandazaView: View {
                 MandazaImageView(snapshot: entry.snapshot,
                                  size: geo.size,
                                  scale: 2)
+                    .accessibilityHidden(true)
             }
             if entry.intent.showTime {
                 VStack(spacing: 4) {
@@ -47,7 +48,87 @@ private struct StandByMandazaView: View {
                 .padding()
             }
         }
-        .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
+        .widgetURL(MandazaDeepLink.url(for: entry.snapshot))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Opens this pattern in Mandaza.")
+    }
+
+    private var accessibilityLabel: String {
+        var parts = ["Mandaza", "\(Palette.by(id: entry.snapshot.paletteId).name) pattern"]
+        if entry.intent.showTime {
+            parts.append(entry.date.formatted(date: .omitted, time: .shortened))
+            parts.append(entry.date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
+        }
+        return parts.joined(separator: ", ")
+    }
+}
+
+// MARK: - Lock Screen
+
+struct LockMandazaWidget: Widget {
+    let kind: String = "LockMandaza"
+
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: kind,
+                               intent: MandazaWidgetIntent.self,
+                               provider: MandazaProvider()) { entry in
+            LockMandazaView(entry: entry)
+                .containerBackground(.black, for: .widget)
+        }
+        .supportedFamilies([.accessoryRectangular, .accessoryCircular, .accessoryInline])
+        .configurationDisplayName("Mandaza — Lock")
+        .description("A glimpse of a generative mandaza on your Lock Screen.")
+    }
+}
+
+private struct LockMandazaView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: MandazaEntry
+
+    var body: some View {
+        Group {
+            switch family {
+            case .accessoryInline:
+                Text("✦ Mandaza")
+            case .accessoryCircular:
+                GeometryReader { geo in
+                    MandazaImageView(snapshot: entry.snapshot, size: geo.size, scale: 2)
+                        .clipShape(Circle())
+                        .accessibilityHidden(true)
+                }
+            default:
+                HStack(spacing: 8) {
+                    GeometryReader { geo in
+                        MandazaImageView(snapshot: entry.snapshot, size: geo.size, scale: 2)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .accessibilityHidden(true)
+                    }
+                    .frame(width: 56)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.date, style: .time)
+                            .font(.headline)
+                            .monospacedDigit()
+                        Text("Mandaza")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .widgetURL(MandazaDeepLink.url(for: entry.snapshot))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Opens this pattern in Mandaza.")
+    }
+
+    private var accessibilityLabel: String {
+        var parts = ["Mandaza", "\(Palette.by(id: entry.snapshot.paletteId).name) pattern"]
+        if family == .accessoryRectangular {
+            parts.append(entry.date.formatted(date: .omitted, time: .shortened))
+        }
+        return parts.joined(separator: ", ")
     }
 }
 
@@ -77,7 +158,11 @@ private struct HomeMandazaView: View {
             MandazaImageView(snapshot: entry.snapshot,
                              size: geo.size,
                              scale: 2)
+                .accessibilityHidden(true)
         }
-        .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
+        .widgetURL(MandazaDeepLink.url(for: entry.snapshot))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Mandaza, \(Palette.by(id: entry.snapshot.paletteId).name) pattern")
+        .accessibilityHint("Opens this pattern in Mandaza.")
     }
 }

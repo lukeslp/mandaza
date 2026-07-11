@@ -4,17 +4,18 @@ Everything in this doc is one-time user-side work in Apple's web consoles.
 Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.sh`
 → `scripts/upload-testflight.sh`) handle every subsequent upload.
 
-**Status today (2026-05-10):**
+**Status today (2026-07-11):**
 
 | Step | Status |
 |---|---|
 | App Icon (1024×1024) | ✅ Generated programmatically (`scripts/render-icon.swift`) |
-| Bundle IDs | ✅ `com.lukesteuber.mandaza`, `com.lukesteuber.mandaza.widgets` |
+| Bundle IDs | ✅ App, widgets, and watch companion IDs configured |
 | Team ID | ✅ `596T7J7FB6` |
 | App Group entitlement | ✅ `group.com.lukesteuber.mandaza` |
 | Photos permission usage string | ✅ |
 | Export compliance flag | ✅ `ITSAppUsesNonExemptEncryption = false` |
-| Privacy nutrition label | ⏳ Needs setting in App Store Connect (we collect nothing) |
+| Privacy nutrition label | ✅ Data collected: None |
+| Privacy policy URL | ❌ Currently returns 404; publish before 1.3 submission |
 | Distribution archive | ✅ Local archive works |
 | Distribution provisioning profile | ❌ Needs App Store Connect app record first |
 | TestFlight beta review | ❌ Submitted after first upload |
@@ -29,7 +30,8 @@ The Apple TV app now uses the same app target and bundle id, **`com.lukesteuber.
 
 ### A. Developer Portal (Identifiers)
 
-1. Confirm the **App ID** for `com.lukesteuber.mandaza` is enabled for iOS and tvOS, with **App Groups** enabled and **`group.com.lukesteuber.mandaza`** checked.
+1. Confirm the **App ID** for `com.lukesteuber.mandaza` is enabled for iOS and
+   tvOS. The unified tvOS build intentionally carries no App Group entitlement.
 2. Register a physical Apple TV for **development** if you need on-device debugging (optional for store upload).
 
 ### B. App Store Connect — shared app record
@@ -46,7 +48,8 @@ scripts/export-ipa-tvos.sh     # build/export-tvos/*.ipa
 scripts/upload-testflight.sh --tvos   # uses altool --type appletvos
 ```
 
-`CFBundleVersion` is still driven by `git rev-list --count HEAD` so iOS and tvOS builds stay in sync numerically if you deploy from the same commit.
+`CFBundleVersion` is allocated from `scripts/build-number.txt`, with a floor
+above uploaded build 55. iOS and tvOS archive scripts share one lock.
 
 ### D. TestFlight / review notes for tvOS
 
@@ -62,6 +65,7 @@ scripts/upload-testflight.sh --tvos   # uses altool --type appletvos
 For **each** of these App IDs:
 - `com.lukesteuber.mandaza`
 - `com.lukesteuber.mandaza.widgets`
+- `com.lukesteuber.mandaza.watchkitapp`
 
 Either confirm it exists (Xcode likely auto-registered during dev signing) or
 click `+` → App IDs → App → fill in:
@@ -77,7 +81,7 @@ Click `+` → App Groups → fill in:
 - **Description**: "Mandaza App Group"
 - **Identifier**: `group.com.lukesteuber.mandaza`
 
-Then for **each** App ID (Mandaza and MandazaWidgets) go back to its detail
+Then for the iOS app, widgets, and watch App IDs, go back to each detail
 page → Capabilities → App Groups → **Configure** → tick
 `group.com.lukesteuber.mandaza`.
 
@@ -131,8 +135,10 @@ Then on GitHub:
 - Wait ~30s. Privacy URL: `https://lukeslp.github.io/mandaza/`
 
 Paste that URL into App Store Connect → App Privacy → Privacy Policy URL.
+The URL currently returns 404; this is an unresolved release blocker, not a
+completed setup step.
 
-### 5. Generate an App Store Connect API key
+### 5. Configure the active App Store Connect API key
 
 → https://appstoreconnect.apple.com/access/integrations/api
 
@@ -151,11 +157,11 @@ mv ~/Downloads/AuthKey_*.p8 ~/.appstoreconnect/private_keys/
 chmod 600 ~/.appstoreconnect/private_keys/AuthKey_*.p8
 ```
 
-Then on the API page, copy the **Issuer ID** (UUID at top) and add it to your shell:
+Select the key centrally in `~/.appstoreconnect/env.sh`:
 
 ```bash
-echo 'export ASC_API_ISSUER="<paste-issuer-uuid-here>"' >> ~/.zshrc
-source ~/.zshrc
+export APP_STORE_CONNECT_API_KEY_KEY_ID="<key-id>"
+export APP_STORE_CONNECT_API_KEY_ISSUER_ID="<issuer-uuid>"
 ```
 
 ### 6. First upload
@@ -199,9 +205,8 @@ Apple TV (same app record and API key):
 scripts/archive-tvos.sh && scripts/export-ipa-tvos.sh && scripts/upload-testflight.sh --tvos
 ```
 
-- `CFBundleVersion` auto-increments from `git rev-list --count HEAD` so every
-  build is unique without manual bumping.
-- Marketing version (`0.2.0`, etc.) is held in `project.yml` and changes only
+- `CFBundleVersion` is allocated and persisted before XcodeGen runs.
+- Marketing version (`1.3`, etc.) is held in `project.yml` and changes only
   when you decide.
 
 ## Troubleshooting

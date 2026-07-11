@@ -19,12 +19,21 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+ARCHIVE_LOCK="${TMPDIR:-/tmp}/mandaza-archive-${UID}.lock"
+if ! mkdir "${ARCHIVE_LOCK}" 2>/dev/null; then
+    echo "✗ Another Mandaza archive is already running (${ARCHIVE_LOCK})." >&2
+    exit 1
+fi
+trap 'rmdir "${ARCHIVE_LOCK}" 2>/dev/null || true' EXIT
+
 PROJECT="Mandaza.xcodeproj"
 SCHEME="Mandaza"
 CONFIG="Release"
 ARCHIVE="build/Mandaza.xcarchive"
 
-# Regenerate the project so any project.yml changes land in the archive.
+# Allocate first, then regenerate so every unified target receives the number.
+BUILD_NUMBER="$(scripts/build-number.sh --next)"
+echo "→ Build number: ${BUILD_NUMBER}"
 xcodegen --quiet
 
 if [[ "${SKIP_TESTS:-}" != "1" ]]; then
@@ -42,11 +51,6 @@ if [[ "${SKIP_TESTS:-}" != "1" ]]; then
 else
     echo "→ Skipping tests (SKIP_TESTS=1)"
 fi
-
-# Auto-increment CFBundleVersion based on current count of git commits.
-# Marketing version (CFBundleShortVersionString) is held steady in project.yml.
-BUILD_NUMBER="$(git rev-list --count HEAD)"
-echo "→ Build number: ${BUILD_NUMBER}"
 
 mkdir -p build
 rm -rf "${ARCHIVE}"

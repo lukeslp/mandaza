@@ -53,6 +53,11 @@
 		<key>UIImageName</key>
 		<string>LaunchSplashIOS</string>
 	</dict>
+	<key>UILaunchScreen~tv</key>
+	<dict>
+		<key>UIImageName</key>
+		<string>LaunchSplashTV</string>
+	</dict>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

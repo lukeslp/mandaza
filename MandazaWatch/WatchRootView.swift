@@ -31,10 +31,12 @@ struct WatchRootView: View {
     @Environment(\.isLuminanceReduced) private var luminanceReduced
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var settings = MandazaSettings.shared
-    @State private var seed = UUID()
+    @State private var configOverride: EngineConfig?
+    @State private var seed = UUID().uuidString
     @State private var paletteIndex = 0
     @State private var crown = 0.0
     @State private var regenTask: Task<Void, Never>?
+    @State private var lastIdle = false
 
     @State private var reactor = AudioReactor()
     @State private var tilt = TiltProvider()
@@ -55,9 +57,17 @@ struct WatchRootView: View {
         return MandazaScreenshot.palette(id)
     }
 
+    private var paletteName: String {
+        Palette.by(id: paletteId).name
+    }
+
     private var cadence: MandazaCadence {
         guard scenePhase == .active else { return .paused }
         return .interval(reactor.source.isActive ? 1.0 / 24.0 : 1.0 / 18.0)
+    }
+
+    private var lastSyncDate: Date? {
+        lastSyncAt > 0 ? Date(timeIntervalSince1970: lastSyncAt) : nil
     }
 
     private var musicModeBinding: Binding<Bool> {
@@ -74,10 +84,14 @@ struct WatchRootView: View {
     }
 
     var body: some View {
+        lifecycleCanvas
+    }
+
+    private var liveCanvas: some View {
         MandazaCanvas(size: screenSize,
                       seed: seed,
                       paletteId: paletteId,
-                      config: settings.engineConfig(),
+                      config: configOverride ?? settings.engineConfig(),
                       cadence: cadence,
                       fill: CGSize(width: 1.18, height: 1.18),
                       reactivity: settings.reactivity,
@@ -99,7 +113,12 @@ struct WatchRootView: View {
                                   isHapticFeedbackEnabled: true)
             .onChange(of: crown) { _, value in
                 paletteIndex = Int(value.rounded())
+                settings.paletteId = paletteId
             }
+    }
+
+    private var accessibleCanvas: some View {
+        liveCanvas
             // Exclusive: a successful long press must NOT also fire the tap
             // (which would regenerate and unpin behind the sheet).
             .gesture(
@@ -108,6 +127,23 @@ struct WatchRootView: View {
                     .exclusively(before: TapGesture().onEnded { regenerate() })
             )
             .contentShape(Rectangle())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Mandaza pattern")
+            .accessibilityValue("\(paletteName) palette")
+            .accessibilityHint("Double tap for a new pattern. Swipe up or down to change the palette.")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { regenerate() }
+            .accessibilityAdjustableAction { direction in
+                switch direction {
+                case .increment: adjustPalette(by: 1)
+                case .decrement: adjustPalette(by: -1)
+                @unknown default: break
+                }
+            }
+    }
+
+    private var presentedCanvas: some View {
+        accessibleCanvas
             .background(BL.canvasGround(for: settings.canvasTheme))
             .ignoresSafeArea()
             .overlay(alignment: .top) {
@@ -123,43 +159,68 @@ struct WatchRootView: View {
             .sheet(isPresented: $showSheet) {
                 WatchSettingsSheet(musicMode: musicModeBinding,
                                    micDenied: reactor.state == .denied,
-                                   lastSyncDate: lastSyncAt > 0
-                                       ? Date(timeIntervalSince1970: lastSyncAt)
-                                       : nil,
+                                   lastSyncDate: lastSyncDate,
                                    onDone: { showSheet = false })
             }
-            .onChange(of: scenePhase) { _, phase in
-                if phase != .active {
-                    regenTask?.cancel()
-                    reactor.stop()
-                }
-                applyTilt()
-            }
+    }
+
+    private var lifecycleCanvas: some View {
+        presentedCanvas
+            .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
             .onChange(of: luminanceReduced) { _, reduced in
                 // The canvas pauses itself under Always-On; sensors stop too.
                 if reduced { reactor.stop() }
                 applyTilt()
             }
-            .onChange(of: reduceMotion) { _, _ in applyTilt() }
+            .onChange(of: reduceMotion) { _, reduced in handleReduceMotion(reduced) }
             .onChange(of: settings.zenTiltEnabled) { _, _ in applyTilt() }
             .onChange(of: settings.zenTiltAmount) { _, _ in applyTilt() }
             .onChange(of: settings.zenTiltAxesRaw) { _, _ in applyTilt() }
-            .onAppear {
-                wireSyncHooks()
-                applyTilt()
-                if let snap = settings.pinnedSnapshot {
-                    apply(snapshot: snap, announce: false)
-                } else if let i = Palette.all.firstIndex(where: { $0.id == settings.paletteId }) {
-                    paletteIndex = i
-                    crown = Double(i)
-                }
-            }
-            .onDisappear {
-                regenTask?.cancel()
-                fromPhoneTask?.cancel()
-                reactor.stop()
-                tilt.stop()
-            }
+            .onAppear(perform: handleAppear)
+            .onDisappear(perform: handleDisappear)
+    }
+
+    private func handleAppear() {
+        wireSyncHooks()
+        applyTilt()
+        if let snapshot = settings.pinnedSnapshot {
+            apply(snapshot: snapshot, announce: false)
+        } else {
+            configOverride = nil
+            restorePalette(id: settings.paletteId)
+        }
+    }
+
+    private func handleDisappear() {
+        regenTask?.cancel()
+        fromPhoneTask?.cancel()
+        reactor.stop()
+        tilt.stop()
+    }
+
+    private func handleScenePhase(_ phase: ScenePhase) {
+        if phase == .active, lastIdle, !reduceMotion {
+            handleIdle(true)
+        } else if phase != .active {
+            regenTask?.cancel()
+            reactor.stop()
+        }
+        applyTilt()
+    }
+
+    private func handleReduceMotion(_ reduced: Bool) {
+        applyTilt()
+        if reduced {
+            regenTask?.cancel()
+        } else if lastIdle, scenePhase == .active {
+            handleIdle(true)
+        }
+    }
+
+    private func restorePalette(id: String) {
+        guard let index = Palette.all.firstIndex(where: { $0.id == id }) else { return }
+        paletteIndex = index
+        crown = Double(index)
     }
 
     /// Runs watch parallax only while the face is active and fully lit.
@@ -186,9 +247,9 @@ struct WatchRootView: View {
                 // A pushed design stays pinned until the user taps —
                 // an incoming settings context must not mutate it.
                 apply(snapshot: snap, announce: false)
-            } else if let i = Palette.all.firstIndex(where: { $0.id == settings.paletteId }) {
-                paletteIndex = i
-                crown = Double(i)
+            } else {
+                configOverride = nil
+                restorePalette(id: settings.paletteId)
             }
         }
         WatchSyncController.shared.onSnapshotReceived = { snap in
@@ -200,12 +261,10 @@ struct WatchRootView: View {
     private func apply(snapshot snap: MandazaSnapshot, announce: Bool) {
         regenTask?.cancel()
         settings.applyLook(from: snap.config)
+        configOverride = snap.config
         settings.paletteId = snap.paletteId
-        if let i = Palette.all.firstIndex(where: { $0.id == snap.paletteId }) {
-            paletteIndex = i
-            crown = Double(i)
-        }
-        seed = UUID(uuidString: snap.seed) ?? UUID()
+        restorePalette(id: snap.paletteId)
+        seed = snap.seed
         guard announce else { return }
         fromPhoneTask?.cancel()
         withAnimation { showFromPhone = true }
@@ -222,20 +281,32 @@ struct WatchRootView: View {
         regenTask?.cancel()
         // A manual tap always returns to generative mode.
         settings.pinnedSnapshot = nil
-        seed = UUID()
+        configOverride = nil
+        seed = UUID().uuidString
+    }
+
+    private func adjustPalette(by delta: Int) {
+        guard !Palette.all.isEmpty else { return }
+        let count = Palette.all.count
+        paletteIndex = ((paletteIndex + delta) % count + count) % count
+        crown = Double(paletteIndex)
+        settings.paletteId = paletteId
     }
 
     /// When a pattern finishes drawing, hold it briefly then auto-redesign —
     /// unless auto-redesign is off or a design pushed from iPhone is pinned.
     private func handleIdle(_ idle: Bool) {
+        lastIdle = idle
         regenTask?.cancel()
         guard idle, scenePhase == .active,
+              !reduceMotion,
               settings.watchAutoRegen,
               settings.pinnedSnapshot == nil else { return }
         regenTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(settings.watchAutoRegenSeconds))
-            guard !Task.isCancelled, scenePhase == .active else { return }
-            seed = UUID()
+            guard !Task.isCancelled, scenePhase == .active, !reduceMotion else { return }
+            configOverride = nil
+            seed = UUID().uuidString
         }
     }
 }

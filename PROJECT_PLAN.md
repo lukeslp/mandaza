@@ -6,6 +6,11 @@
 - **watchOS:** Live companion face with mirror sync and Send to Watch.
 - **tvOS:** Ship a fullscreen ambient companion app with a quick-control rail, compact “controls hidden” hint, larger Zen clock typography, and a tvOS-safe collapsible Zen section (no `DisclosureGroup`); `UILaunchScreen` uses `LaunchSplashTV` (iOS uses `LaunchSplashIOS`) to hard-bust stale launch-screen caches.
 - **Shared:** Single `MandazaCore` engine and App Group–backed settings; `project.yml` + XcodeGen as the project source of truth. Brand refreshes: `scripts/apply-brand-assets.py --icon … [--tv-icon …] --splash … [--tv-splash …]` writes iOS icon/splash, tvOS layered icons, top shelf, and tv launch art. **Glow** defaults off; random regenerate may enable a soft bloom with probability under 0.5; manual Glow toggle uses full strength (`glowStrength`).
+- **Release:** Version 1.2 is live; version 1.3 is prepared. Archive numbering
+  advances from a tracked monotonic counter above uploaded build 55.
+- **Privacy:** Music responsivity uses the microphone only while enabled for
+  on-device modulation; audio is never recorded or stored. The privacy-policy
+  URL currently returns 404 and remains a release blocker until published.
 
 ## Architecture snapshot
 
@@ -26,7 +31,9 @@
   invert), faint ambient parallax sway at rest, and Void/Paper canvas themes.
 - tvOS controls are intentionally two-tier: slim quick rail for frequent actions and Ambient Options for deeper tuning.
 - iOS icon + launch splash and tvOS brand assets derive from `scripts/apply-brand-assets.py`; rerun when refreshing store art.
-- **Device signing:** follow [PROVISIONING.md](PROVISIONING.md) to register Apple TV and ensure the shared App ID (`com.lukesteuber.mandaza`) supports tvOS + App Groups for on-device runs.
+- **Device signing:** follow [PROVISIONING.md](PROVISIONING.md); the unified app
+  ID supports tvOS without a tvOS App Group entitlement, while iOS, widgets,
+  and the watch App ID retain App Group capability.
 - Optional: Apple TV **Top Shelf** extension (still images + deep link) for home-screen presence.
 - Refine **tvOS Brand Assets** in Xcode if actool warns about App Icon / Top Shelf collections (cosmetic; build can succeed with a primary tv icon).
 - Parallax follow-up: map CoreMotion gravity through the active interface

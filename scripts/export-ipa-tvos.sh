@@ -31,6 +31,12 @@ xcodebuild \
         exit 1
     }
 
-IPA="$(find "${EXPORT_DIR}" -name '*.ipa' | head -1)"
+shopt -s nullglob
+IPAS=("${EXPORT_DIR}"/*.ipa)
+if [ "${#IPAS[@]}" -ne 1 ]; then
+    echo "✗ Expected exactly one .ipa in ${EXPORT_DIR}, found ${#IPAS[@]}." >&2
+    exit 1
+fi
+IPA="${IPAS[0]}"
 echo "✓ tvOS IPA at ${IPA}"
 echo "  Next: scripts/upload-testflight.sh --tvos"

@@ -15,8 +15,8 @@ WidgetKit surface).
   hexagonal-loop pattern on every canvas tap, stroking each loop
   progressively with optional glow (off by default; regenerate may turn on a
   soft bloom less than half the time).
-- **11 palettes** — Aurora, Sunset, Ember, Bioluminescent, Vaporwave,
-  Cyberpunk, Risograph, Oxblood, Arctic, Dichromat, Amber.
+- **12 palettes** — Aurora, Sunset, Ember, Bioluminescent, Vaporwave,
+  Cyberpunk, Risograph, Oxblood, Canopy, Dichromat, Amber, Terrain.
 - **Zen Mode** — center footer button drops into Zen: large clock over the
   mandala, optional auto-regenerating patterns. Digital, stacked, and
   editorial clock forms; opacity, type, size, and eight positions.
@@ -108,7 +108,9 @@ The tvOS build uses the same `Mandaza` app target and switches to `TVContentView
 at compile time. iOS-only Photos, WidgetKit, and Watch settings code is guarded
 out of the tvOS build.
 
-**Physical Apple TV:** Xcode needs a **registered device** and matching **App ID** (with App Groups). Step-by-step: [PROVISIONING.md](PROVISIONING.md).
+**Physical Apple TV:** Xcode needs a **registered device** and matching shared
+**App ID**. The tvOS build intentionally has no App Group entitlement.
+Step-by-step: [PROVISIONING.md](PROVISIONING.md).
 
 ## Project layout
 
@@ -124,7 +126,7 @@ Mandaza/                      multiplatform iOS/tvOS app target
 MandazaCore/                  Sources shared between app and widget targets
   MandazaEngine.swift         Algorithm port: cells, dots, loops, beziers + off-main renderImage
   MandazaCanvas.swift         SwiftUI Canvas + TimelineView animation host
-  Palettes.swift              11 palettes, CGColor + SwiftUI Color representations
+  Palettes.swift              12 palettes, CGColor + SwiftUI Color representations
   MandazaSnapshot.swift       Value-type record of one mandala (used by widgets + favorites)
   MandazaSettings.swift       @Observable, App Group-backed persistence + applyLook(from:)
   ZenClockTypography.swift    Shared zen clock weight → Font.Weight + label mapping
@@ -169,6 +171,7 @@ MIT — see [LICENSE](LICENSE).
 
 ## Status
 
-Version **1.3** — music responsivity, clock forms, tilt parallax, Watch
-companion, Home/StandBy widgets. Next: App Store Connect upload of metadata
-and screenshots, TestFlight beta review.
+Version **1.2** is live. Version **1.3** is prepared with music responsivity,
+clock forms, tilt parallax, Watch companion, and Home/Lock/StandBy widgets.
+The documented privacy-policy URL currently returns 404 and must be published
+and verified before submission.

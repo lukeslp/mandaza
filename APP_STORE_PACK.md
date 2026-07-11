@@ -17,6 +17,7 @@ This document is the single source of truth for App Store and TestFlight submiss
 | Widgets bundle ID | `com.lukesteuber.mandaza.widgets` |
 
 iOS and tvOS ship from the same App Store Connect app record via the shared bundle ID.
+Version 1.2 is live; version 1.3 is prepared.
 
 ## App Store Metadata Pack
 
@@ -41,13 +42,13 @@ Tap the canvas for a new pattern, tune the look, and save high-resolution images
 
 Features:
 - Real-time generative canvas with smooth animated loop drawing
-- 11 curated color palettes
+- 12 curated color palettes
 - Zen Mode from the center footer button — optional clock overlay with digital, stacked, and editorial forms, plus opacity, type, size, and eight positions
 - Music responsivity in Zen: the mandala pumps on the beat and quickens with nearby sound (Reactivity slider). Audio is never recorded or stored
 - Adjustable tilt parallax on iPhone and Apple Watch, with layered depth,
   axis control, and a faint ambient sway while Zen rests
 - Favorites with quick recall and Previous history
-- Home Screen and StandBy widgets
+- Home Screen, Lock Screen, and StandBy widgets
 - Export presets for iPhone, iPad, and Square 4K
 - Deterministic seeds for reproducible visuals
 - Apple Watch companion: a full watch face with tap to regenerate, Digital Crown to cycle palettes, and long-press for settings — your iPhone's look mirrors to the watch automatically, and Send to Watch pushes the current or any favorited design to your wrist instantly
@@ -136,8 +137,9 @@ MandazaTV runs on-device and does not require an account.
 
 ### Privacy Policy URL
 
-- Use: `https://lukeslp.github.io/mandaza/`
-- Confirm URL is public and renders before each submission cycle.
+- Intended URL: `https://lukeslp.github.io/mandaza/`
+- **Unresolved blocker:** this URL currently returns 404. Publish and verify it
+  before submitting 1.3; do not mark privacy metadata complete until it loads.
 
 ### Apple TV (tvOS) — Privacy Policy in App Store Connect
 
@@ -238,9 +240,11 @@ Tap the center button to drop into Zen. Nothing is collected, ever.
 ### Preconditions
 
 - App IDs exist and are capability-aligned.
-- App Group `group.com.lukesteuber.mandaza` is enabled for iOS, widgets, and tvOS IDs.
+- App Group `group.com.lukesteuber.mandaza` is enabled for iOS, widgets, and
+  watch IDs; the unified tvOS build omits the entitlement.
 - App records exist in App Store Connect for both iOS and tvOS bundle IDs.
-- API key is present in `~/.appstoreconnect/private_keys/`.
+- `~/.appstoreconnect/env.sh` selects the API key and issuer, and the matching
+  key is present in `~/.appstoreconnect/private_keys/`.
 - `ASC_API_ISSUER` is exported in shell.
 
 ### iOS Build and Upload

@@ -26,8 +26,17 @@ struct MandazaProvider: AppIntentTimelineProvider {
     func timeline(for configuration: MandazaWidgetIntent,
                   in context: Context) async -> Timeline<MandazaEntry> {
         let now = Date.now
-        let minutes = configuration.autoRotate ? configuration.interval.minutes : 60
-        let count = configuration.autoRotate ? 24 : 6
+        if !configuration.autoRotate {
+            let snapshot = await Self.snapshotUsingSharedSettings(at: now, intent: configuration)
+            let entries = (0..<120).map { minute in
+                MandazaEntry(date: now.addingTimeInterval(TimeInterval(minute * 60)),
+                             snapshot: snapshot,
+                             intent: configuration)
+            }
+            return Timeline(entries: entries, policy: .atEnd)
+        }
+        let minutes = configuration.interval.minutes
+        let count = 24
         var entries: [MandazaEntry] = []
         entries.reserveCapacity(count)
         for i in 0..<count {
@@ -42,7 +51,9 @@ struct MandazaProvider: AppIntentTimelineProvider {
     private static func placeholderSnapshot(at date: Date,
                                             intent: MandazaWidgetIntent) -> MandazaSnapshot {
         let bucketMinutes = intent.interval.minutes
-        let bucket = Int(date.timeIntervalSince1970) / max(60, bucketMinutes * 60)
+        let bucket = intent.autoRotate
+            ? Int(date.timeIntervalSince1970) / max(60, bucketMinutes * 60)
+            : 0
         let palette = intent.palette == .followsApp ? "aurora" : intent.palette.rawValue
         let seed = "widget-\(bucket)-\(bucketMinutes)-\(palette)"
         return MandazaSnapshot(seed: seed,
@@ -56,14 +67,16 @@ struct MandazaProvider: AppIntentTimelineProvider {
     private static func snapshotUsingSharedSettings(at date: Date,
                                                     intent: MandazaWidgetIntent) async -> MandazaSnapshot {
         let bucketMinutes = intent.interval.minutes
-        let bucket = Int(date.timeIntervalSince1970) / max(60, bucketMinutes * 60)
+        let bucket = intent.autoRotate
+            ? Int(date.timeIntervalSince1970) / max(60, bucketMinutes * 60)
+            : 0
         return await MainActor.run {
             let palette = intent.palette.resolved()
             let seed = "widget-\(bucket)-\(bucketMinutes)-\(palette)"
             let config = MandazaSettings.shared.engineConfig()
             let favorites = MandazaSettings.shared.favorites
             // If the user has favorites and the bucket lines up, prefer a favorite.
-            if !favorites.isEmpty, bucket % 3 == 0 {
+            if intent.autoRotate, !favorites.isEmpty, bucket % 3 == 0 {
                 let fav = favorites[abs(bucket) % favorites.count]
                 return MandazaSnapshot(seed: fav.seed,
                                        paletteId: fav.paletteId,

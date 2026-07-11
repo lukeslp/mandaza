@@ -20,6 +20,9 @@ struct ContentView: View {
 
     // Ephemeral state — purely view-local.
     @State private var seed = UUID().uuidString
+    /// Exact external/favorite config, retained even when it cannot be mapped
+    /// losslessly onto the simplified settings controls.
+    @State private var configOverride: EngineConfig?
     @State private var canvasSize: CGSize = .zero
     @State private var showSettings = false
     @State private var exportInProgress = false
@@ -67,9 +70,9 @@ struct ContentView: View {
                 ZStack {
                     BL.canvasGround(for: settings.canvasTheme)
                     MandazaCanvas(size: geo.size,
-                                  seed: UUID(uuidString: seed) ?? UUID(),
+                                  seed: seed,
                                   paletteId: MandazaScreenshot.palette(settings.paletteId),
-                                  config: settings.engineConfig(),
+                                  config: effectiveConfig,
                                   reactivity: settings.reactivity,
                                   onIdleChange: handleIdleChange(_:),
                                   modulationSource: reactor.source,
@@ -96,7 +99,9 @@ struct ContentView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Mandaza canvas")
             .accessibilityHint(canvasA11yHint)
-            .accessibilityAddTraits(canvasA11yTraits)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { canvasTapped() }
+            .accessibilityHidden(exportInProgress)
 
             // Layer 2 — clock overlay (mid-depth UIKit parallax).
             if settings.zenMode, settings.zenShowClock {
@@ -128,8 +133,9 @@ struct ContentView: View {
             }
             .opacity(controlsFaded ? 0 : 1)
             .allowsHitTesting(!controlsFaded)
-            .animation(.easeInOut(duration: 0.45), value: controlsFaded)
-            .animation(.easeInOut(duration: 0.25), value: showRecents)
+            .accessibilityHidden(exportInProgress)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.45), value: controlsFaded)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: showRecents)
 
             if controlsFaded {
                 Color.clear
@@ -157,6 +163,7 @@ struct ContentView: View {
                         .fill(BL.deep)
                         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(BL.rule, lineWidth: 1))
                 }
+                .accessibilityLabel("Saving image")
             }
         }
         .safeAreaInset(edge: .top) {
@@ -194,6 +201,12 @@ struct ContentView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIAccessibility.voiceOverStatusDidChangeNotification
+        )) { _ in handleAssistiveTechnologyChange() }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIAccessibility.switchControlStatusDidChangeNotification
+        )) { _ in handleAssistiveTechnologyChange() }
         .onChange(of: settings.zenMode) { _, on in
             applyTilt()
             if !on || !settings.zenAutoRegen {
@@ -212,7 +225,14 @@ struct ContentView: View {
         .onChange(of: settings.zenTiltEnabled) { _, _ in applyTilt() }
         .onChange(of: settings.zenTiltAmount) { _, _ in applyTilt() }
         .onChange(of: settings.zenTiltAxesRaw) { _, _ in applyTilt() }
-        .onChange(of: reduceMotion) { _, _ in applyTilt() }
+        .onChange(of: reduceMotion) { _, reduced in
+            applyTilt()
+            if reduced {
+                autoRegenTask?.cancel()
+            } else if lastIdle, settings.zenMode, settings.zenAutoRegen {
+                handleIdleChange(true)
+            }
+        }
         .onChange(of: showSettings) { _, isPresented in
             if !isPresented { noteInteraction() }
         }
@@ -277,7 +297,15 @@ struct ContentView: View {
     /// Long-press regenerate is disabled whenever VoiceOver or Switch Control
     /// is active — assistive tech users get the explicit button instead.
     private var longPressEnabled: Bool {
-        !UIAccessibility.isVoiceOverRunning && !UIAccessibility.isSwitchControlRunning
+        !assistiveTechnologyRunning
+    }
+
+    private var assistiveTechnologyRunning: Bool {
+        UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning
+    }
+
+    private var effectiveConfig: EngineConfig {
+        configOverride ?? settings.engineConfig()
     }
 
     // MARK: - Control bar
@@ -316,6 +344,7 @@ struct ContentView: View {
                        label: "Tune",
                        accent: accent) {
                 noteInteraction()
+                configOverride = nil
                 showSettings = true
             }
 
@@ -382,7 +411,7 @@ struct ContentView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(BL.muted)
-                        .frame(width: 32, height: 28)
+                        .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Hide previous patterns")
@@ -571,13 +600,22 @@ struct ContentView: View {
     private func scheduleControlsFade() {
         controlsFadeTask?.cancel()
         // Don't auto-hide chrome while VoiceOver / Switch Control need persistent targets.
-        guard !UIAccessibility.isVoiceOverRunning,
-              !UIAccessibility.isSwitchControlRunning else { return }
+        guard !assistiveTechnologyRunning else { return }
         controlsFadeTask = Task { @MainActor in
             try? await Task.sleep(for: controlsFadeDelay)
-            guard !Task.isCancelled, !showSettings, exportAlert == nil, !exportInProgress else { return }
+            guard !Task.isCancelled, !showSettings, exportAlert == nil,
+                  !exportInProgress, !assistiveTechnologyRunning else { return }
             showRecents = false
             controlsFaded = true
+        }
+    }
+
+    private func handleAssistiveTechnologyChange() {
+        if assistiveTechnologyRunning {
+            controlsFadeTask?.cancel()
+            controlsFaded = false
+        } else {
+            scheduleControlsFade()
         }
     }
 
@@ -586,6 +624,7 @@ struct ContentView: View {
         // seed changes — so the artwork the user is about to overwrite is
         // recoverable.
         pushCurrentToRecents()
+        configOverride = nil
         seed = UUID().uuidString
         settings.randomizePatternLook(includePalette: settings.randomizePaletteOnRegenerate)
         selectionFeedback()
@@ -597,7 +636,7 @@ struct ContentView: View {
     private func pushCurrentToRecents() {
         let snap = MandazaSnapshot(seed: seed,
                                    paletteId: settings.paletteId,
-                                   config: settings.engineConfig())
+                                   config: effectiveConfig)
         // De-dupe: if user oscillates back to a recent seed, don't re-record it.
         recents.removeAll { $0.seed == snap.seed }
         recents.insert(snap, at: 0)
@@ -610,6 +649,7 @@ struct ContentView: View {
         seed = snap.seed
         settings.paletteId = snap.paletteId
         settings.applyLook(from: snap.config)
+        configOverride = snap.config
         showRecents = false
         selectionFeedback()
     }
@@ -619,7 +659,7 @@ struct ContentView: View {
     private func toggleFavorite() {
         let now = settings.toggleFavorite(seed: seed,
                                           paletteId: settings.paletteId,
-                                          config: settings.engineConfig())
+                                          config: effectiveConfig)
         showToast(now ? "Saved to Favorites" : "Removed from Favorites")
         reloadWidgetTimelines()
         selectionFeedback()
@@ -629,6 +669,7 @@ struct ContentView: View {
         seed = snapshot.seed
         settings.paletteId = snapshot.paletteId
         settings.applyLook(from: snapshot.config)
+        configOverride = snapshot.config
     }
 
     private func selectionFeedback() {
@@ -658,7 +699,7 @@ struct ContentView: View {
         let wait = settings.zenAutoRegenSeconds
         autoRegenTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(wait))
-            if !Task.isCancelled { regenerate() }
+            if !Task.isCancelled, !reduceMotion { regenerate() }
         }
     }
 
@@ -700,19 +741,23 @@ struct ContentView: View {
     private func sendCurrentToWatch() {
         let snap = MandazaSnapshot(seed: seed,
                                    paletteId: settings.paletteId,
-                                   config: settings.engineConfig())
+                                   config: effectiveConfig)
         WatchSyncController.shared.send(snapshot: snap)
         showToast("Sent to Watch")
         selectionFeedback()
     }
 
     private func handleIncomingURL(_ url: URL) {
-        guard url.scheme == "mandaza" else { return }
-        // mandaza://seed/<UUID>
-        let parts = url.pathComponents.filter { $0 != "/" }
-        if url.host == "seed", let uuidString = parts.first {
-            seed = uuidString
+        if let snapshot = MandazaDeepLink.snapshot(from: url) {
+            seed = snapshot.seed
+            settings.paletteId = snapshot.paletteId
+            settings.applyLook(from: snapshot.config)
+            configOverride = snapshot.config
+            return
         }
+        guard let incomingSeed = MandazaDeepLink.seed(from: url) else { return }
+        configOverride = nil
+        seed = incomingSeed
     }
 
     // MARK: - Export
@@ -733,7 +778,7 @@ struct ContentView: View {
         exportInProgress = true
         let s = seed
         let pid = settings.paletteId
-        let cfg = settings.engineConfig()
+        let cfg = effectiveConfig
 
         Task.detached(priority: .userInitiated) {
             let image = MandazaEngine.renderImage(seed: s,
@@ -1326,6 +1371,7 @@ private struct LabeledSlider: View {
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.system(size: 20, weight: .regular))
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(BL.muted)
@@ -1344,6 +1390,7 @@ private struct LabeledSlider: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 20, weight: .regular))
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(BL.muted)
@@ -1467,11 +1514,11 @@ private struct ZenClockOverlay: View {
                     .padding(.top, topInset(height: geo.size.height))
                     .padding(.bottom, bottomInset(height: geo.size.height))
                     .padding(.horizontal, 20)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(clockAccessibilityLabel(now))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Clock")
     }
 
     // MARK: Forms
@@ -1583,6 +1630,14 @@ private struct ZenClockOverlay: View {
             return date.formatted(.dateTime.minute(.twoDigits).second(.twoDigits))
         }
         return date.formatted(.dateTime.minute(.twoDigits))
+    }
+
+    private func clockAccessibilityLabel(_ date: Date) -> String {
+        var parts = [inlineTimeString(date)]
+        if showDate {
+            parts.append(date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
+        }
+        return parts.joined(separator: ", ")
     }
 
     // MARK: Fonts & insets

@@ -10,75 +10,29 @@ import XCTest
 @MainActor
 final class WatchSyncPayloadTests: XCTestCase {
 
-    private var savedPaletteId = ""
-    private var savedDrawSpeed = 0.0
-    private var savedLineWidth = 0.0
-    private var savedGlow = false
-    private var savedGlowStrength = 0.0
-    private var savedDensity = 0.0
-    private var savedGeometryPreset = ""
-    private var savedWatchAutoRegen = false
-    private var savedWatchAutoRegenSeconds = 0.0
-    private var savedReactivity = 0.0
-    private var savedClockFormRaw = ""
-    private var savedClockSizeScale = 0.0
-    private var savedTiltEnabled = false
-    private var savedTiltAmount = 0.0
-    private var savedTiltDepth = 0.0
-    private var savedTiltInvertDepth = false
-    private var savedTiltAxesRaw = ""
-    private var savedCanvasThemeRaw = ""
+    private var suiteName = ""
+    private var defaults: UserDefaults!
+    private var settings: MandazaSettings!
 
     override func setUp() {
         super.setUp()
-        let s = MandazaSettings.shared
-        savedPaletteId = s.paletteId
-        savedDrawSpeed = s.drawSpeed
-        savedLineWidth = s.lineWidth
-        savedGlow = s.glow
-        savedGlowStrength = s.glowStrength
-        savedDensity = s.density
-        savedGeometryPreset = s.geometryPreset
-        savedWatchAutoRegen = s.watchAutoRegen
-        savedWatchAutoRegenSeconds = s.watchAutoRegenSeconds
-        savedReactivity = s.reactivity
-        savedClockFormRaw = s.zenClockFormRaw
-        savedClockSizeScale = s.zenClockSizeScale
-        savedTiltEnabled = s.zenTiltEnabled
-        savedTiltAmount = s.zenTiltAmount
-        savedTiltDepth = s.zenTiltDepth
-        savedTiltInvertDepth = s.zenTiltInvertDepth
-        savedTiltAxesRaw = s.zenTiltAxesRaw
-        savedCanvasThemeRaw = s.canvasThemeRaw
+        suiteName = "Mandaza.WatchSyncTests.\(UUID().uuidString)"
+        defaults = UserDefaults(suiteName: suiteName)
+        defaults.removePersistentDomain(forName: suiteName)
+        settings = MandazaSettings(defaults: defaults, migrate: false)
     }
 
     override func tearDown() {
-        let s = MandazaSettings.shared
-        s.paletteId = savedPaletteId
-        s.drawSpeed = savedDrawSpeed
-        s.lineWidth = savedLineWidth
-        s.glow = savedGlow
-        s.glowStrength = savedGlowStrength
-        s.density = savedDensity
-        s.geometryPreset = savedGeometryPreset
-        s.watchAutoRegen = savedWatchAutoRegen
-        s.watchAutoRegenSeconds = savedWatchAutoRegenSeconds
-        s.reactivity = savedReactivity
-        s.zenClockFormRaw = savedClockFormRaw
-        s.zenClockSizeScale = savedClockSizeScale
-        s.zenTiltEnabled = savedTiltEnabled
-        s.zenTiltAmount = savedTiltAmount
-        s.zenTiltDepth = savedTiltDepth
-        s.zenTiltInvertDepth = savedTiltInvertDepth
-        s.zenTiltAxesRaw = savedTiltAxesRaw
-        s.canvasThemeRaw = savedCanvasThemeRaw
+        settings = nil
+        defaults.removePersistentDomain(forName: suiteName)
+        defaults = nil
         super.tearDown()
     }
 
     // MARK: - Settings context round trip
 
     func testSettingsContextRoundTripRestoresEverySyncedKey() {
-        let s = MandazaSettings.shared
+        let s = settings!
         s.paletteId = "aurora"
         s.drawSpeed = 0.33
         s.lineWidth = 1.7
@@ -143,7 +97,7 @@ final class WatchSyncPayloadTests: XCTestCase {
     // MARK: - Version guards
 
     func testApplySettingsContextRejectsMissingVersion() {
-        let s = MandazaSettings.shared
+        let s = settings!
         s.paletteId = "aurora"
         var context = WatchSync.settingsContext(from: s)
         context.removeValue(forKey: "v")
@@ -153,7 +107,7 @@ final class WatchSyncPayloadTests: XCTestCase {
     }
 
     func testApplySettingsContextRejectsFutureVersion() {
-        let s = MandazaSettings.shared
+        let s = settings!
         s.drawSpeed = 0.33
         var context = WatchSync.settingsContext(from: s)
         context["v"] = 999
@@ -165,7 +119,7 @@ final class WatchSyncPayloadTests: XCTestCase {
     // MARK: - Partial payload
 
     func testPartialPayloadAppliesOnlyProvidedKeys() {
-        let s = MandazaSettings.shared
+        let s = settings!
         s.paletteId = "aurora"
         s.drawSpeed = 0.5
         s.lineWidth = 1.2
