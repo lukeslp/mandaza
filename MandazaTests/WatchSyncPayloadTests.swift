@@ -1,3 +1,9 @@
+// File Purpose: Verifies plist-safe iPhone-to-Watch settings and snapshot
+// payload compatibility, partial updates, and version guards.
+// Primary Components: WatchSyncPayloadTests.
+// I/O: Mutates and restores shared settings around each test; asserts encoded
+// dictionaries round-trip every advertised Watch field.
+
 import XCTest
 @testable import Mandaza
 
@@ -13,6 +19,15 @@ final class WatchSyncPayloadTests: XCTestCase {
     private var savedGeometryPreset = ""
     private var savedWatchAutoRegen = false
     private var savedWatchAutoRegenSeconds = 0.0
+    private var savedReactivity = 0.0
+    private var savedClockFormRaw = ""
+    private var savedClockSizeScale = 0.0
+    private var savedTiltEnabled = false
+    private var savedTiltAmount = 0.0
+    private var savedTiltDepth = 0.0
+    private var savedTiltInvertDepth = false
+    private var savedTiltAxesRaw = ""
+    private var savedCanvasThemeRaw = ""
 
     override func setUp() {
         super.setUp()
@@ -26,6 +41,15 @@ final class WatchSyncPayloadTests: XCTestCase {
         savedGeometryPreset = s.geometryPreset
         savedWatchAutoRegen = s.watchAutoRegen
         savedWatchAutoRegenSeconds = s.watchAutoRegenSeconds
+        savedReactivity = s.reactivity
+        savedClockFormRaw = s.zenClockFormRaw
+        savedClockSizeScale = s.zenClockSizeScale
+        savedTiltEnabled = s.zenTiltEnabled
+        savedTiltAmount = s.zenTiltAmount
+        savedTiltDepth = s.zenTiltDepth
+        savedTiltInvertDepth = s.zenTiltInvertDepth
+        savedTiltAxesRaw = s.zenTiltAxesRaw
+        savedCanvasThemeRaw = s.canvasThemeRaw
     }
 
     override func tearDown() {
@@ -39,6 +63,15 @@ final class WatchSyncPayloadTests: XCTestCase {
         s.geometryPreset = savedGeometryPreset
         s.watchAutoRegen = savedWatchAutoRegen
         s.watchAutoRegenSeconds = savedWatchAutoRegenSeconds
+        s.reactivity = savedReactivity
+        s.zenClockFormRaw = savedClockFormRaw
+        s.zenClockSizeScale = savedClockSizeScale
+        s.zenTiltEnabled = savedTiltEnabled
+        s.zenTiltAmount = savedTiltAmount
+        s.zenTiltDepth = savedTiltDepth
+        s.zenTiltInvertDepth = savedTiltInvertDepth
+        s.zenTiltAxesRaw = savedTiltAxesRaw
+        s.canvasThemeRaw = savedCanvasThemeRaw
         super.tearDown()
     }
 
@@ -55,6 +88,15 @@ final class WatchSyncPayloadTests: XCTestCase {
         s.geometryPreset = "dense"
         s.watchAutoRegen = true
         s.watchAutoRegenSeconds = 45
+        s.reactivity = 0.72
+        s.zenClockForm = .stacked
+        s.zenClockSizeScale = 1.35
+        s.zenTiltEnabled = true
+        s.zenTiltAmount = 0.64
+        s.zenTiltDepth = 0.81
+        s.zenTiltInvertDepth = true
+        s.zenTiltAxes = .vertical
+        s.canvasTheme = .paper
 
         let context = WatchSync.settingsContext(from: s)
 
@@ -67,6 +109,15 @@ final class WatchSyncPayloadTests: XCTestCase {
         s.geometryPreset = "sparse"
         s.watchAutoRegen = false
         s.watchAutoRegenSeconds = 120
+        s.reactivity = 0.1
+        s.zenClockForm = .digital
+        s.zenClockSizeScale = 0.7
+        s.zenTiltEnabled = false
+        s.zenTiltAmount = 0.2
+        s.zenTiltDepth = 0.1
+        s.zenTiltInvertDepth = false
+        s.zenTiltAxes = .horizontal
+        s.canvasTheme = .void
 
         XCTAssertTrue(WatchSync.applySettingsContext(context, to: s))
         XCTAssertEqual(s.paletteId, "aurora")
@@ -78,6 +129,15 @@ final class WatchSyncPayloadTests: XCTestCase {
         XCTAssertEqual(s.geometryPreset, "dense")
         XCTAssertTrue(s.watchAutoRegen)
         XCTAssertEqual(s.watchAutoRegenSeconds, 45, accuracy: 0.0001)
+        XCTAssertEqual(s.reactivity, 0.72, accuracy: 0.0001)
+        XCTAssertEqual(s.zenClockForm, .stacked)
+        XCTAssertEqual(s.zenClockSizeScale, 1.35, accuracy: 0.0001)
+        XCTAssertTrue(s.zenTiltEnabled)
+        XCTAssertEqual(s.zenTiltAmount, 0.64, accuracy: 0.0001)
+        XCTAssertEqual(s.zenTiltDepth, 0.81, accuracy: 0.0001)
+        XCTAssertTrue(s.zenTiltInvertDepth)
+        XCTAssertEqual(s.zenTiltAxes, .vertical)
+        XCTAssertEqual(s.canvasTheme, .paper)
     }
 
     // MARK: - Version guards

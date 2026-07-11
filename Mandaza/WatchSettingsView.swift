@@ -1,3 +1,10 @@
+// File Purpose: Presents paired Apple Watch status and watch-specific visual,
+// regeneration, clock, parallax, and canvas controls.
+// Primary Components: WatchSettingsView sections and debounced settings push.
+// I/O: Reads/writes MandazaSettings and WatchConnectivity state; outputs
+// accessible SwiftUI controls and synchronized watch settings.
+
+#if os(iOS)
 import SwiftUI
 import WatchConnectivity
 
@@ -36,15 +43,7 @@ struct WatchSettingsView: View {
     /// One value covering every watch-relevant setting, so a single onChange
     /// pushes on any look/behavior change (the controller debounces).
     private var syncFingerprint: String {
-        [settings.paletteId,
-         settings.geometryPreset,
-         String(settings.drawSpeed),
-         String(settings.lineWidth),
-         String(settings.glow),
-         String(settings.glowStrength),
-         String(settings.density),
-         String(settings.watchAutoRegen),
-         String(settings.watchAutoRegenSeconds)].joined(separator: "|")
+        WatchSync.settingsFingerprint(from: settings)
     }
 
     private func push() {
@@ -213,3 +212,4 @@ struct WatchSettingsView: View {
         .padding(.top, 4)
     }
 }
+#endif

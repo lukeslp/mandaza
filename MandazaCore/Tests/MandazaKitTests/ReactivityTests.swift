@@ -1,5 +1,12 @@
+// File Purpose: Verifies pure music-reactivity speed and beat-scale helpers.
+// Primary Components: ReactivityTests.
+// I/O: Supplies bounded and out-of-range level/reactivity values; asserts
+// identity, clamping, monotonicity, and visible design targets.
+
 import XCTest
+#if SWIFT_PACKAGE
 @testable import MandazaKit
+#endif
 
 /// Pure-math contract for music reactivity. The render wires these two
 /// helpers into the canvas presentation transform; the values here are the

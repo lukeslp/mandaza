@@ -1,5 +1,10 @@
+// File Purpose: Renders compact live feedback for music-responsive controls.
+// Primary Components: MusicModePulseRing.
+// I/O: Reads AudioReactor modulation and Reduce Motion; outputs a decorative,
+// noninteractive pulse ring around the Zen control.
+
+#if !os(tvOS)
 import SwiftUI
-import UIKit
 
 /// A soft pulsing ring around the center button while Music Mode is
 /// listening — the button's own live feedback, so no separate indicator
@@ -27,3 +32,4 @@ struct MusicModePulseRing: View {
         }
     }
 }
+#endif

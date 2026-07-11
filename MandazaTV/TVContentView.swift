@@ -13,6 +13,7 @@
  - Outputs: renders live `MandazaCanvas`, persists toggles via `MandazaSettings`.
  */
 
+#if os(tvOS)
 import SwiftUI
 import UIKit
 
@@ -929,3 +930,4 @@ private struct TVZenClockOverlay: View {
 #Preview {
     TVContentView()
 }
+#endif

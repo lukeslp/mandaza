@@ -1,3 +1,10 @@
+// File Purpose: Encodes and applies the plist-safe settings and snapshot
+// payloads exchanged between the iPhone and Apple Watch apps.
+// Primary Components: WatchSync settings context, fingerprint, and snapshot
+// message codecs.
+// I/O: Reads MandazaSettings / MandazaSnapshot values; emits dictionaries
+// accepted by WatchConnectivity and applies received values transactionally.
+
 import Foundation
 
 /// Wire codec for phone ↔ watch sync. Pure dictionary/Codable translation —
@@ -27,6 +34,15 @@ public enum WatchSync {
         static let geometryPreset = "geometryPreset"
         static let watchAutoRegen = "watchAutoRegen"
         static let watchAutoRegenSeconds = "watchAutoRegenSeconds"
+        static let reactivity = "reactivity"
+        static let zenClockFormRaw = "zenClockFormRaw"
+        static let zenClockSizeScale = "zenClockSizeScale"
+        static let zenTiltEnabled = "zenTiltEnabled"
+        static let zenTiltAmount = "zenTiltAmount"
+        static let zenTiltDepth = "zenTiltDepth"
+        static let zenTiltInvertDepth = "zenTiltInvertDepth"
+        static let zenTiltAxesRaw = "zenTiltAxesRaw"
+        static let canvasThemeRaw = "canvasThemeRaw"
     }
 
     // MARK: - Settings context (phone → watch applicationContext)
@@ -45,6 +61,15 @@ public enum WatchSync {
             Key.geometryPreset: settings.geometryPreset,
             Key.watchAutoRegen: settings.watchAutoRegen,
             Key.watchAutoRegenSeconds: settings.watchAutoRegenSeconds,
+            Key.reactivity: settings.reactivity,
+            Key.zenClockFormRaw: settings.zenClockFormRaw,
+            Key.zenClockSizeScale: settings.zenClockSizeScale,
+            Key.zenTiltEnabled: settings.zenTiltEnabled,
+            Key.zenTiltAmount: settings.zenTiltAmount,
+            Key.zenTiltDepth: settings.zenTiltDepth,
+            Key.zenTiltInvertDepth: settings.zenTiltInvertDepth,
+            Key.zenTiltAxesRaw: settings.zenTiltAxesRaw,
+            Key.canvasThemeRaw: settings.canvasThemeRaw,
         ]
         return [
             Key.version: version,
@@ -73,7 +98,42 @@ public enum WatchSync {
         if let geometryPreset = inner[Key.geometryPreset] as? String { settings.geometryPreset = geometryPreset }
         if let watchAutoRegen = inner[Key.watchAutoRegen] as? Bool { settings.watchAutoRegen = watchAutoRegen }
         if let seconds = inner[Key.watchAutoRegenSeconds] as? Double { settings.watchAutoRegenSeconds = seconds }
+        if let reactivity = inner[Key.reactivity] as? Double { settings.reactivity = reactivity }
+        if let form = inner[Key.zenClockFormRaw] as? String { settings.zenClockFormRaw = form }
+        if let scale = inner[Key.zenClockSizeScale] as? Double { settings.zenClockSizeScale = scale }
+        if let enabled = inner[Key.zenTiltEnabled] as? Bool { settings.zenTiltEnabled = enabled }
+        if let amount = inner[Key.zenTiltAmount] as? Double { settings.zenTiltAmount = amount }
+        if let depth = inner[Key.zenTiltDepth] as? Double { settings.zenTiltDepth = depth }
+        if let invert = inner[Key.zenTiltInvertDepth] as? Bool { settings.zenTiltInvertDepth = invert }
+        if let axes = inner[Key.zenTiltAxesRaw] as? String { settings.zenTiltAxesRaw = axes }
+        if let theme = inner[Key.canvasThemeRaw] as? String { settings.canvasThemeRaw = theme }
         return true
+    }
+
+    /// Stable projection of every field encoded by `settingsContext`.
+    /// SwiftUI observes this one value to trigger a debounced Watch push.
+    @MainActor
+    public static func settingsFingerprint(from settings: MandazaSettings) -> String {
+        [
+            settings.paletteId,
+            settings.geometryPreset,
+            String(settings.drawSpeed),
+            String(settings.lineWidth),
+            String(settings.glow),
+            String(settings.glowStrength),
+            String(settings.density),
+            String(settings.watchAutoRegen),
+            String(settings.watchAutoRegenSeconds),
+            String(settings.reactivity),
+            settings.zenClockFormRaw,
+            String(settings.zenClockSizeScale),
+            String(settings.zenTiltEnabled),
+            String(settings.zenTiltAmount),
+            String(settings.zenTiltDepth),
+            String(settings.zenTiltInvertDepth),
+            settings.zenTiltAxesRaw,
+            settings.canvasThemeRaw,
+        ].joined(separator: "|")
     }
 
     // MARK: - Snapshot message (phone → watch sendMessage)

@@ -1,6 +1,8 @@
 import XCTest
 import CoreGraphics
+#if SWIFT_PACKAGE
 @testable import MandazaKit
+#endif
 
 /// Contract for the gravity-based tilt-parallax mapping. `tiltOffset` is the
 /// pure geometry under the CoreMotion-backed `TiltProvider`: off ⇒ no motion,
@@ -147,6 +149,16 @@ final class TiltTests: XCTestCase {
         XCTAssertEqual(h.height, 0, accuracy: 1e-9)
         let v = ambientParallaxOffset(time: 5, amount: 1, axes: .vertical, viewSize: size)
         XCTAssertEqual(v.width, 0, accuracy: 1e-9)
+    }
+
+    func testCombinedTiltAndAmbientStayWithinTravelCap() {
+        let limit = tiltMaxTravelFraction * Double(min(size.width, size.height))
+        let combined = clampedParallaxOffset(
+            CGSize(width: limit * 1.3, height: -limit * 1.3),
+            amount: 1,
+            viewSize: size)
+        XCTAssertEqual(combined.width, limit, accuracy: 1e-9)
+        XCTAssertEqual(combined.height, -limit, accuracy: 1e-9)
     }
 
     func testParallaxDepthScalesWithLuminance() {

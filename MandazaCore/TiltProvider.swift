@@ -1,3 +1,10 @@
+// File Purpose: Maps device motion and ambient Zen sway into stable,
+// layered-parallax offsets shared by the Apple-platform targets.
+// Primary Components: tiltOffset, ambientParallaxOffset, parallaxDepth, and
+// the CoreMotion-backed TiltProvider.
+// I/O: Accepts gravity, settings, time, and view size; emits bounded CGSize
+// offsets to the canvas and registered overlay listeners.
+
 import Foundation
 import CoreGraphics
 
@@ -72,6 +79,18 @@ public func ambientParallaxOffset(time: TimeInterval,
     case .vertical:   x = 0
     }
     return CGSize(width: x * maxTravel, height: y * maxTravel)
+}
+
+/// Clamps combined physical + ambient travel to the same advertised cap as
+/// physical tilt alone.
+public func clampedParallaxOffset(_ offset: CGSize,
+                                  amount: Double,
+                                  viewSize: CGSize) -> CGSize {
+    let a = min(1, max(0, amount))
+    let limit = a * tiltMaxTravelFraction
+        * Double(min(viewSize.width, viewSize.height))
+    return CGSize(width: min(limit, max(-limit, offset.width)),
+                  height: min(limit, max(-limit, offset.height)))
 }
 
 /// Legacy intensity → continuous amount. Subtle ≈ half travel, pronounced = full.
@@ -226,7 +245,11 @@ public final class TiltProvider {
         guard self.amount > 0.001 else { stop(); return }
         guard motion.isDeviceMotionAvailable else { return }
         guard !motion.isDeviceMotionActive else { return }
+        #if os(watchOS)
+        motion.deviceMotionUpdateInterval = 1.0 / 24.0
+        #else
         motion.deviceMotionUpdateInterval = 1.0 / 60.0
+        #endif
         motion.startDeviceMotionUpdates(to: .main) { [weak self] data, _ in
             guard let data else { return }
             let g = data.gravity
@@ -290,8 +313,11 @@ public final class TiltProvider {
                                             amount: amount,
                                             axes: axes,
                                             viewSize: viewSize)
-            next = CGSize(width: tilt.width + amb.width,
-                          height: tilt.height + amb.height)
+            next = clampedParallaxOffset(
+                CGSize(width: tilt.width + amb.width,
+                       height: tilt.height + amb.height),
+                amount: amount,
+                viewSize: viewSize)
         }
         // Sub-pixel skip while still — but never while ambient sway is on,
         // or the slow sine steps (~0.1pt/frame) would freeze the drift.

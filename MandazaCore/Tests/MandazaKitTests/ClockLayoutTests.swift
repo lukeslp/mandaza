@@ -1,6 +1,13 @@
+// File Purpose: Verifies pure Zen clock layout and typography mappings.
+// Primary Components: ClockLayoutTests.
+// I/O: Supplies every clock enum case; asserts deterministic SwiftUI
+// alignment, font-design, width, and form outputs.
+
 import XCTest
 import SwiftUI
+#if SWIFT_PACKAGE
 @testable import MandazaKit
+#endif
 
 /// Layout contract for the Zen clock overlay. These pure maps decide where
 /// the clock sits (all 8 positions) and how each font style renders, so a

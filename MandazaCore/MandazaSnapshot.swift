@@ -1,5 +1,9 @@
+// File Purpose: Defines the durable value object for one reproducible mandala.
+// Primary Components: MandazaSnapshot.
+// I/O: Stores seed, palette, engine configuration, and date; supports Codable
+// persistence, widget timelines, favorites, history, and device handoff.
+
 import Foundation
-import CoreGraphics
 
 /// Value-type record of one generated mandala. Used as the unit of
 /// • the widget timeline entry,

@@ -19,6 +19,7 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
     STRING_CATALOG_GENERATE_SYMBOLS: YES
+    MARKETING_VERSION: "1.3"
     # Build number flows from the archive (scripts set CURRENT_PROJECT_VERSION
     # to the git commit count); this default keeps non-archive builds valid.
     CURRENT_PROJECT_VERSION: "44"
@@ -31,9 +32,12 @@ targets:
 
   Mandaza:
     type: application
-    platform: iOS
+    platform: auto
+    supportedDestinations: [iOS, tvOS]
     sources:
       - path: Mandaza
+      - path: MandazaTV/TVContentView.swift
+      - path: MandazaTV/Assets.xcassets
       - path: MandazaCore
         excludes:
           - Package.swift
@@ -48,7 +52,7 @@ targets:
       properties:
         CFBundleDisplayName: Mandaza
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "1.3"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:
           UIColorName: LaunchBackground
@@ -80,54 +84,17 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UIRequiresFullScreen: NO
-        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
-        TARGETED_DEVICE_FAMILY: "1,2"
-        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+        TARGETED_DEVICE_FAMILY: "1,2,3"
         SUPPORTS_MACCATALYST: NO
         SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
     dependencies:
       - target: MandazaWidgets
+        destinationFilters: [iOS]
       # Standalone watchOS companion, embedded in the iOS build only (ships
       # under the same App Store record). Not embedded in tvOS.
       - target: MandazaWatch
         embed: true
         destinationFilters: [iOS]
-
-  MandazaTV:
-    type: application
-    platform: tvOS
-    sources:
-      - path: MandazaTV
-      - path: MandazaCore
-        excludes:
-          - Package.swift
-          - ".swiftpm"
-          - ".swiftpm/**"
-          - ".build"
-          - ".build/**"
-          - Tests
-          - "Tests/**"
-    info:
-      path: MandazaTV/Info.plist
-      properties:
-        CFBundleDisplayName: Mandaza
-        CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "1.3"
-        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
-        ITSAppUsesNonExemptEncryption: false
-        CFBundleURLTypes:
-          - CFBundleURLName: com.lukesteuber.mandaza
-            CFBundleURLSchemes:
-              - mandaza
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.tv
-        CODE_SIGN_ENTITLEMENTS: MandazaTV/MandazaTV.entitlements
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
-        TVOS_DEPLOYMENT_TARGET: "17.0"
-        TARGETED_DEVICE_FAMILY: "3"
-        SUPPORTED_PLATFORMS: "appletvos appletvsimulator"
 
   MandazaWidgets:
     type: app-extension
@@ -147,7 +114,7 @@ targets:
       path: MandazaWidgets/Info.plist
       properties:
         CFBundleDisplayName: Mandaza Widgets
-        CFBundleShortVersionString: "1.3"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
@@ -166,6 +133,7 @@ targets:
     platform: iOS
     sources:
       - path: MandazaTests
+      - path: MandazaCore/Tests/MandazaKitTests
       - path: MandazaCore
         excludes:
           - Package.swift
@@ -205,7 +173,7 @@ targets:
       path: MandazaWatch/Info.plist
       properties:
         CFBundleDisplayName: Mandaza
-        CFBundleShortVersionString: "1.3"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         WKApplication: true
         WKCompanionAppBundleIdentifier: com.lukesteuber.mandaza
@@ -234,14 +202,6 @@ schemes:
       config: Debug
       targets:
         - MandazaTests
-
-  MandazaTV:
-    build:
-      targets:
-        MandazaTV: all
-    run:
-      config: Debug
-
   MandazaWatch:
     build:
       targets:

@@ -8,9 +8,8 @@ This repo already sets **Automatic signing** and **Development Team** in XcodeGe
 |--------|--------|
 | **Development Team ID** | `596T7J7FB6` |
 | **App Group** (entitlements) | `group.com.lukesteuber.mandaza` |
-| **iOS app** | `com.lukesteuber.mandaza` |
+| **iOS/tvOS app** | `com.lukesteuber.mandaza` |
 | **iOS widgets** | `com.lukesteuber.mandaza.widgets` |
-| **tvOS app** | `com.lukesteuber.mandaza.tv` |
 | **Unit tests** | `com.lukesteuber.mandaza.tests` |
 
 Portal: [Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/)
@@ -20,14 +19,14 @@ Portal: [Certificates, Identifiers & Profiles](https://developer.apple.com/accou
 ## A. Run on Simulator only (no physical device)
 
 1. Open `Mandaza.xcodeproj` (after `xcodegen`).
-2. Scheme **Mandaza** or **MandazaTV** → destination **iPhone / Apple TV … Simulator** (not a gray “Any … Device”).
+2. Scheme **Mandaza** → destination **iPhone / Apple TV … Simulator** (not a gray “Any … Device”).
 3. **Signing & Capabilities** for that target → **Automatically manage signing** → Team **Luke Steuber** (or the team for `596T7J7FB6`).
 
 Simulator builds do **not** require a registered Apple TV.
 
 ---
 
-## B. Run MandazaTV on a physical Apple TV (fixes “no devices” / “no profile”)
+## B. Run Mandaza on a physical Apple TV (fixes “no devices” / “no profile”)
 
 Apple only creates an **tvOS App Development** profile if your team has **at least one registered Apple TV** (or you add its UDID manually).
 
@@ -41,24 +40,24 @@ Apple only creates an **tvOS App Development** profile if your team has **at lea
 
 Until this step succeeds, you will keep seeing *“Your team has no devices from which to generate a provisioning profile”*.
 
-### 2) App ID for tvOS with App Groups
+### 2) Shared App ID for tvOS with App Groups
 
-The tvOS app uses **App Groups** ([MandazaTV/MandazaTV.entitlements](MandazaTV/MandazaTV.entitlements)) — the tvOS **App ID** must allow the same group as iOS.
+The tvOS build uses the same **App ID** as iOS, `com.lukesteuber.mandaza`, and the same App Group entitlement.
 
 1. [Identifiers](https://developer.apple.com/account/resources/identifiers/list) → **+** (or select existing).
-2. Create **App IDs** → **App** → enable **tvOS** for identifier **`com.lukesteuber.mandaza.tv`** (or edit existing if Xcode already created it).
+2. Edit the **App ID** for **`com.lukesteuber.mandaza`** and ensure tvOS is enabled for it.
 3. Under **Capabilities**, enable **App Groups** and assign **`group.com.lukesteuber.mandaza`** (must match the **App Group** container you use for the iOS app; same group name on all targets that share `UserDefaults`).
 
 If the App Group identifier does not exist yet: [Identifiers → App Groups](https://developer.apple.com/account/resources/identifiers/list/applicationGroup) → **+** → `group.com.lukesteuber.mandaza`.
 
-### 3) Xcode on the MandazaTV target
+### 3) Xcode on the Mandaza target
 
-1. Select **MandazaTV** target → **Signing & Capabilities**.
+1. Select **Mandaza** target → **Signing & Capabilities**.
 2. **Team**: same team as `596T7J7FB6`.
 3. **Automatically manage signing**: ON.
 4. Run destination: your **physical Apple TV** (not Simulator).
 
-Xcode should create or refresh **MandazaTV tvOS Development** profile. If not: **File → Workspace Settings** (or Project) → **Accounts** → download profiles; or toggle **Automatically manage signing** off/on.
+Xcode should create or refresh the tvOS development profile for `com.lukesteuber.mandaza`. If not: **File → Workspace Settings** (or Project) → **Accounts** → download profiles; or toggle **Automatically manage signing** off/on.
 
 ---
 
@@ -70,7 +69,7 @@ Same pattern: register **each iPhone/iPad** used for development under **Devices
 
 ## D. Distribution (TestFlight / App Store)
 
-- **Archive** still needs **Distribution** certificates and **App Store** provisioning profiles — Xcode **Organizer** + **Distribute App** usually handles this with automatic signing once the **tvOS** app record exists in App Store Connect.
+- **Archive** still needs **Distribution** certificates and **App Store** provisioning profiles — Xcode **Organizer** + **Distribute App** usually handles this with automatic signing once the shared app record exists in App Store Connect.
 
 ---
 

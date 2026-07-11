@@ -1,3 +1,10 @@
+// File Purpose: Hosts the live Apple Watch mandala face and its interaction,
+// sync, audio, parallax, and regeneration lifecycle.
+// Primary Components: WatchRootView, WatchConnectivity callbacks, sensor
+// lifecycle reconciliation, and automatic pattern regeneration.
+// I/O: Reads shared settings, crown/gesture/sensor input, and iPhone sync;
+// outputs the animated face, settings sheet, haptics, and visual status.
+
 import SwiftUI
 import WatchKit
 
@@ -22,6 +29,7 @@ import WatchKit
 struct WatchRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.isLuminanceReduced) private var luminanceReduced
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var settings = MandazaSettings.shared
     @State private var seed = UUID()
     @State private var paletteIndex = 0
@@ -29,6 +37,7 @@ struct WatchRootView: View {
     @State private var regenTask: Task<Void, Never>?
 
     @State private var reactor = AudioReactor()
+    @State private var tilt = TiltProvider()
     @State private var showSheet = false
     @State private var showFromPhone = false
     @State private var fromPhoneTask: Task<Void, Never>?
@@ -74,6 +83,8 @@ struct WatchRootView: View {
                       reactivity: settings.reactivity,
                       onIdleChange: handleIdle,
                       modulationSource: reactor.source,
+                      parallaxSource: settings.zenTiltEnabled && !reduceMotion
+                          ? tilt : nil,
                       parallaxDepthContrast: settings.zenTiltDepth,
                       parallaxInvertDepth: settings.zenTiltInvertDepth,
                       theme: settings.canvasTheme)
@@ -122,13 +133,20 @@ struct WatchRootView: View {
                     regenTask?.cancel()
                     reactor.stop()
                 }
+                applyTilt()
             }
             .onChange(of: luminanceReduced) { _, reduced in
-                // The canvas pauses itself under Always-On; the mic must stop too.
+                // The canvas pauses itself under Always-On; sensors stop too.
                 if reduced { reactor.stop() }
+                applyTilt()
             }
+            .onChange(of: reduceMotion) { _, _ in applyTilt() }
+            .onChange(of: settings.zenTiltEnabled) { _, _ in applyTilt() }
+            .onChange(of: settings.zenTiltAmount) { _, _ in applyTilt() }
+            .onChange(of: settings.zenTiltAxesRaw) { _, _ in applyTilt() }
             .onAppear {
                 wireSyncHooks()
+                applyTilt()
                 if let snap = settings.pinnedSnapshot {
                     apply(snapshot: snap, announce: false)
                 } else if let i = Palette.all.firstIndex(where: { $0.id == settings.paletteId }) {
@@ -140,7 +158,23 @@ struct WatchRootView: View {
                 regenTask?.cancel()
                 fromPhoneTask?.cancel()
                 reactor.stop()
+                tilt.stop()
             }
+    }
+
+    /// Runs watch parallax only while the face is active and fully lit.
+    /// The provider uses a lower watchOS sampling cadence to protect battery.
+    private func applyTilt() {
+        guard scenePhase == .active,
+              !luminanceReduced,
+              !reduceMotion,
+              settings.zenTiltEnabled else {
+            tilt.stop()
+            return
+        }
+        tilt.viewSize = screenSize
+        tilt.ambientSway = false
+        tilt.start(amount: settings.zenTiltAmount, axes: settings.zenTiltAxes)
     }
 
     // MARK: - iPhone sync

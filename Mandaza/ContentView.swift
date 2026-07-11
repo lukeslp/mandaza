@@ -6,6 +6,7 @@
 // sources, and export requests; outputs SwiftUI UI, saved images, widget reloads,
 // toasts, accessibility announcements, and watch sync messages.
 
+#if !os(tvOS)
 import SwiftUI
 import UIKit
 #if canImport(WidgetKit)
@@ -47,8 +48,8 @@ struct ContentView: View {
     /// set. The reactor is foreground-only; scenePhase handling stops/resumes.
     @State private var reactor = AudioReactor()
 
-    /// Device-tilt parallax source. Runs only while Zen is visible and the
-    /// intensity setting is not off; drives layered `.offset`s below.
+    /// Device-tilt parallax source. Runs whenever enabled; Zen additionally
+    /// mixes in faint ambient sway so depth remains visible at rest.
     @State private var tilt = TiltProvider()
 
     @Environment(\.scenePhase) private var scenePhase
@@ -211,6 +212,7 @@ struct ContentView: View {
         .onChange(of: settings.zenTiltEnabled) { _, _ in applyTilt() }
         .onChange(of: settings.zenTiltAmount) { _, _ in applyTilt() }
         .onChange(of: settings.zenTiltAxesRaw) { _, _ in applyTilt() }
+        .onChange(of: reduceMotion) { _, _ in applyTilt() }
         .onChange(of: showSettings) { _, isPresented in
             if !isPresented { noteInteraction() }
         }
@@ -692,15 +694,7 @@ struct ContentView: View {
     /// One value covering every watch-relevant setting; a single onChange
     /// pushes on any change (mirrors WatchSettingsView.syncFingerprint).
     private var watchSyncFingerprint: String {
-        [settings.paletteId,
-         settings.geometryPreset,
-         String(settings.drawSpeed),
-         String(settings.lineWidth),
-         String(settings.glow),
-         String(settings.glowStrength),
-         String(settings.density),
-         String(settings.watchAutoRegen),
-         String(settings.watchAutoRegenSeconds)].joined(separator: "|")
+        WatchSync.settingsFingerprint(from: settings)
     }
 
     private func sendCurrentToWatch() {
@@ -809,6 +803,8 @@ private struct ExportAlert: Identifiable {
 // MARK: - Settings sheet
 
 private struct SettingsSheet: View {
+    private static let websiteURL = URL(string: "https://dr.eamer.dev")
+
     @Bindable var settings: MandazaSettings
     let loadFavorite: (MandazaSnapshot) -> Void
     var reactor: AudioReactor
@@ -1151,11 +1147,13 @@ private struct SettingsSheet: View {
                 }
 
                 Section {
-                    Link("dr.eamer.dev", destination: URL(string: "https://dr.eamer.dev")!)
-                        .font(.bl(15))
-                        .foregroundStyle(BL.paper)
-                        .accessibilityLabel("Open dr.eamer.dev")
-                        .accessibilityHint("Opens the website in your browser.")
+                    if let websiteURL = Self.websiteURL {
+                        Link("dr.eamer.dev", destination: websiteURL)
+                            .font(.bl(15))
+                            .foregroundStyle(BL.paper)
+                            .accessibilityLabel("Open dr.eamer.dev")
+                            .accessibilityHint("Opens the website in your browser.")
+                    }
                 }
                 .listRowBackground(BL.deep)
             }
@@ -1744,3 +1742,4 @@ private struct ParallaxHost<Content: View>: UIViewControllerRepresentable {
 }
 
 #Preview { ContentView() }
+#endif

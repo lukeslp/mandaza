@@ -13,8 +13,8 @@ gone through the API script directly. `description.txt` / `keywords.txt` /
 `promotional_text.txt` / `release_notes.txt` here are exactly what that
 script expects.
 
-tvOS metadata is unchanged in 1.3 — no `metadata/en-US` update needed for
-`com.lukesteuber.mandaza.tv`.
+tvOS now ships under the shared `com.lukesteuber.mandaza` app record. Add
+Apple TV platform screenshots/metadata on that record when staging tvOS assets.
 
 Before running the ship pipeline for real:
 1. Confirm iPhone 1320×2868 heroes + Watch Ultra faces in

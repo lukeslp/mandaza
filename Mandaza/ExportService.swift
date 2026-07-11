@@ -1,3 +1,4 @@
+#if os(iOS)
 import UIKit
 import Photos
 
@@ -51,3 +52,4 @@ enum ExportService {
         ("Square 4K",            CGSize(width: 3840, height: 3840))
     ]
 }
+#endif

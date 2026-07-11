@@ -291,17 +291,29 @@ public struct MandazaCanvas: View {
         // frame, so parallax stays live without invalidating this view tree.
         let parallax = parallaxSource?.offset ?? .zero
 
-        // Dark (far) first, bright (near) last so nearer strokes sit on top.
-        // (Invert depth flips which luminance is nearer.)
-        let strokes: [(path: Path, color: Color, depth: Double)] = engine.loops.map { loop in
-            let cg = engine.color(for: loop, timeMs: colorTimeMs)
-            let lum = relativeLuminance(cg)
-            return (Path(engine.currentPath(for: loop)),
-                    Color(cgColor: cg),
-                    parallaxDepth(luminance: lum,
-                                  contrast: parallaxDepthContrast,
-                                  invert: parallaxInvertDepth))
-        }.sorted { $0.depth < $1.depth }
+        let strokes: [(path: Path, color: Color, depth: Double)]
+        if parallaxSource == nil {
+            // Fast path: preserve engine order and skip per-frame color-space
+            // conversion + luminance sorting when parallax is disabled.
+            strokes = engine.loops.map { loop in
+                let cg = engine.color(for: loop, timeMs: colorTimeMs)
+                return (Path(engine.currentPath(for: loop)),
+                        Color(cgColor: cg),
+                        1)
+            }
+        } else {
+            // Dark (far) first, bright (near) last so nearer strokes sit on top.
+            // (Invert depth flips which luminance is nearer.)
+            strokes = engine.loops.map { loop in
+                let cg = engine.color(for: loop, timeMs: colorTimeMs)
+                let lum = relativeLuminance(cg)
+                return (Path(engine.currentPath(for: loop)),
+                        Color(cgColor: cg),
+                        parallaxDepth(luminance: lum,
+                                      contrast: parallaxDepthContrast,
+                                      invert: parallaxInvertDepth))
+            }.sorted { $0.depth < $1.depth }
+        }
 
         let paperTheme = theme == .paper
         for stroke in strokes {

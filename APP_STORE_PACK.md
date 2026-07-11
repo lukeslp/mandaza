@@ -1,11 +1,10 @@
 # Mandaza App Store Pack
 
-This document is the single source of truth for App Store and TestFlight submission assets, metadata, copy, and runbooks for both iOS and tvOS listings.
+This document is the single source of truth for App Store and TestFlight submission assets, metadata, copy, and runbooks for the multiplatform iOS/tvOS listing.
 
 ## Scope
 
-- iOS app listing: `com.lukesteuber.mandaza`
-- tvOS app listing: `com.lukesteuber.mandaza.tv`
+- iOS/tvOS app listing: `com.lukesteuber.mandaza`
 - Widget extension bundle: `com.lukesteuber.mandaza.widgets` (not a separate store listing)
 
 ## IDs and Platform Records
@@ -14,11 +13,10 @@ This document is the single source of truth for App Store and TestFlight submiss
 |---|---|
 | Team ID | `596T7J7FB6` |
 | App Group | `group.com.lukesteuber.mandaza` |
-| iOS bundle ID | `com.lukesteuber.mandaza` |
-| tvOS bundle ID | `com.lukesteuber.mandaza.tv` |
+| App bundle ID | `com.lukesteuber.mandaza` |
 | Widgets bundle ID | `com.lukesteuber.mandaza.widgets` |
 
-Both iOS and tvOS require separate app records in App Store Connect because they use different bundle IDs.
+iOS and tvOS ship from the same App Store Connect app record via the shared bundle ID.
 
 ## App Store Metadata Pack
 
@@ -46,7 +44,8 @@ Features:
 - 11 curated color palettes
 - Zen Mode from the center footer button — optional clock overlay with digital, stacked, and editorial forms, plus opacity, type, size, and eight positions
 - Music responsivity in Zen: the mandala pumps on the beat and quickens with nearby sound (Reactivity slider). Audio is never recorded or stored
-- Tilt parallax for gentle depth on iPhone and Apple Watch
+- Adjustable tilt parallax on iPhone and Apple Watch, with layered depth,
+  axis control, and a faint ambient sway while Zen rests
 - Favorites with quick recall and Previous history
 - Home Screen and StandBy widgets
 - Export presets for iPhone, iPad, and Square 4K
@@ -142,13 +141,12 @@ MandazaTV runs on-device and does not require an account.
 
 ### Apple TV (tvOS) — Privacy Policy in App Store Connect
 
-Apple asks for a **Privacy Policy URL** on the **tvOS** app record the same way
-as on iOS. You do **not** need a different domain for Apple TV if one policy
-covers both apps.
+Apple asks for a **Privacy Policy URL** on the shared app record covering iOS
+and tvOS. You do **not** need a different domain for Apple TV if one policy
+covers both platforms.
 
 1. In [App Store Connect](https://appstoreconnect.apple.com), open the app
-   whose bundle ID is **`com.lukesteuber.mandaza.tv`** (the tvOS listing, not
-   the iPhone app).
+   whose bundle ID is **`com.lukesteuber.mandaza`**.
 2. Go to **App Privacy** (left sidebar, under **General** or the app's trust
    section depending on ASC layout).
 3. Set **Privacy Policy** to the **same public URL** as iOS:
@@ -212,7 +210,9 @@ Staged heroes at 1320×2868: mandalas, music-reactive Zen, digital clock, stacke
 - Widgets support Home Screen and StandBy with configurable palette/rotation (no Lock Screen accessory families).
 - Deep link format: `mandaza://seed/<UUID>`.
 - **Music responsivity** (Settings toggle, active in Zen): microphone access is used only for local, on-device audio-reactive visuals (beat pump, speed, stroke/glow). Audio is never recorded, saved, or uploaded, and there is no integration with any streaming or third-party audio service. The permission is requested only when the user turns it on.
-- **Tilt parallax** is optional (Off / Subtle / Pronounced) and is a presentation offset only.
+- **Tilt parallax** is optional and adjustable (amount, depth, axis, and depth
+  direction). It is a presentation-only effect; Zen adds a faint ambient sway
+  so the layered depth remains visible while the iPhone rests.
 - Mandaza includes an Apple Watch companion app that syncs over WatchConnectivity. The iPhone app mirrors its current look (palette, density, glow, line width) to the paired watch automatically, and includes a "Send to Watch" action (Save menu, and on any Favorite) that pushes a design to the watch immediately. This paired-device sync is expected behavior between the two apps under the same Team ID / App Group and is not unexpected background networking.
 
 ### tvOS Review Notes (paste-ready)
@@ -229,7 +229,7 @@ Zen mode grew up.
 
 • Music that moves it — the mandala now pumps on the beat and quickens with the music. Dial in exactly how much with a Reactivity slider.
 • A living clock — new stacked and editorial layouts, serif and condensed type, eight positions, and a size you choose.
-• Tilt for depth — the art drifts with a gentle parallax as you tilt your iPhone or Apple Watch. Subtle or pronounced, your call.
+• Tilt for depth — tune the amount, layer separation, direction, and axes on iPhone or Apple Watch. In Zen, a faint ambient sway keeps the depth alive at rest.
 
 Tap the center button to drop into Zen. Nothing is collected, ever.
 
@@ -255,7 +255,7 @@ scripts/upload-testflight.sh
 
 ### tvOS Build and Upload
 
-`archive-tvos.sh` runs a **Debug tvOS Simulator build** smoke, then the Release archive. Same `SKIP_TESTS=1` escape hatch.
+`archive-tvos.sh` runs a **Debug tvOS Simulator build** smoke, then archives the shared `Mandaza` scheme for a tvOS destination. Same `SKIP_TESTS=1` escape hatch.
 
 ```bash
 scripts/archive-tvos.sh
@@ -275,7 +275,7 @@ scripts/upload-testflight.sh --tvos
 
 - [ ] Metadata pasted (name, subtitle, promo text, description, keywords)
 - [ ] Privacy label completed (None)
-- [ ] Privacy policy URL verified live (iOS **and** tvOS app records in ASC)
+- [ ] Privacy policy URL verified live on the shared iOS/tvOS app record in ASC
 - [ ] Icons verified in ASC preview
 - [ ] Screenshots uploaded for active platform listing
 - [ ] Review notes pasted

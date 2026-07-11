@@ -8,7 +8,8 @@
 #   scripts/export-ipa.sh         # produces build/Mandaza.ipa
 #   scripts/upload-testflight.sh  # uploads to App Store Connect
 #
-# tvOS (separate bundle): scripts/archive-tvos.sh → export-ipa-tvos.sh → upload-testflight.sh --tvos
+# tvOS uses the same Mandaza scheme and bundle ID via project.yml supportedDestinations:
+# scripts/archive-tvos.sh → export-ipa-tvos.sh → upload-testflight.sh --tvos
 #
 # Requires: xcodegen, Xcode 26.4+, Apple Developer membership.
 #

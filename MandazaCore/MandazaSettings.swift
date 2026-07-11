@@ -104,7 +104,7 @@ public final class MandazaSettings {
 
     // MARK: - Music responsivity
 
-    /// When true (default on iOS/watchOS), entering Zen starts the audio reactor.
+    /// When true, entering Zen starts the audio reactor.
     public var musicResponsivity: Bool { didSet { write(musicResponsivity, .musicResponsivity) } }
     /// 0…1 — how strongly the mandala responds to music. Default 0.35.
     public var reactivity: Double { didSet { write(reactivity, .reactivity) } }
@@ -112,9 +112,19 @@ public final class MandazaSettings {
     // MARK: - Tilt
 
     /// Master parallax switch. When false, motion sampling stops.
-    public var zenTiltEnabled: Bool { didSet { write(zenTiltEnabled, .zenTiltEnabled) } }
+    public var zenTiltEnabled: Bool {
+        didSet {
+            write(zenTiltEnabled, .zenTiltEnabled)
+            synchronizeLegacyTiltIntensity()
+        }
+    }
     /// 0…1 travel strength. 1.0 ≈ 12% of the shorter edge; Subtle ≈ 0.5.
-    public var zenTiltAmount: Double { didSet { write(zenTiltAmount, .zenTiltAmount) } }
+    public var zenTiltAmount: Double {
+        didSet {
+            write(zenTiltAmount, .zenTiltAmount)
+            synchronizeLegacyTiltIntensity()
+        }
+    }
     /// 0…1 how strongly luminance separates near/far layers. 0 = flat shift.
     public var zenTiltDepth: Double { didSet { write(zenTiltDepth, .zenTiltDepth) } }
     /// When true, darker strokes sit nearer (more travel).
@@ -152,13 +162,15 @@ public final class MandazaSettings {
 
     // MARK: - Init
 
-    private init() {
-        let suite = Self.makeDefaults()
+    /// Uses production App Group defaults by default. Tests can inject an
+    /// isolated suite and disable migration to make default assertions stable.
+    init(defaults injectedDefaults: UserDefaults? = nil, migrate: Bool = true) {
+        let suite = injectedDefaults ?? Self.makeDefaults()
         self.defaults = suite
 
         // Migration: copy values from .standard suite to App Group on first
         // post-upgrade launch (Phase A note from the architect).
-        if suite.object(forKey: Key.paletteId.rawValue) == nil {
+        if migrate, suite.object(forKey: Key.paletteId.rawValue) == nil {
             Self.migrateFromStandardSuite(into: suite)
         }
 
@@ -188,13 +200,13 @@ public final class MandazaSettings {
         self.zenClockSizeScale = Self.readDouble(suite, .zenClockSizeScale, default: 1.0)
         self.zenClockFormRaw = suite.string(forKey: Key.zenClockFormRaw.rawValue) ?? ZenClockForm.digital.rawValue
 
-        self.musicResponsivity = Self.readBool(suite, .musicResponsivity, default: true)
+        self.musicResponsivity = Self.readBool(suite, .musicResponsivity, default: false)
         self.reactivity = Self.readDouble(suite, .reactivity, default: 0.35)
 
         let legacyTilt = ZenTiltIntensity(
             rawValue: suite.string(forKey: Key.zenTiltIntensityRaw.rawValue)
-                ?? ZenTiltIntensity.subtle.rawValue
-        ) ?? .subtle
+                ?? ZenTiltIntensity.off.rawValue
+        ) ?? .off
         self.zenTiltIntensityRaw = legacyTilt.rawValue
         self.zenTiltEnabled = Self.readBool(suite, .zenTiltEnabled, default: legacyTilt != .off)
         if suite.object(forKey: Key.zenTiltAmount.rawValue) == nil {
@@ -362,6 +374,20 @@ public final class MandazaSettings {
         }
     }
 
+    /// Keeps the pre-1.3 preset key coherent for older app/watch readers while
+    /// the current UI writes the continuous enabled + amount fields directly.
+    private func synchronizeLegacyTiltIntensity() {
+        let legacy: ZenTiltIntensity
+        if !zenTiltEnabled {
+            legacy = .off
+        } else {
+            legacy = zenTiltAmount < 0.6 ? .subtle : .pronounced
+        }
+        if zenTiltIntensityRaw != legacy.rawValue {
+            zenTiltIntensityRaw = legacy.rawValue
+        }
+    }
+
     /// Typed accessor over `pinnedSnapshotData` — the snapshot the watch face
     /// keeps showing while auto-regeneration is paused.
     public var pinnedSnapshot: MandazaSnapshot? {
@@ -451,4 +477,3 @@ public final class MandazaSettings {
         #endif
     }
 }
-

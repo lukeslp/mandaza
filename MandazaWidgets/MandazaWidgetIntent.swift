@@ -1,5 +1,9 @@
+// File Purpose: Defines the configurable options shown by Edit Widget.
+// Primary Components: MandazaWidgetIntent, PaletteOption, RotationInterval.
+// I/O: Accepts palette, rotation, and time-overlay choices; outputs typed
+// App Intent values consumed by widget timeline providers.
+
 import AppIntents
-import WidgetKit
 
 /// Configuration intent surfaced by long-pressing → Edit Widget. Lets users
 /// pin a specific palette per widget instance and toggle the time overlay.

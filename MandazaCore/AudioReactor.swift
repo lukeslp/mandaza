@@ -1,3 +1,10 @@
+// File Purpose: Converts live microphone input into smoothed, on-device
+// modulation values for music-responsive mandala rendering.
+// Primary Components: AudioReactor lifecycle, TapProcessor buffering, and
+// interruption/route-change recovery.
+// I/O: Reads ephemeral PCM buffers; emits level, frequency-band, beat, and
+// color-phase modulation. Audio is never recorded, stored, or transmitted.
+
 #if os(iOS) || os(watchOS)
 #if canImport(AVFoundation)
 import AVFoundation
@@ -29,16 +36,9 @@ public final class AudioReactor {
 
     public private(set) var state: State = .idle
 
-    /// Whether this platform has a microphone the reactor can listen through.
-    /// tvOS has no mic, so Zen there is always the clean fullscreen view.
-    /// (A real runtime permission/availability check can refine this later.)
-    public static var micAvailable: Bool {
-        #if os(tvOS)
-        false
-        #else
-        true
-        #endif
-    }
+    /// This implementation is compiled only for iOS/watchOS, both of which
+    /// support microphone input. tvOS receives the inert platform stub.
+    public static let micAvailable = true
 
     /// Downstream views observe this for smoothed, main-actor modulation values.
     public let source = MandazaModulationSource()
