@@ -1,3 +1,10 @@
+/*
+ File Purpose: Defines Mandaza's shared bioluminescent visual design tokens.
+ Primary Components: BL colors, semantic typography helpers, BLDot, BLCaption.
+ Inputs / Outputs: Accepts palette identifiers and text; returns accessible
+ SwiftUI colors, fonts, and reusable visual components.
+ */
+
 import SwiftUI
 
 /// Bioluminescent design system.
@@ -18,7 +25,7 @@ public enum BL {
     /// Emphasis text — display titles, active values.
     public static let highlight = Color(hex: "#e0e6ed")
     /// Secondary / supporting text.
-    public static let muted     = Color(red: 160/255, green: 176/255, blue: 192/255).opacity(0.55)
+    public static let muted     = Color(red: 160/255, green: 176/255, blue: 192/255).opacity(0.78)
     /// Hairline rule color (1px borders).
     public static let rule      = Color.white.opacity(0.08)
 

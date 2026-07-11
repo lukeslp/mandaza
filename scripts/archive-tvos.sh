@@ -16,11 +16,20 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+ARCHIVE_LOCK="${TMPDIR:-/tmp}/mandaza-archive-${UID}.lock"
+if ! mkdir "${ARCHIVE_LOCK}" 2>/dev/null; then
+    echo "✗ Another Mandaza archive is already running (${ARCHIVE_LOCK})." >&2
+    exit 1
+fi
+trap 'rmdir "${ARCHIVE_LOCK}" 2>/dev/null || true' EXIT
+
 PROJECT="Mandaza.xcodeproj"
 SCHEME="MandazaTV"
 CONFIG="Release"
 ARCHIVE="build/MandazaTV.xcarchive"
 
+BUILD_NUMBER="$(scripts/build-number.sh --next)"
+echo "→ tvOS build number: ${BUILD_NUMBER}"
 xcodegen --quiet
 
 if [[ "${SKIP_TESTS:-}" != "1" ]]; then
@@ -28,7 +37,7 @@ if [[ "${SKIP_TESTS:-}" != "1" ]]; then
     xcodebuild build \
         -project "${PROJECT}" \
         -scheme "${SCHEME}" \
-        -destination 'platform=tvOS Simulator,name=Apple TV' \
+        -destination 'generic/platform=tvOS Simulator' \
         -configuration Debug \
         2>&1 | (which xcbeautify >/dev/null 2>&1 && xcbeautify --quiet || tail -50) || {
             echo "✗ tvOS build smoke failed." >&2
@@ -38,9 +47,6 @@ if [[ "${SKIP_TESTS:-}" != "1" ]]; then
 else
     echo "→ Skipping tvOS build smoke (SKIP_TESTS=1)"
 fi
-
-BUILD_NUMBER="$(git rev-list --count HEAD)"
-echo "→ tvOS build number: ${BUILD_NUMBER}"
 
 mkdir -p build
 rm -rf "${ARCHIVE}"

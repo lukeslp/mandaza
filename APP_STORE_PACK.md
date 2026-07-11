@@ -17,6 +17,7 @@ This document is the single source of truth for App Store and TestFlight submiss
 | iOS bundle ID | `com.lukesteuber.mandaza` |
 | tvOS bundle ID | `com.lukesteuber.mandaza.tv` |
 | Widgets bundle ID | `com.lukesteuber.mandaza.widgets` |
+| watchOS bundle ID | `com.lukesteuber.mandaza.watchkitapp` |
 
 Both iOS and tvOS require separate app records in App Store Connect because they use different bundle IDs.
 
@@ -43,7 +44,7 @@ Tap to generate a new pattern, tune the look, and save high-resolution images fo
 
 Features:
 - Real-time generative canvas with smooth animated loop drawing
-- 11 curated color palettes
+- 12 curated color palettes
 - Zen Mode with optional clock overlay and style controls (opacity, container, font, position)
 - Favorites with quick recall
 - Lock Screen, Home Screen, and StandBy widgets
@@ -159,8 +160,8 @@ only maintain one document.
 
 ### Launch/Splash
 
-- iOS launch configured via `UILaunchScreen` with `AccentColor` + `LaunchSplash` image.
-- tvOS launch uses `UILaunchScreen` with `AccentColor` + `LaunchSplash` (see `project.yml`; regenerated Info.plist mirrors iOS pattern).
+- iOS launch uses `LaunchBackground` + `LaunchSplashIOS`.
+- tvOS launch uses its dedicated `LaunchSplashTV` asset.
 
 ### Screenshot Checklist
 
@@ -200,10 +201,12 @@ Use short, legible overlays with one core message per frame.
 ### Preconditions
 
 - App IDs exist and are capability-aligned.
-- App Group `group.com.lukesteuber.mandaza` is enabled for iOS, widgets, and tvOS IDs.
+- App Group `group.com.lukesteuber.mandaza` is enabled for iOS, widgets, and
+  watchOS IDs. tvOS uses standard local defaults.
 - App records exist in App Store Connect for both iOS and tvOS bundle IDs.
-- API key is present in `~/.appstoreconnect/private_keys/`.
-- `ASC_API_ISSUER` is exported in shell.
+- `~/.appstoreconnect/env.sh` selects the active API key ID and issuer.
+- The matching key exists at
+  `~/.appstoreconnect/private_keys/AuthKey_<KEYID>.p8`.
 
 ### iOS Build and Upload
 

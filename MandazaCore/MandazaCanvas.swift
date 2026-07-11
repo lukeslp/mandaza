@@ -19,7 +19,7 @@ public enum MandazaCadence: Equatable {
 /// when its size or seed changes.
 public struct MandazaCanvas: View {
     let size: CGSize
-    let seed: UUID
+    let seed: String
     let paletteId: String
     let config: EngineConfig
     let cadence: MandazaCadence
@@ -43,7 +43,7 @@ public struct MandazaCanvas: View {
     @Environment(\.isLuminanceReduced) private var luminanceReduced
 
     public init(size: CGSize,
-                seed: UUID,
+                seed: String,
                 paletteId: String,
                 config: EngineConfig,
                 cadence: MandazaCadence = .smooth,
@@ -62,10 +62,10 @@ public struct MandazaCanvas: View {
         Group {
             switch cadence {
             case .smooth:
-                timeline(.animation(paused: luminanceReduced))
+                timeline(.animation(paused: luminanceReduced || reduceMotion))
             case .interval(let seconds):
                 // Honor Always-On dimming even in throttled mode.
-                if luminanceReduced {
+                if luminanceReduced || reduceMotion {
                     timeline(.animation(paused: true))
                 } else {
                     timeline(.periodic(from: .now, by: seconds))
@@ -89,7 +89,13 @@ public struct MandazaCanvas: View {
         )
         .onChange(of: seed)      { _, _ in rebuild() }
         .onChange(of: paletteId) { _, new in engine.paletteId = new }
-        .onChange(of: config)    { _, new in engine.config = new }
+        .onChange(of: config)    { old, new in
+            if new.requiresRebuild(comparedTo: old) {
+                rebuild(configOverride: new)
+            } else {
+                engine.config = new
+            }
+        }
         .onChange(of: reduceMotion) { _, reduced in
             if reduced && built { engine.completeAllPaths() }
         }
@@ -104,7 +110,7 @@ public struct MandazaCanvas: View {
     @ViewBuilder
     private func timeline<S: TimelineSchedule>(_ schedule: S) -> some View {
         TimelineView(schedule) { timeline in
-            let elapsedMs = msSince(start: firstTimestamp, now: timeline.date)
+            let elapsedMs = reduceMotion ? 0 : msSince(start: firstTimestamp, now: timeline.date)
             Canvas(opaque: true,
                    colorMode: .extendedLinear,
                    rendersAsynchronously: false) { ctx, canvasSize in
@@ -116,13 +122,13 @@ public struct MandazaCanvas: View {
         }
     }
 
-    private func rebuild(render: CGSize? = nil) {
+    private func rebuild(render: CGSize? = nil, configOverride: EngineConfig? = nil) {
         let r = render ?? (builtSize == .zero ? size : builtSize)
-        engine.config = config
+        engine.config = configOverride ?? config
         engine.paletteId = paletteId
         let ok = engine.regenerate(width: Double(r.width),
                                    height: Double(r.height),
-                                   seed: seed.uuidString)
+                                   seed: seed)
         built = ok
         firstTimestamp = nil
         wasIdle = nil

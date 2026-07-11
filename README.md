@@ -1,10 +1,10 @@
 # Mandaza
 
-A native iOS and tvOS app that draws animated hexagonal-loop mandalas in
-real time. On iPhone and iPad it ships Lock Screen / StandBy / Home Screen
-widgets and exports wallpaper-resolution images. On Apple TV it runs as a
-fullscreen ambient experience with on-screen quick controls (Apple
-TV has no third-party WidgetKit surface).
+A native iOS, tvOS, and watchOS app that draws animated hexagonal-loop mandalas
+in real time. On iPhone and iPad it ships Lock Screen / StandBy / Home Screen
+widgets and exports wallpaper-resolution images. Apple TV runs a fullscreen
+ambient experience with on-screen quick controls, while Apple Watch provides a
+live wrist-sized canvas with Crown palette control.
 
 100% on-device. No network. No analytics. No account.
 
@@ -13,8 +13,8 @@ TV has no third-party WidgetKit surface).
 - **Animated canvas.** SwiftUI `Canvas` + `TimelineView` renders a fresh
   hexagonal-loop pattern on every tap, stroking each loop progressively with
   optional glow (off by default; **New** may turn on a soft bloom less than half the time).
-- **11 palettes** — Aurora, Sunset, Ember, Bioluminescent, Vaporwave,
-  Cyberpunk, Risograph, Oxblood, Arctic, Dichromat, Amber.
+- **12 palettes** — Aurora, Sunset, Ember, Bioluminescent, Vaporwave,
+  Cyberpunk, Risograph, Oxblood, Canopy, Dichromat, Amber, Terrain.
 - **Zen Mode** — large ultra-light digital clock floating over the mandala,
   auto-regenerating patterns at a user-set interval. Calm by default,
   customizable for nightstand or desk display.
@@ -119,11 +119,13 @@ Mandaza/                      iOS app
 
 MandazaCore/                  Sources shared between app and widget targets
   MandazaEngine.swift         Algorithm port: cells, dots, loops, beziers + off-main renderImage
-  Palettes.swift              11 palettes, CGColor + SwiftUI Color representations
+  Palettes.swift              12 palettes, CGColor + SwiftUI Color representations
   MandazaSnapshot.swift       Value-type record of one mandala (used by widgets + favorites)
   MandazaSettings.swift       @Observable, App Group-backed persistence + applyLook(from:)
+  MandazaDeepLink.swift       Strict mandaza://seed/<UUID> route parser
   ZenClockTypography.swift    Shared zen clock weight → Font.Weight + label mapping
   MandazaImageView.swift      Still-image renderer used by widgets and favorites grid
+  PrivacyInfo.xcprivacy       No tracking; UserDefaults required-reason declarations
 
 MandazaWidgets/               WidgetKit app extension
   MandazaWidgetsBundle.swift  @main bundle
@@ -158,9 +160,10 @@ building on David Siaw's Hexlife. Truchet tile mathematics is public domain
 
 ## License
 
-TBD.
+MIT. See [LICENSE](LICENSE).
 
 ## Status
 
-Pre-release. Engine, settings, widgets, and tests are all in. Next: App Store
-assets, accessibility soak test, App Review submission.
+Version 1.2 is live on iOS and tvOS. Version 1.3 is prepared in App Store
+Connect; the source project now matches that train. Remaining work is device
+accessibility testing and final App Review staging.

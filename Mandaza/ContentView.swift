@@ -1,3 +1,13 @@
+/*
+ File Purpose: Hosts Mandaza's iOS canvas, controls, settings, favorites,
+ deep links, and Photos export flow.
+ Primary Components: ContentView, SettingsSheet, FavoritesGrid, palette and
+ slider controls, ZenClockOverlay, and transient feedback views.
+ Inputs / Outputs: Reads shared MandazaSettings and mandaza:// seed URLs;
+ renders interactive SwiftUI UI and writes favorites, widget refreshes, and
+ user-requested images to Photos.
+ */
+
 import SwiftUI
 import UIKit
 #if canImport(WidgetKit)
@@ -8,6 +18,7 @@ struct ContentView: View {
 
     // Shared, App Group-backed settings (single source of truth for app + widgets).
     @State private var settings = MandazaSettings.shared
+    @State private var configOverride: EngineConfig?
 
     // Ephemeral state — purely view-local.
     @State private var seed = UUID().uuidString
@@ -38,6 +49,10 @@ struct ContentView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.displayScale) private var displayScale
 
+    private var assistiveTechnologyRunning: Bool {
+        UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -47,9 +62,9 @@ struct ContentView: View {
                 ZStack {
                     Color.black
                     MandazaCanvas(size: geo.size,
-                                  seed: UUID(uuidString: seed) ?? UUID(),
+                                  seed: seed,
                                   paletteId: MandazaScreenshot.palette(settings.paletteId),
-                                  config: settings.engineConfig(),
+                                  config: effectiveConfig,
                                   onIdleChange: handleIdleChange(_:))
                 }
                 .onAppear { canvasSize = geo.size }
@@ -68,7 +83,9 @@ struct ContentView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Mandaza canvas")
             .accessibilityHint(canvasA11yHint)
-            .accessibilityAddTraits(canvasA11yTraits)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { canvasTapped() }
+            .accessibilityHidden(exportInProgress)
 
             // Layer 2 — clock overlay (tinted by current palette's phylum accent).
             if settings.zenMode, settings.zenShowClock {
@@ -90,14 +107,17 @@ struct ContentView: View {
                 Spacer()
                 if showRecents, !recents.isEmpty {
                     recentsStrip
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .transition(reduceMotion
+                            ? .opacity
+                            : .opacity.combined(with: .move(edge: .bottom)))
                 }
                 controlBar
             }
             .opacity(controlsFaded ? 0 : 1)
             .allowsHitTesting(!controlsFaded)
-            .animation(.easeInOut(duration: 0.45), value: controlsFaded)
-            .animation(.easeInOut(duration: 0.25), value: showRecents)
+            .accessibilityHidden(exportInProgress)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.45), value: controlsFaded)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: showRecents)
 
             if controlsFaded {
                 Color.clear
@@ -118,6 +138,7 @@ struct ContentView: View {
                 ProgressView {
                     BLCaption("saving", tint: BL.accent(for: settings.paletteId))
                 }
+                .accessibilityLabel("Saving image")
                 .tint(BL.accent(for: settings.paletteId))
                 .padding(24)
                 .background {
@@ -160,6 +181,12 @@ struct ContentView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in handleScenePhase(phase) }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIAccessibility.voiceOverStatusDidChangeNotification
+        )) { _ in handleAssistiveTechnologyChange() }
+        .onReceive(NotificationCenter.default.publisher(
+            for: UIAccessibility.switchControlStatusDidChangeNotification
+        )) { _ in handleAssistiveTechnologyChange() }
         .onChange(of: settings.zenMode) { _, on in
             if !on || !settings.zenAutoRegen {
                 autoRegenTask?.cancel()
@@ -171,6 +198,13 @@ struct ContentView: View {
             if !on || !settings.zenMode {
                 autoRegenTask?.cancel()
             } else if lastIdle {
+                handleIdleChange(true)
+            }
+        }
+        .onChange(of: reduceMotion) { _, reduced in
+            if reduced {
+                autoRegenTask?.cancel()
+            } else if lastIdle, settings.zenMode, settings.zenAutoRegen {
                 handleIdleChange(true)
             }
         }
@@ -197,12 +231,6 @@ struct ContentView: View {
         }
     }
 
-    private var canvasA11yTraits: AccessibilityTraits {
-        // When AT is on, the canvas is not a button — it's a decorative image.
-        // Don't promise gestures we won't honor.
-        longPressEnabled ? .isButton : .isImage
-    }
-
     /// Long-press regenerate is disabled whenever VoiceOver or Switch Control
     /// is active — assistive tech users get the explicit button instead.
     private var longPressEnabled: Bool {
@@ -226,6 +254,7 @@ struct ContentView: View {
                        label: "Tune",
                        accent: accent) {
                 noteInteraction()
+                configOverride = nil
                 showSettings = true
             }
 
@@ -300,7 +329,7 @@ struct ContentView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(BL.muted)
-                        .frame(width: 32, height: 28)
+                        .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
                 .accessibilityLabel("Hide previous patterns")
@@ -399,6 +428,10 @@ struct ContentView: View {
         settings.isFavorite(seed: seed) ? "heart.fill" : "heart"
     }
 
+    private var effectiveConfig: EngineConfig {
+        configOverride ?? settings.engineConfig()
+    }
+
     private func toggleRecents() {
         guard !recents.isEmpty else { return }
         showRecents.toggle()
@@ -443,13 +476,22 @@ struct ContentView: View {
     private func scheduleControlsFade() {
         controlsFadeTask?.cancel()
         // Don't auto-hide chrome while VoiceOver / Switch Control need persistent targets.
-        guard !UIAccessibility.isVoiceOverRunning,
-              !UIAccessibility.isSwitchControlRunning else { return }
+        guard !assistiveTechnologyRunning else { return }
         controlsFadeTask = Task { @MainActor in
             try? await Task.sleep(for: controlsFadeDelay)
-            guard !Task.isCancelled, !showSettings, exportAlert == nil, !exportInProgress else { return }
+            guard !Task.isCancelled, !showSettings, exportAlert == nil,
+                  !exportInProgress, !assistiveTechnologyRunning else { return }
             showRecents = false
             controlsFaded = true
+        }
+    }
+
+    private func handleAssistiveTechnologyChange() {
+        if assistiveTechnologyRunning {
+            controlsFadeTask?.cancel()
+            controlsFaded = false
+        } else {
+            scheduleControlsFade()
         }
     }
 
@@ -458,6 +500,7 @@ struct ContentView: View {
         // seed changes — so the artwork the user is about to overwrite is
         // recoverable.
         pushCurrentToRecents()
+        configOverride = nil
         seed = UUID().uuidString
         settings.randomizePatternLook(includePalette: settings.randomizePaletteOnRegenerate)
         selectionFeedback()
@@ -469,7 +512,7 @@ struct ContentView: View {
     private func pushCurrentToRecents() {
         let snap = MandazaSnapshot(seed: seed,
                                    paletteId: settings.paletteId,
-                                   config: settings.engineConfig())
+                                   config: effectiveConfig)
         // De-dupe: if user oscillates back to a recent seed, don't re-record it.
         recents.removeAll { $0.seed == snap.seed }
         recents.insert(snap, at: 0)
@@ -482,6 +525,7 @@ struct ContentView: View {
         seed = snap.seed
         settings.paletteId = snap.paletteId
         settings.applyLook(from: snap.config)
+        configOverride = snap.config
         showRecents = false
         selectionFeedback()
     }
@@ -491,7 +535,7 @@ struct ContentView: View {
     private func toggleFavorite() {
         let now = settings.toggleFavorite(seed: seed,
                                           paletteId: settings.paletteId,
-                                          config: settings.engineConfig())
+                                          config: effectiveConfig)
         showToast(now ? "Saved to Favorites" : "Removed from Favorites")
         reloadWidgetTimelines()
         selectionFeedback()
@@ -501,6 +545,7 @@ struct ContentView: View {
         seed = snapshot.seed
         settings.paletteId = snapshot.paletteId
         settings.applyLook(from: snapshot.config)
+        configOverride = snapshot.config
     }
 
     private func selectionFeedback() {
@@ -530,7 +575,7 @@ struct ContentView: View {
         let wait = settings.zenAutoRegenSeconds
         autoRegenTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(wait))
-            if !Task.isCancelled { regenerate() }
+            if !Task.isCancelled, !reduceMotion { regenerate() }
         }
     }
 
@@ -548,12 +593,16 @@ struct ContentView: View {
     }
 
     private func handleIncomingURL(_ url: URL) {
-        guard url.scheme == "mandaza" else { return }
-        // mandaza://seed/<UUID>
-        let parts = url.pathComponents.filter { $0 != "/" }
-        if url.host == "seed", let uuidString = parts.first {
-            seed = uuidString
+        if let snapshot = MandazaDeepLink.snapshot(from: url) {
+            seed = snapshot.seed
+            settings.paletteId = snapshot.paletteId
+            settings.applyLook(from: snapshot.config)
+            configOverride = snapshot.config
+            return
         }
+        guard let incomingSeed = MandazaDeepLink.seed(from: url) else { return }
+        configOverride = nil
+        seed = incomingSeed
     }
 
     // MARK: - Export
@@ -574,7 +623,7 @@ struct ContentView: View {
         exportInProgress = true
         let s = seed
         let pid = settings.paletteId
-        let cfg = settings.engineConfig()
+        let cfg = effectiveConfig
 
         Task.detached(priority: .userInitiated) {
             let image = MandazaEngine.renderImage(seed: s,
@@ -647,6 +696,8 @@ private struct SettingsSheet: View {
     @Bindable var settings: MandazaSettings
     let loadFavorite: (MandazaSnapshot) -> Void
     @Environment(\.dismiss) private var dismiss
+    private let websiteURL = URL(string: "https://dr.eamer.dev")
+    private let privacyURL = URL(string: "https://lukeslp.github.io/mandaza/")
 
     /// Turning Glow on from settings uses full-strength bloom; random New uses a softer band.
     /// Tracks explicit user intent so randomizePatternLook never re-enables glow against their preference.
@@ -822,11 +873,19 @@ private struct SettingsSheet: View {
                 }
 
                 Section {
-                    Link("dr.eamer.dev", destination: URL(string: "https://dr.eamer.dev")!)
-                        .font(.bl(15))
-                        .foregroundStyle(BL.paper)
-                        .accessibilityLabel("Open dr.eamer.dev")
-                        .accessibilityHint("Opens the website in your browser.")
+                    if let websiteURL {
+                        Link("dr.eamer.dev", destination: websiteURL)
+                            .font(.bl(15))
+                            .foregroundStyle(BL.paper)
+                            .accessibilityLabel("Open dr.eamer.dev")
+                            .accessibilityHint("Opens the website in your browser.")
+                    }
+                    if let privacyURL {
+                        Link("Privacy Policy", destination: privacyURL)
+                            .font(.bl(15))
+                            .foregroundStyle(BL.paper)
+                            .accessibilityHint("Opens Mandaza's privacy policy in your browser.")
+                    }
                 }
                 .listRowBackground(BL.deep)
             }
@@ -901,6 +960,8 @@ private struct FavoritesGrid: View {
                             )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Load \(Palette.by(id: snap.paletteId).name) favorite")
+                    .accessibilityHint("Restores this saved pattern and its visual settings.")
                     .contextMenu {
                         Button(role: .destructive) {
                             settings.favorites.removeAll { $0.id == snap.id }
@@ -965,6 +1026,7 @@ private struct LabeledSlider: View {
                 } label: {
                     Image(systemName: "minus.circle.fill")
                         .font(.system(size: 20, weight: .regular))
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(BL.muted)
@@ -983,6 +1045,7 @@ private struct LabeledSlider: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 20, weight: .regular))
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(BL.muted)
@@ -991,7 +1054,6 @@ private struct LabeledSlider: View {
             .frame(minHeight: 44)
             #endif
         }
-        .accessibilityElement(children: .combine)
     }
 
     private func adjustValue(by delta: Double) {
@@ -1115,11 +1177,11 @@ private struct ZenClockOverlay: View {
                 .opacity(min(max(clockOpacity, 0.2), 1.0))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignmentForPosition())
                 .padding(.top, topPadding(height: geo.size.height))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(clockAccessibilityLabel(now))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Clock")
     }
 
     private func timeString(_ date: Date) -> String {
@@ -1127,6 +1189,14 @@ private struct ZenClockOverlay: View {
             ? .dateTime.hour().minute().second()
             : .dateTime.hour().minute()
         return date.formatted(style)
+    }
+
+    private func clockAccessibilityLabel(_ date: Date) -> String {
+        var parts = [timeString(date)]
+        if showDate {
+            parts.append(date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
+        }
+        return parts.joined(separator: ", ")
     }
 
     private func alignmentForPosition() -> Alignment {

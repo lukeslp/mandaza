@@ -15,7 +15,10 @@ let package = Package(
         .target(
             name: "MandazaKit",
             path: ".",
-            exclude: ["Package.swift"]
+            exclude: ["Package.swift"],
+            resources: [
+                .copy("PrivacyInfo.xcprivacy")
+            ]
         )
     ]
 )

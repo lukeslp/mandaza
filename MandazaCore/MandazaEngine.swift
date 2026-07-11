@@ -25,6 +25,29 @@ public struct EngineConfig: Equatable, Codable, Hashable, Sendable {
     public var lineWidth: Double = 1.2
 
     public init() {}
+
+    public func requiresRebuild(comparedTo other: EngineConfig) -> Bool {
+        cellSizeRandom != other.cellSizeRandom ||
+        cellSize != other.cellSize ||
+        randomPattern != other.randomPattern ||
+        geometry != other.geometry ||
+        withMargin != other.withMargin ||
+        concentric != other.concentric ||
+        centered != other.centered ||
+        regularity != other.regularity
+    }
+
+    public var isValidForExternalRendering: Bool {
+        guard cellSize.isFinite, (0 ... 1).contains(cellSize),
+              (0 ... 6).contains(geometry),
+              regularity.isFinite, (0 ... 100).contains(regularity),
+              drawSpeed.isFinite, (0 ... 1).contains(drawSpeed),
+              lineWidth.isFinite, (0.1 ... 10).contains(lineWidth) else {
+            return false
+        }
+        guard let glowStrength else { return true }
+        return glowStrength.isFinite && (0.18 ... 1).contains(glowStrength)
+    }
 }
 
 // MARK: - Geometry constants (mirrors Cell.xs / Cell.ys / Cell.xperp / Cell.yperp)

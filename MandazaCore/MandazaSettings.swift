@@ -1,3 +1,10 @@
+/*
+ File Purpose: Stores Mandaza appearance, Zen, favorite, and widget preferences.
+ Primary Components: MandazaSettings plus Zen clock option enums.
+ Inputs / Outputs: Reads and writes app-local or App Group UserDefaults and
+ produces EngineConfig values for app, widget, TV, and watch renderers.
+ */
+
 import Foundation
 import Observation
 
@@ -74,13 +81,17 @@ public final class MandazaSettings {
 
     // MARK: - Init
 
-    private init() {
-        let suite = Self.makeDefaults()
+    private convenience init() {
+        self.init(defaults: Self.makeDefaults(), migrateFromStandard: true)
+    }
+
+    init(defaults suite: UserDefaults, migrateFromStandard: Bool = false) {
         self.defaults = suite
 
         // Migration: copy values from .standard suite to App Group on first
         // post-upgrade launch (Phase A note from the architect).
-        if suite.object(forKey: Key.paletteId.rawValue) == nil {
+        if migrateFromStandard,
+           suite.object(forKey: Key.paletteId.rawValue) == nil {
             Self.migrateFromStandardSuite(into: suite)
         }
 

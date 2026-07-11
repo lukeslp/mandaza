@@ -10,6 +10,7 @@ This repo already sets **Automatic signing** and **Development Team** in XcodeGe
 | **App Group** (entitlements) | `group.com.lukesteuber.mandaza` |
 | **iOS app** | `com.lukesteuber.mandaza` |
 | **iOS widgets** | `com.lukesteuber.mandaza.widgets` |
+| **watchOS app** | `com.lukesteuber.mandaza.watchkitapp` |
 | **tvOS app** | `com.lukesteuber.mandaza.tv` |
 | **Unit tests** | `com.lukesteuber.mandaza.tests` |
 
@@ -41,15 +42,13 @@ Apple only creates an **tvOS App Development** profile if your team has **at lea
 
 Until this step succeeds, you will keep seeing *“Your team has no devices from which to generate a provisioning profile”*.
 
-### 2) App ID for tvOS with App Groups
-
-The tvOS app uses **App Groups** ([MandazaTV/MandazaTV.entitlements](MandazaTV/MandazaTV.entitlements)) — the tvOS **App ID** must allow the same group as iOS.
+### 2) App ID for tvOS
 
 1. [Identifiers](https://developer.apple.com/account/resources/identifiers/list) → **+** (or select existing).
 2. Create **App IDs** → **App** → enable **tvOS** for identifier **`com.lukesteuber.mandaza.tv`** (or edit existing if Xcode already created it).
-3. Under **Capabilities**, enable **App Groups** and assign **`group.com.lukesteuber.mandaza`** (must match the **App Group** container you use for the iOS app; same group name on all targets that share `UserDefaults`).
 
-If the App Group identifier does not exist yet: [Identifiers → App Groups](https://developer.apple.com/account/resources/identifiers/list/applicationGroup) → **+** → `group.com.lukesteuber.mandaza`.
+tvOS stores its settings in `UserDefaults.standard`; it does not need the App
+Group capability.
 
 ### 3) Xcode on the MandazaTV target
 
@@ -64,7 +63,13 @@ Xcode should create or refresh **MandazaTV tvOS Development** profile. If not: *
 
 ## C. iOS device / widget extension
 
-Same pattern: register **each iPhone/iPad** used for development under **Devices**, ensure App IDs for `com.lukesteuber.mandaza` and `com.lukesteuber.mandaza.widgets` include **App Groups** and **App Groups** matches `group.com.lukesteuber.mandaza`. Widget extension needs **App Groups** on its App ID as well.
+Same pattern: register each iPhone, iPad, and Apple Watch used for development.
+Ensure App IDs for `com.lukesteuber.mandaza`,
+`com.lukesteuber.mandaza.widgets`, and
+`com.lukesteuber.mandaza.watchkitapp` include the
+`group.com.lukesteuber.mandaza` App Group. The group shares settings only
+between processes on the same device; cross-device phone/watch sync would
+require WatchConnectivity.
 
 ---
 

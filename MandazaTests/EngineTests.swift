@@ -1,3 +1,11 @@
+/*
+ File Purpose: Verifies Mandaza engine generation, rendering, determinism, and
+ configuration rebuild boundaries.
+ Primary Components: EngineTests.
+ Inputs / Outputs: Builds deterministic engine fixtures and rendered images;
+ asserts geometry, lifecycle, and configuration behavior.
+ */
+
 import XCTest
 @testable import Mandaza
 
@@ -61,5 +69,29 @@ final class EngineTests: XCTestCase {
             size: CGSize(width: 0, height: 0)
         )
         XCTAssertNil(none)
+    }
+
+    func testStructuralConfigurationChangesRequireRebuild() {
+        let original = EngineConfig()
+        var density = original
+        density.cellSizeRandom = false
+        density.cellSize = 0.4
+        XCTAssertTrue(density.requiresRebuild(comparedTo: original))
+
+        var geometry = original
+        geometry.randomPattern = false
+        geometry.geometry = 2
+        XCTAssertTrue(geometry.requiresRebuild(comparedTo: original))
+    }
+
+    func testStrokeOnlyConfigurationChangesDoNotRequireRebuild() {
+        let original = EngineConfig()
+        var changed = original
+        changed.drawSpeed = 0.2
+        changed.glow = true
+        changed.glowStrength = 0.4
+        changed.idlePulse = false
+        changed.lineWidth = 2.5
+        XCTAssertFalse(changed.requiresRebuild(comparedTo: original))
     }
 }

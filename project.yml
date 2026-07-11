@@ -19,9 +19,11 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
     STRING_CATALOG_GENERATE_SYMBOLS: YES
-    # Build number flows from the archive (scripts set CURRENT_PROJECT_VERSION
-    # to the git commit count); this default keeps non-archive builds valid.
-    CURRENT_PROJECT_VERSION: "44"
+    # App Store Connect has editable 1.3 records for iOS and tvOS. Archive
+    # Archive scripts increment scripts/build-number.txt, preserve this floor,
+    # and compare the git count so rewritten history cannot regress an upload.
+    MARKETING_VERSION: "1.3"
+    CURRENT_PROJECT_VERSION: "56"
 
 # MandazaCore holds the shared engine/palette/settings sources. Every target
 # compiles these files directly (the MandazaKit Package.swift exists only for
@@ -44,7 +46,7 @@ targets:
       properties:
         CFBundleDisplayName: Mandaza
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "1.2"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:
           UIColorName: LaunchBackground
@@ -103,9 +105,11 @@ targets:
       properties:
         CFBundleDisplayName: Mandaza
         CFBundleIconName: AppIcon
-        CFBundleShortVersionString: "1.2"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         ITSAppUsesNonExemptEncryption: false
+        UILaunchScreen:
+          UIImageName: LaunchSplashTV
         CFBundleURLTypes:
           - CFBundleURLName: com.lukesteuber.mandaza
             CFBundleURLSchemes:
@@ -113,7 +117,6 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lukesteuber.mandaza.tv
-        CODE_SIGN_ENTITLEMENTS: MandazaTV/MandazaTV.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TVOS_DEPLOYMENT_TARGET: "17.0"
@@ -134,7 +137,7 @@ targets:
       path: MandazaWidgets/Info.plist
       properties:
         CFBundleDisplayName: Mandaza Widgets
-        CFBundleShortVersionString: "1.2"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
@@ -184,7 +187,7 @@ targets:
       path: MandazaWatch/Info.plist
       properties:
         CFBundleDisplayName: Mandaza
-        CFBundleShortVersionString: "1.2"
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         WKApplication: true
         WKCompanionAppBundleIdentifier: com.lukesteuber.mandaza

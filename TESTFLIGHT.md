@@ -4,22 +4,22 @@ Everything in this doc is one-time user-side work in Apple's web consoles.
 Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.sh`
 → `scripts/upload-testflight.sh`) handle every subsequent upload.
 
-**Status today (2026-05-10):**
+**Status today (2026-07-10):**
 
 | Step | Status |
 |---|---|
 | App Icon (1024×1024) | ✅ Generated programmatically (`scripts/render-icon.swift`) |
-| Bundle IDs | ✅ `com.lukesteuber.mandaza`, `com.lukesteuber.mandaza.widgets`, `com.lukesteuber.mandaza.tv` |
+| Bundle IDs | ✅ iOS, widgets, watchOS, and tvOS identifiers configured |
 | Team ID | ✅ `596T7J7FB6` |
 | App Group entitlement | ✅ `group.com.lukesteuber.mandaza` |
 | Photos permission usage string | ✅ |
 | Export compliance flag | ✅ `ITSAppUsesNonExemptEncryption = false` |
-| Privacy nutrition label | ⏳ Needs setting in App Store Connect (we collect nothing) |
+| Privacy manifest | ✅ No tracking/collection; UserDefaults reasons declared |
+| Privacy nutrition label | ✅ Data collected: None |
 | Distribution archive | ✅ Local archive works |
-| Distribution provisioning profile | ❌ Needs App Store Connect app record first |
-| TestFlight beta review | ❌ Submitted after first upload |
-| Public TestFlight link | ❌ Generated after beta review passes |
-| **tvOS app** (`com.lukesteuber.mandaza.tv`) | ⏳ Separate App Store Connect record + upload (see below) |
+| Distribution provisioning profile | ✅ Shipping profiles in use |
+| **iOS app** | ✅ 1.2 live; 1.3 prepared |
+| **tvOS app** (`com.lukesteuber.mandaza.tv`) | ✅ 1.2 live; 1.3 prepared |
 
 ## tvOS (MandazaTV) — App Store Connect & upload
 
@@ -27,7 +27,7 @@ The Apple TV app uses bundle id **`com.lukesteuber.mandaza.tv`** (not the iOS ap
 
 ### A. Developer Portal (Identifiers)
 
-1. Confirm an **App ID** exists for `com.lukesteuber.mandaza.tv` with **App Groups** enabled and **`group.com.lukesteuber.mandaza`** checked (same group as iOS — see [PROVISIONING.md](PROVISIONING.md)).
+1. Confirm an **App ID** exists for `com.lukesteuber.mandaza.tv`. tvOS uses local standard defaults and does not require App Groups.
 2. Register a physical Apple TV for **development** if you need on-device debugging (optional for store upload).
 
 ### B. App Store Connect — new tvOS app
@@ -42,7 +42,7 @@ The Apple TV app uses bundle id **`com.lukesteuber.mandaza.tv`** (not the iOS ap
 
 ### C. Build, export, upload (command line)
 
-Same API key and `ASC_API_ISSUER` as iOS ([step 5](#5-generate-an-app-store-connect-api-key)). Then:
+Same centralized API key as iOS ([step 5](#5-configure-the-active-app-store-connect-api-key)). Then:
 
 ```bash
 scripts/archive-tvos.sh        # build/MandazaTV.xcarchive
@@ -50,7 +50,9 @@ scripts/export-ipa-tvos.sh     # build/export-tvos/MandazaTV.ipa
 scripts/upload-testflight.sh --tvos   # uses altool --type appletvos
 ```
 
-`CFBundleVersion` is still driven by `git rev-list --count HEAD` so iOS and tvOS builds stay in sync numerically if you deploy from the same commit.
+`CFBundleVersion` increments from `scripts/build-number.txt` and also respects
+the configured floor plus git commit count, so rewritten history cannot regress
+below an uploaded build.
 
 ### D. TestFlight / review notes for tvOS
 
@@ -66,7 +68,7 @@ scripts/upload-testflight.sh --tvos   # uses altool --type appletvos
 For **each** of these App IDs:
 - `com.lukesteuber.mandaza`
 - `com.lukesteuber.mandaza.widgets`
-- `com.lukesteuber.mandaza.tv` (tvOS — App Groups must match iOS)
+- `com.lukesteuber.mandaza.watchkitapp`
 
 Either confirm it exists (Xcode likely auto-registered during dev signing) or
 click `+` → App IDs → App → fill in:
@@ -82,9 +84,11 @@ Click `+` → App Groups → fill in:
 - **Description**: "Mandaza App Group"
 - **Identifier**: `group.com.lukesteuber.mandaza`
 
-Then for **each** App ID (Mandaza and MandazaWidgets) go back to its detail
+Then for each iOS, widget, and watch App ID, go back to its detail
 page → Capabilities → App Groups → **Configure** → tick
 `group.com.lukesteuber.mandaza`.
+
+Create `com.lukesteuber.mandaza.tv` separately without App Groups.
 
 ### 3. Create the app in App Store Connect
 
@@ -137,31 +141,15 @@ Then on GitHub:
 
 Paste that URL into App Store Connect → App Privacy → Privacy Policy URL.
 
-### 5. Generate an App Store Connect API key
+### 5. Configure the active App Store Connect API key
 
 → https://appstoreconnect.apple.com/access/integrations/api
 
-Click `+` (next to "Active") → fill in:
-- **Name**: "Mandaza uploads" (or any descriptive name)
-- **Access**: **App Manager** is sufficient
-
-Click **Generate**, then **Download** the `.p8` file. **You can only download it
-once** — if you lose it you'll need to regenerate.
-
-Save it locally:
-
-```bash
-mkdir -p ~/.appstoreconnect/private_keys
-mv ~/Downloads/AuthKey_*.p8 ~/.appstoreconnect/private_keys/
-chmod 600 ~/.appstoreconnect/private_keys/AuthKey_*.p8
-```
-
-Then on the API page, copy the **Issuer ID** (UUID at top) and add it to your shell:
-
-```bash
-echo 'export ASC_API_ISSUER="<paste-issuer-uuid-here>"' >> ~/.zshrc
-source ~/.zshrc
-```
+Mandaza uses the shared key selection in `~/.appstoreconnect/env.sh`. It must
+define `APP_STORE_CONNECT_API_KEY_KEY_ID` and
+`APP_STORE_CONNECT_API_KEY_ISSUER_ID`; the matching
+`~/.appstoreconnect/private_keys/AuthKey_<KEYID>.p8` must exist with mode 600.
+The upload script never guesses from whichever `.p8` happens to sort first.
 
 ### 6. First upload
 
@@ -204,9 +192,9 @@ Apple TV (same API key; separate App Store Connect app — see [tvOS section](#t
 scripts/archive-tvos.sh && scripts/export-ipa-tvos.sh && scripts/upload-testflight.sh --tvos
 ```
 
-- `CFBundleVersion` auto-increments from `git rev-list --count HEAD` so every
-  build is unique without manual bumping.
-- Marketing version (`0.2.0`, etc.) is held in `project.yml` and changes only
+- `CFBundleVersion` increments and persists before each archive through
+  `scripts/build-number.sh --next`.
+- Marketing version (`1.3`, etc.) is held in `project.yml` and changes only
   when you decide.
 
 ## Troubleshooting

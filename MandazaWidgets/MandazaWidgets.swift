@@ -1,3 +1,10 @@
+/*
+ File Purpose: Defines Mandaza's StandBy, Lock Screen, and Home Screen widgets.
+ Primary Components: Three Widget configurations and their snapshot views.
+ Inputs / Outputs: Renders MandazaEntry snapshots and opens the app with an
+ encoded snapshot route that restores the displayed artwork.
+ */
+
 import SwiftUI
 import WidgetKit
 
@@ -28,6 +35,7 @@ private struct StandByMandazaView: View {
                 MandazaImageView(snapshot: entry.snapshot,
                                  size: geo.size,
                                  scale: 2)
+                    .accessibilityHidden(true)
             }
             if entry.intent.showTime {
                 VStack(spacing: 4) {
@@ -47,7 +55,19 @@ private struct StandByMandazaView: View {
                 .padding()
             }
         }
-        .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
+        .widgetURL(MandazaDeepLink.url(for: entry.snapshot))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Opens this pattern in Mandaza.")
+    }
+
+    private var accessibilityLabel: String {
+        var parts = ["Mandaza", "\(Palette.by(id: entry.snapshot.paletteId).name) pattern"]
+        if entry.intent.showTime {
+            parts.append(entry.date.formatted(date: .omitted, time: .shortened))
+            parts.append(entry.date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
+        }
+        return parts.joined(separator: ", ")
     }
 }
 
@@ -74,39 +94,53 @@ private struct LockMandazaView: View {
     let entry: MandazaEntry
 
     var body: some View {
-        switch family {
-        case .accessoryInline:
-            Text("✦ Mandaza")
-        case .accessoryCircular:
-            GeometryReader { geo in
-                MandazaImageView(snapshot: entry.snapshot,
-                                 size: geo.size,
-                                 scale: 2)
-                    .clipShape(Circle())
-            }
-            .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
-        default:
-            // Rectangular
-            HStack(spacing: 8) {
+        Group {
+            switch family {
+            case .accessoryInline:
+                Text("✦ Mandaza")
+            case .accessoryCircular:
                 GeometryReader { geo in
                     MandazaImageView(snapshot: entry.snapshot,
                                      size: geo.size,
                                      scale: 2)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .clipShape(Circle())
+                        .accessibilityHidden(true)
                 }
-                .frame(width: 56)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.date, style: .time)
-                        .font(.headline)
-                        .monospacedDigit()
-                    Text("Mandaza")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+            default:
+                // Rectangular
+                HStack(spacing: 8) {
+                    GeometryReader { geo in
+                        MandazaImageView(snapshot: entry.snapshot,
+                                         size: geo.size,
+                                         scale: 2)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .accessibilityHidden(true)
+                    }
+                    .frame(width: 56)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.date, style: .time)
+                            .font(.headline)
+                            .monospacedDigit()
+                        Text("Mandaza")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
                 }
-                Spacer(minLength: 0)
             }
-            .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
         }
+        .widgetURL(MandazaDeepLink.url(for: entry.snapshot))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Opens this pattern in Mandaza.")
+    }
+
+    private var accessibilityLabel: String {
+        var parts = ["Mandaza", "\(Palette.by(id: entry.snapshot.paletteId).name) pattern"]
+        if family == .accessoryRectangular {
+            parts.append(entry.date.formatted(date: .omitted, time: .shortened))
+        }
+        return parts.joined(separator: ", ")
     }
 }
 
@@ -136,7 +170,11 @@ private struct HomeMandazaView: View {
             MandazaImageView(snapshot: entry.snapshot,
                              size: geo.size,
                              scale: 2)
+                .accessibilityHidden(true)
         }
-        .widgetURL(URL(string: "mandaza://seed/\(entry.snapshot.seed)"))
+        .widgetURL(MandazaDeepLink.url(for: entry.snapshot))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Mandaza, \(Palette.by(id: entry.snapshot.paletteId).name) pattern")
+        .accessibilityHint("Opens this pattern in Mandaza.")
     }
 }
