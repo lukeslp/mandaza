@@ -36,8 +36,13 @@ targets:
     supportedDestinations: [iOS, tvOS]
     sources:
       - path: Mandaza
+        excludes:
+          - Assets.xcassets
+      - path: Mandaza/Assets.xcassets
+        destinationFilters: [iOS]
       - path: MandazaTV/TVContentView.swift
       - path: MandazaTV/Assets.xcassets
+        destinationFilters: [tvOS]
       - path: MandazaCore
         excludes:
           - Package.swift
