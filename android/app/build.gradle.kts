@@ -10,7 +10,7 @@ plugins {
 val marketingVersion = rootProject.file("../project.yml").readText()
     .let { Regex("MARKETING_VERSION:\\s*\"?([0-9]+(?:\\.[0-9]+){0,2})").find(it)?.groupValues?.get(1) }
     ?: "1.0"
-val androidPatchVersion = 1
+val androidPatchVersion = 2
 
 android {
     namespace = "com.lukesteuber.mandaza"
@@ -20,7 +20,7 @@ android {
         applicationId = "com.lukesteuber.mandaza"
         minSdk = 24
         targetSdk = 35
-        versionCode = 10301
+        versionCode = 10302
         versionName = "$marketingVersion.$androidPatchVersion"
     }
 

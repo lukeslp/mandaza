@@ -85,8 +85,9 @@ fun MandazaCanvas(
             if (colorPosition > 1) colorPosition = 2 - colorPosition
             val color = Color(palette.colorAt(colorPosition).toInt())
             val depth = if (loop.colorTotal > 1) loop.colorIndex.toFloat() / (loop.colorTotal - 1) else 0.5f
-            // Canvas coordinates are pixels. Keep the effect visible on high-density phones.
-            val travel = parallaxAmount * 52.dp.toPx() * (0.25f + depth * 0.75f)
+            // Normal handheld tilt is only a fraction of gravity. Give it enough
+            // physical travel to read clearly while preserving per-layer depth.
+            val travel = parallaxAmount * 180.dp.toPx() * (0.25f + depth * 0.75f)
             val shift = Offset(tilt.x * travel, tilt.y * travel)
             val path = Path()
             loop.curves.take(count).forEachIndexed { index, curve ->
