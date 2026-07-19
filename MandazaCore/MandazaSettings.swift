@@ -26,6 +26,12 @@ public enum ZenClockForm: String, CaseIterable, Codable, Sendable {
     case editorial
 }
 
+public enum TimeTellingMode: String, CaseIterable, Codable, Sendable {
+    case classic
+    case concentricRings
+    case encodedRhythm
+}
+
 public enum ZenTiltIntensity: String, CaseIterable, Codable, Sendable {
     case off
     case subtle
@@ -101,6 +107,20 @@ public final class MandazaSettings {
     public var zenClockSizeScale: Double { didSet { write(zenClockSizeScale, .zenClockSizeScale) } }
     /// Raw value of the Zen clock layout form; use `zenClockForm` for typed access.
     public var zenClockFormRaw: String { didSet { write(zenClockFormRaw, .zenClockFormRaw) } }
+    /// How Zen communicates the current time. Classic preserves the existing clock.
+    public var timeTellingModeRaw: String { didSet { write(timeTellingModeRaw, .timeTellingModeRaw) } }
+    /// Enables the explicit "Feel current time" control for layered haptic modes.
+    public var timeHapticsEnabled: Bool { didSet { write(timeHapticsEnabled, .timeHapticsEnabled) } }
+    /// Adds individual minute taps after the five-minute groups.
+    public var timeHapticsExactMinutes: Bool { didSet { write(timeHapticsExactMinutes, .timeHapticsExactMinutes) } }
+    /// Overall haptic strength, clamped by the playback engine.
+    public var timeHapticsIntensity: Double { didSet { write(timeHapticsIntensity, .timeHapticsIntensity) } }
+    /// Seconds between rhythmic haptic beats.
+    public var timeHapticsTempo: Double { didSet { write(timeHapticsTempo, .timeHapticsTempo) } }
+    /// Reverses the visual ring direction without changing the represented time.
+    public var timeRingsClockwise: Bool { didSet { write(timeRingsClockwise, .timeRingsClockwise) } }
+    /// Adjusts ring stroke weight independently of the underlying mandala.
+    public var timeRingsWeight: Double { didSet { write(timeRingsWeight, .timeRingsWeight) } }
 
     // MARK: - Music responsivity
 
@@ -199,6 +219,13 @@ public final class MandazaSettings {
         self.zenClockPositionRaw = suite.string(forKey: Key.zenClockPositionRaw.rawValue) ?? ZenClockPosition.upperThird.rawValue
         self.zenClockSizeScale = Self.readDouble(suite, .zenClockSizeScale, default: 1.0)
         self.zenClockFormRaw = suite.string(forKey: Key.zenClockFormRaw.rawValue) ?? ZenClockForm.digital.rawValue
+        self.timeTellingModeRaw = suite.string(forKey: Key.timeTellingModeRaw.rawValue) ?? TimeTellingMode.classic.rawValue
+        self.timeHapticsEnabled = Self.readBool(suite, .timeHapticsEnabled, default: false)
+        self.timeHapticsExactMinutes = Self.readBool(suite, .timeHapticsExactMinutes, default: true)
+        self.timeHapticsIntensity = Self.readDouble(suite, .timeHapticsIntensity, default: 0.7)
+        self.timeHapticsTempo = Self.readDouble(suite, .timeHapticsTempo, default: 0.22)
+        self.timeRingsClockwise = Self.readBool(suite, .timeRingsClockwise, default: true)
+        self.timeRingsWeight = Self.readDouble(suite, .timeRingsWeight, default: 0.55)
 
         self.musicResponsivity = Self.readBool(suite, .musicResponsivity, default: false)
         self.reactivity = Self.readDouble(suite, .reactivity, default: 0.35)
@@ -342,6 +369,11 @@ public final class MandazaSettings {
         set { zenClockFormRaw = newValue.rawValue }
     }
 
+    public var timeTellingMode: TimeTellingMode {
+        get { TimeTellingMode(rawValue: timeTellingModeRaw) ?? .classic }
+        set { timeTellingModeRaw = newValue.rawValue }
+    }
+
     public var zenTiltAxes: ZenTiltAxes {
         get { ZenTiltAxes(rawValue: zenTiltAxesRaw) ?? .both }
         set { zenTiltAxesRaw = newValue.rawValue }
@@ -414,6 +446,9 @@ public final class MandazaSettings {
         case zenClockOpacity, zenClockContainerOpacity
         case zenClockFontStyleRaw, zenClockFontWeight, zenClockPositionRaw
         case zenClockSizeScale, zenClockFormRaw
+        case timeTellingModeRaw, timeHapticsEnabled, timeHapticsExactMinutes
+        case timeHapticsIntensity, timeHapticsTempo
+        case timeRingsClockwise, timeRingsWeight
         case musicResponsivity, reactivity
         case zenTiltEnabled, zenTiltAmount, zenTiltDepth, zenTiltInvertDepth
         case zenTiltAxesRaw, zenTiltIntensityRaw

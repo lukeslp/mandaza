@@ -106,18 +106,29 @@ struct ContentView: View {
             // Layer 2 — clock overlay (mid-depth UIKit parallax).
             if settings.zenMode, settings.zenShowClock {
                 ParallaxHost(provider: tilt, multiplier: CGFloat(0.35 + 0.45 * settings.zenTiltAmount)) {
-                    ZenClockOverlay(showSeconds: settings.zenShowSeconds,
-                                    showDate: settings.zenShowDate,
-                                    accent: BL.accent(for: settings.paletteId),
-                                    clockOpacity: settings.zenClockOpacity,
-                                    containerOpacity: settings.zenClockContainerOpacity,
-                                    fontStyle: settings.zenClockFontStyle,
-                                    fontWeight: settings.zenClockFontWeight,
-                                    position: MandazaScreenshot.clockPosition(settings.zenClockPosition),
-                                    form: MandazaScreenshot.clockForm(settings.zenClockForm),
-                                    sizeScale: settings.zenClockSizeScale)
+                    if settings.timeTellingMode == .classic {
+                        ZenClockOverlay(showSeconds: settings.zenShowSeconds,
+                                        showDate: settings.zenShowDate,
+                                        accent: BL.accent(for: settings.paletteId),
+                                        clockOpacity: settings.zenClockOpacity,
+                                        containerOpacity: settings.zenClockContainerOpacity,
+                                        fontStyle: settings.zenClockFontStyle,
+                                        fontWeight: settings.zenClockFontWeight,
+                                        position: MandazaScreenshot.clockPosition(settings.zenClockPosition),
+                                        form: MandazaScreenshot.clockForm(settings.zenClockForm),
+                                        sizeScale: settings.zenClockSizeScale)
+                    } else {
+                        TimeTellingOverlay(mode: settings.timeTellingMode,
+                                           accent: BL.accent(for: settings.paletteId),
+                                           clockwise: settings.timeRingsClockwise,
+                                           ringWeight: settings.timeRingsWeight,
+                                           hapticsEnabled: settings.timeHapticsEnabled,
+                                           exactMinutes: settings.timeHapticsExactMinutes,
+                                           hapticIntensity: settings.timeHapticsIntensity,
+                                           hapticTempo: settings.timeHapticsTempo)
+                    }
                 }
-                .allowsHitTesting(false)
+                .allowsHitTesting(settings.timeTellingMode != .classic && settings.timeHapticsEnabled)
                 .transition(.opacity)
             }
 
@@ -1017,6 +1028,8 @@ private struct SettingsSheet: View {
                         Toggle("Show Clock", isOn: $settings.zenShowClock)
                             .font(.bl(15))
                             .foregroundStyle(BL.paper)
+                        TimeModeSettingsControls(settings: settings, accent: accent)
+                            .disabled(!settings.zenShowClock)
                         Toggle("Show Seconds", isOn: $settings.zenShowSeconds)
                             .font(.bl(15))
                             .foregroundStyle(BL.paper)
@@ -1025,6 +1038,8 @@ private struct SettingsSheet: View {
                             .font(.bl(15))
                             .foregroundStyle(BL.paper)
                             .disabled(!settings.zenShowClock)
+
+                        if settings.timeTellingMode == .classic {
 
                         LabeledSlider(title: "Clock Opacity",
                                       value: $settings.zenClockOpacity,
@@ -1083,6 +1098,7 @@ private struct SettingsSheet: View {
                                       range: 0.5 ... 1.8,
                                       accent: accent,
                                       format: { "\(Int($0 * 100))%" })
+                        }
 
                         Toggle("Loop New Patterns", isOn: $settings.zenAutoRegen)
                             .font(.bl(15))
@@ -1096,7 +1112,7 @@ private struct SettingsSheet: View {
                                           format: { "\(Int($0))s" })
                         }
                     } footer: {
-                        Text("Clock, style, and optional looping while the canvas is idle.")
+                        Text("Choose a visual time language, optionally feel it as layered hour, five-minute, and exact-minute pulses, and control looping while the canvas is idle.")
                             .font(.bl(12))
                             .foregroundStyle(BL.muted)
                     }
