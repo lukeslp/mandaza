@@ -15,6 +15,12 @@ no Android lock-screen widgets. The first Android release intentionally focuses
 on the base app and watch companion; Home Screen widgets and phone-to-watch
 sync remain follow-up work.
 
+The phone app checks the public Drummer downloads catalog once per day. When
+the Android version in `https://dr.eamer.dev/downloads/catalog.json` is newer,
+it offers a dismissible link to the Mandaza download page. Publishing a new APK
+through the Android release toolkit updates that catalog and activates the
+prompt; no Play Store integration is required.
+
 ## Build and test
 
 Use JDK 21 and Android SDK 36:

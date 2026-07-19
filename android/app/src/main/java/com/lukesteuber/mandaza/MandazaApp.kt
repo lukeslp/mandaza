@@ -1,7 +1,9 @@
 package com.lukesteuber.mandaza
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -84,6 +86,7 @@ fun MandazaApp(state: MandazaAppState) {
     var canvasHeight by remember { mutableStateOf(1f) }
     var saving by remember { mutableStateOf(false) }
     var showPermissionExplanation by remember { mutableStateOf(false) }
+    var availableUpdate by remember { mutableStateOf<AvailableUpdate?>(null) }
     val micGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted && state.zenMode && state.musicResponsive) audio.start()
@@ -100,6 +103,7 @@ fun MandazaApp(state: MandazaAppState) {
         } else audio.stop()
     }
     DisposableEffect(Unit) { onDispose { audio.stop() } }
+    LaunchedEffect(Unit) { availableUpdate = UpdateChecker.checkIfNeeded(context) }
 
     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(
         primary = Cyan, background = Void, surface = Deep, onSurface = Paper,
@@ -176,6 +180,22 @@ fun MandazaApp(state: MandazaAppState) {
             text = { Text("Music responsivity only reads the live sound level. Audio is never recorded, stored, or sent anywhere. You can enable access later in Android Settings.") },
             confirmButton = { TextButton(onClick = { showPermissionExplanation = false }) { Text("OK") } },
         )
+        availableUpdate?.let { update ->
+            AlertDialog(
+                onDismissRequest = { availableUpdate = null },
+                title = { Text("A new Mandaza is available") },
+                text = { Text("Version ${update.version} is ready to download.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.downloadPage)))
+                        availableUpdate = null
+                    }) { Text("Download") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { availableUpdate = null }) { Text("Later") }
+                },
+            )
+        }
     }
 }
 

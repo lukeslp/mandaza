@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.dp
 import com.lukesteuber.mandaza.core.EngineConfig
 import com.lukesteuber.mandaza.core.GeneratedMandaza
 import com.lukesteuber.mandaza.core.MandazaEngine
@@ -84,7 +85,8 @@ fun MandazaCanvas(
             if (colorPosition > 1) colorPosition = 2 - colorPosition
             val color = Color(palette.colorAt(colorPosition).toInt())
             val depth = if (loop.colorTotal > 1) loop.colorIndex.toFloat() / (loop.colorTotal - 1) else 0.5f
-            val travel = parallaxAmount * 36f * (0.25f + depth * 0.75f)
+            // Canvas coordinates are pixels. Keep the effect visible on high-density phones.
+            val travel = parallaxAmount * 52.dp.toPx() * (0.25f + depth * 0.75f)
             val shift = Offset(tilt.x * travel, tilt.y * travel)
             val path = Path()
             loop.curves.take(count).forEachIndexed { index, curve ->
