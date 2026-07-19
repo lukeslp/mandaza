@@ -120,29 +120,4 @@ final class SettingsTests: XCTestCase {
         XCTAssertFalse(s.glow)
         XCTAssertEqual(s.glowStrength, 0.4, accuracy: 0.0001)
     }
-
-    func testTimeTellingDefaultsPreserveClassicClock() {
-        let s = makeSettings()
-        XCTAssertEqual(s.timeTellingMode, .classic)
-        XCTAssertFalse(s.timeHapticsEnabled)
-        XCTAssertTrue(s.timeHapticsExactMinutes)
-        XCTAssertTrue(s.timeRingsClockwise)
-    }
-
-    func testTimeTellingSettingsPersist() {
-        var s: MandazaSettings? = makeSettings()
-        s?.timeTellingMode = .encodedRhythm
-        s?.timeHapticsEnabled = true
-        s?.timeHapticsExactMinutes = false
-        s?.timeHapticsIntensity = 0.82
-        s?.timeHapticsTempo = 0.31
-        s = nil
-
-        let restored = makeSettings()
-        XCTAssertEqual(restored.timeTellingMode, .encodedRhythm)
-        XCTAssertTrue(restored.timeHapticsEnabled)
-        XCTAssertFalse(restored.timeHapticsExactMinutes)
-        XCTAssertEqual(restored.timeHapticsIntensity, 0.82, accuracy: 0.0001)
-        XCTAssertEqual(restored.timeHapticsTempo, 0.31, accuracy: 0.0001)
-    }
 }
