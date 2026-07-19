@@ -7,10 +7,18 @@ plugins {
     kotlin("plugin.serialization")
 }
 
+val signingValues = listOf(
+    "MANDAZA_ANDROID_STORE_FILE",
+    "MANDAZA_ANDROID_STORE_PASSWORD",
+    "MANDAZA_ANDROID_KEY_ALIAS",
+    "MANDAZA_ANDROID_KEY_PASSWORD",
+).associateWith { providers.environmentVariable(it).orNull }
+val hasReleaseSigning = signingValues.values.all { !it.isNullOrBlank() }
+
 val marketingVersion = rootProject.file("../project.yml").readText()
     .let { Regex("MARKETING_VERSION:\\s*\"?([0-9]+(?:\\.[0-9]+){0,2})").find(it)?.groupValues?.get(1) }
     ?: "1.0"
-val androidPatchVersion = 2
+val androidPatchVersion = 3
 
 android {
     namespace = "com.lukesteuber.mandaza"
@@ -20,8 +28,19 @@ android {
         applicationId = "com.lukesteuber.mandaza"
         minSdk = 24
         targetSdk = 35
-        versionCode = 10302
+        versionCode = 10303
         versionName = "$marketingVersion.$androidPatchVersion"
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(signingValues.getValue("MANDAZA_ANDROID_STORE_FILE")!!)
+                storePassword = signingValues.getValue("MANDAZA_ANDROID_STORE_PASSWORD")
+                keyAlias = signingValues.getValue("MANDAZA_ANDROID_KEY_ALIAS")
+                keyPassword = signingValues.getValue("MANDAZA_ANDROID_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -32,6 +51,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -42,6 +62,10 @@ android {
     }
     kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+}
+
+tasks.register("printVersion") {
+    doLast { println(android.defaultConfig.versionName) }
 }
 
 dependencies {

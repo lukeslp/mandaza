@@ -44,6 +44,7 @@ Package.resolved
 android/.gradle/
 android/**/build/
 android/local.properties
+dist/android/
 *.jks
 *.keystore
 
