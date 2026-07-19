@@ -40,6 +40,13 @@ Package.resolved
 .idea/
 .vscode/
 
+# Android / Gradle
+android/.gradle/
+android/**/build/
+android/local.properties
+*.jks
+*.keystore
+
 # Plist user data
 *.plist.user
 

@@ -4,6 +4,7 @@
 
 - **iOS / iPadOS:** Ship on-device generative mandalas, Home Screen / StandBy widgets, Photos export, `mandaza://` deep links, Zen + music responsivity + tilt.
 - **watchOS:** Live companion face with mirror sync and Send to Watch.
+- **Android / Wear OS:** Native Compose phone/tablet port and Pixel Watch companion sharing a deterministic Kotlin engine. Android mirrors canvas-tap regeneration, collections, Zen, music responsivity, parallax, settings, and PNG export; Wear uses tap for a new piece and the crown for palettes.
 - **tvOS:** Ship a fullscreen ambient companion app with a quick-control rail, compact “controls hidden” hint, larger Zen clock typography, and a tvOS-safe collapsible Zen section (no `DisclosureGroup`); `UILaunchScreen` uses `LaunchSplashTV` (iOS uses `LaunchSplashIOS`) to hard-bust stale launch-screen caches.
 - **Shared:** Single `MandazaCore` engine and App Group–backed settings; `project.yml` + XcodeGen as the project source of truth. Brand refreshes: `scripts/apply-brand-assets.py --icon … [--tv-icon …] --splash … [--tv-splash …]` writes iOS icon/splash, tvOS layered icons, top shelf, and tv launch art. **Glow** defaults off; random regenerate may enable a soft bloom with probability under 0.5; manual Glow toggle uses full strength (`glowStrength`).
 - **Release:** Version 1.2 is live; version 1.3 is prepared. Archive numbering
@@ -20,6 +21,8 @@
 | MandazaWidgets| iOS      | `MandazaWidgets/`, `MandazaCore/`| Home + StandBy only (no Lock Screen accessory families) |
 | MandazaWatch  | watchOS  | `MandazaWatch/`, `MandazaCore/`  | Companion face |
 | MandazaTests  | iOS      | `MandazaTests/`, `MandazaCore/`   | Unit tests |
+| Android app   | Android  | `android/app/`, `android/core/`    | Native Compose phone/tablet app |
+| Mandaza Wear  | Wear OS  | `android/wear/`, `android/core/`   | Native round-screen companion |
 
 ## Outstanding (suggested)
 

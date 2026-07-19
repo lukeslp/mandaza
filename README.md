@@ -1,9 +1,10 @@
 # Mandaza
 
-A native iOS, watchOS, and tvOS app that draws animated hexagonal-loop
+A native iOS, Android, watchOS, Wear OS, and tvOS app that draws animated hexagonal-loop
 mandalas in real time. On iPhone and iPad it ships Home Screen / StandBy
 widgets and exports wallpaper-resolution images. On Apple Watch it runs as
-a live companion face. On Apple TV it runs as a fullscreen ambient
+a live companion face; Pixel Watch has a native round-screen companion powered
+by the same deterministic engine. On Apple TV it runs as a fullscreen ambient
 experience with on-screen quick controls (Apple TV has no third-party
 WidgetKit surface).
 
@@ -172,6 +173,6 @@ MIT — see [LICENSE](LICENSE).
 ## Status
 
 Version **1.2** is live. Version **1.3** is prepared with music responsivity,
-clock forms, tilt parallax, Watch companion, and Home/Lock/StandBy widgets.
+clock forms, tilt parallax, Watch companion, and Home/StandBy widgets.
 The documented privacy-policy URL currently returns 404 and must be published
 and verified before submission.
