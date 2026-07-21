@@ -24,8 +24,9 @@ same on-device engine. No data leaves your device through widgets.
 
 The Google Play build creates procedural art entirely on-device and makes no
 network requests. It requests microphone access only when you enable Music
-responsivity. Microphone input is reduced to a live sound-level value in
-memory; audio is never recorded, stored, uploaded, or shared.
+responsivity. Mandaza reduces microphone input to a live sound-level value in
+memory and immediately discards the audio samples. Nothing gets recorded,
+stored, uploaded, or shared.
 
 When you choose Save, Mandaza writes the generated image to the device's media
 library. Settings, favorites, and recent designs remain on the device. The app

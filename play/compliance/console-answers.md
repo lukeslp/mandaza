@@ -2,9 +2,9 @@
 
 ## App access
 
-- All functionality is available without special access.
-- No account, login, membership, location restriction, or reviewer credential
-  is required.
+- Reviewers can reach every feature without special access.
+- Reviewers need no account, login, membership, location exception, or
+  credential.
 
 ## Ads
 
@@ -21,8 +21,8 @@
   or account exists.
 - Independent security review: No.
 
-Microphone input is processed ephemerally on-device only while Music
-responsivity is active. It is not retained, transmitted, collected, or shared.
+Mandaza processes microphone input ephemerally on-device only while Music
+responsivity is active. The app does not retain, transmit, collect, or share it.
 Generated images, settings, favorites, and history remain on the device unless
 the user explicitly saves or exports an image.
 
@@ -57,5 +57,5 @@ assigns the rating.
 - Privacy policy source: `docs/index.md`
 - Intended public URL: `https://lukeslp.github.io/mandaza/`
 - Support email: `luke@lukesteuber.com`
-- Public URL status on 2026-07-20: **404 — blocker until GitHub Pages is
-  enabled and the rendered policy is verified.**
+- Public URL status on 2026-07-20: **404. Enable GitHub Pages and verify the
+  rendered policy before submission.**

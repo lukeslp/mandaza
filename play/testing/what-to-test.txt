@@ -9,5 +9,5 @@ Please try these flows on a phone or tablet:
 7. Save an image and confirm it appears in Pictures/Mandaza.
 8. Rotate the device and check that the canvas and controls stay usable.
 
-No account or sign-in is required. Please report the device model, Android
+You do not need an account or sign-in. Please report the device model, Android
 version, steps, expected result, and observed result with any issue.

@@ -1,6 +1,6 @@
 Mandaza creates endlessly varied ambient mandalas on your phone or tablet.
 
-Tap the canvas to generate a new composition, then tune its palette, geometry, line work, motion, and glow. Every design is created on your device from a reproducible seed, so favorites can be revisited whenever you want.
+Tap the canvas to generate a new composition, then tune its palette, geometry, line work, motion, and glow. Mandaza creates each design on your device from a reproducible seed, so you can return to a favorite whenever you want.
 
 Find your visual rhythm:
 
@@ -13,6 +13,6 @@ Find your visual rhythm:
 • Keep favorite designs and return to recent patterns
 • Choose a luminous dark canvas or a softer paper look
 
-Music responsivity uses the microphone only while the feature is active. Sound is reduced to a live level value on your device; audio is never recorded, stored, or uploaded.
+Music responsivity uses the microphone only while the feature is active. Mandaza turns sound into a live level value on your device and immediately discards the audio samples. Nothing gets recorded, stored, or uploaded.
 
 Mandaza has no account, advertising, analytics, or tracking. The Google Play build makes no network requests. Your designs and settings remain on your device.
