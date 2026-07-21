@@ -18,11 +18,10 @@ Android parallax is available in both standard and Zen presentation. There are
 no Android lock-screen widgets. The supported Android release focuses on the
 phone/tablet app; Home Screen widgets remain follow-up work.
 
-The phone app checks the public Drummer downloads catalog once per day. When
-the Android version in `https://dr.eamer.dev/downloads/catalog.json` is newer,
-it offers a dismissible link to the Mandaza download page. Publishing a new APK
-through the Android release toolkit updates that catalog and activates the
-prompt; no Play Store integration is required.
+The `direct` flavor checks the public Drummer downloads catalog once per day
+and links to the Mandaza download page when a newer version is available. The
+`play` flavor contains no direct updater or network permission and relies on
+Google Play for updates.
 
 ## Build and test
 
@@ -41,8 +40,8 @@ Install on a connected Android phone:
 ./gradlew :app:installDebug
 ```
 
-Build and stage the signed production APK and Play AAB through the shared
-release identity:
+Build and stage a signed direct-distribution release through the shared release
+identity:
 
 ```sh
 cd /Users/luke/workspace/android-release-toolkit
@@ -50,5 +49,8 @@ scripts/android-release with-signing --profile mandaza -- \
   /Users/luke/workspace/mandaza-ios/scripts/stage-android-release.sh
 ```
 
+Set `MANDAZA_DISTRIBUTION=play` to stage the Google Play flavor. The direct
+release uses version code `10303`; the Play release uses version code `10304`.
+
 Release signing material remains outside the repository and its password stays
-in macOS Keychain. Mandaza is distributed directly rather than through Google Play.
+in macOS Keychain. Google Play login, upload, and submission remain manual.

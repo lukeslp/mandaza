@@ -27,9 +27,21 @@ android {
     defaultConfig {
         applicationId = "app.mandaza.android"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 10303
         versionName = "$marketingVersion.$androidPatchVersion"
+    }
+
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("direct") {
+            dimension = "distribution"
+            versionCode = 10303
+        }
+        create("play") {
+            dimension = "distribution"
+            versionCode = 10304
+        }
     }
 
     signingConfigs {

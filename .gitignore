@@ -45,6 +45,7 @@ android/.gradle/
 android/**/build/
 android/local.properties
 dist/android/
+/artifacts/
 *.jks
 *.keystore
 

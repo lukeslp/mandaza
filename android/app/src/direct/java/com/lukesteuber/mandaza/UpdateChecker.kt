@@ -10,6 +10,7 @@ import java.net.URL
 data class AvailableUpdate(val version: String, val downloadPage: String)
 
 object UpdateChecker {
+    const val enabled = true
     private const val catalogUrl = "https://dr.eamer.dev/downloads/catalog.json"
     const val downloadPage = "https://dr.eamer.dev/downloads/apps/mandaza/"
     private const val preferencesName = "mandaza_update_check"

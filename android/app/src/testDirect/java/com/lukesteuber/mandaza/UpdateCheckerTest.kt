@@ -5,6 +5,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UpdateCheckerTest {
+    @Test fun directUpdatesAreEnabled() {
+        assertTrue(UpdateChecker.enabled)
+    }
+
     @Test fun newerSemanticVersionIsDetected() {
         assertTrue(UpdateChecker.isNewerVersion("1.4", "1.3-debug"))
         assertTrue(UpdateChecker.isNewerVersion("2.0.0", "1.99.99"))
