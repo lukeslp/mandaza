@@ -1,0 +1,19 @@
+Mandaza Google Play graphics — en-US
+
+Upload mapping:
+- App icon: shared/icon-512.png (512 × 512, RGB PNG)
+- Feature graphic: shared/feature-graphic-1024x500.png (1024 × 500, RGB PNG)
+- Phone screenshots: phone/01-live-canvas.png through 03-tune.png
+  (1080 × 2424, RGB PNG)
+- 7-inch tablet screenshots: tablet-7in/01-live-canvas.png through
+  03-tune.png (1080 × 1920, RGB PNG; 7.9-inch AVD)
+
+SHA-256:
+0baa7a7d761b80c842a4fa758eba925cbe027cbbf364962c9fde832a2d3618a9  phone/01-live-canvas.png
+3eb0d4d4b8a1ed8fb55cfcca21c95cf2a193d5b511eebe65ede6f5bf01ade89d  phone/02-zen-clock.png
+8d1992cf368794094f89a7faf1b24d5a6756eca88addf8c8aeb9562651a9e6aa  phone/03-tune.png
+874cc78e5cf921b72b6d0cf122b35a320ec8fe0cd0562673eda6832b7c89edd5  shared/feature-graphic-1024x500.png
+63b592472fe1ab3e567975ef9fed3d85c61ed72ae83988924e0d9e4eb4e8c4fa  shared/icon-512.png
+faf3ad5fbb77fd417428a287aab2a16cd512b3ce4d80b6ddc93c5b3d3c70d72a  tablet-7in/01-live-canvas.png
+25dddac643f5a65cbb6226dda85bdbd05a6e2507eddeb6334299a8f119a43362  tablet-7in/02-zen-clock.png
+a129811204006259a9685e0e92c2c2062afb722af000ac36fef34a810ca9a983  tablet-7in/03-tune.png

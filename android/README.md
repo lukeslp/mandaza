@@ -50,7 +50,7 @@ scripts/android-release with-signing --profile mandaza -- \
 ```
 
 Set `MANDAZA_DISTRIBUTION=play` to stage the Google Play flavor. The direct
-release uses version code `10303`; the Play release uses version code `10304`.
+release uses version code `10303`; the Play release uses version code `10305`.
 
 Release signing material remains outside the repository and its password stays
 in macOS Keychain. Google Play login, upload, and submission remain manual.

@@ -1,0 +1,18 @@
+Mandaza creates endlessly varied ambient mandalas on your phone or tablet.
+
+Tap the canvas to generate a new composition, then tune its palette, geometry, line work, motion, and glow. Every design is created on your device from a reproducible seed, so favorites can be revisited whenever you want.
+
+Find your visual rhythm:
+
+• Explore 12 carefully tuned color palettes
+• Enter Zen mode for a quiet, full-screen presentation
+• Add a customizable clock and date overlay
+• Let nearby sound gently shape the motion with optional Music responsivity
+• Tilt your device for subtle parallax depth
+• Save finished artwork to use as a wallpaper
+• Keep favorite designs and return to recent patterns
+• Choose a luminous dark canvas or a softer paper look
+
+Music responsivity uses the microphone only while the feature is active. Sound is reduced to a live level value on your device; audio is never recorded, stored, or uploaded.
+
+Mandaza has no account, advertising, analytics, or tracking. The Google Play build makes no network requests. Your designs and settings remain on your device.

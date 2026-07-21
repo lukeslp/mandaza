@@ -56,6 +56,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -139,6 +141,7 @@ fun MandazaApp(state: MandazaAppState) {
                     .fillMaxSize()
                     .padding(padding)
                     .onSizeChanged { canvasWidth = it.width.toFloat(); canvasHeight = it.height.toFloat() }
+                    .semantics { contentDescription = "Mandaza canvas" }
                     .clickable(role = Role.Button, onClickLabel = "Generate a new Mandaza") { state.newPattern() },
             ) {
                 MandazaCanvas(

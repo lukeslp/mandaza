@@ -1,0 +1,13 @@
+Please try these flows on a phone or tablet:
+
+1. Tap the canvas several times and confirm each new pattern animates smoothly.
+2. Open Tune, change the palette, density, geometry, line width, and canvas look.
+3. Enter Zen and verify the clock and date remain legible over different patterns.
+4. Enable Music responsivity, allow or deny microphone access, and confirm both paths are clear and stable. No audio should be saved.
+5. Turn on tilt parallax and move the device gently.
+6. Add and reopen a Favorite, then use Previous history.
+7. Save an image and confirm it appears in Pictures/Mandaza.
+8. Rotate the device and check that the canvas and controls stay usable.
+
+No account or sign-in is required. Please report the device model, Android
+version, steps, expected result, and observed result with any issue.

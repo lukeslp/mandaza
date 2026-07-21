@@ -4,7 +4,7 @@ title: Mandaza — Privacy Policy
 
 # Mandaza — Privacy Policy
 
-_Last updated: 2026-07-11_
+_Last updated: 2026-07-20_
 
 Mandaza does not collect, store, or transmit any personal data. The app
 runs entirely on your device. It makes no network requests, includes no
@@ -19,6 +19,23 @@ never recorded, stored, uploaded, or shared.
 
 The app's bundled WidgetKit extension renders mandala images using the
 same on-device engine. No data leaves your device through widgets.
+
+## Mandaza for Android
+
+The Google Play build creates procedural art entirely on-device and makes no
+network requests. It requests microphone access only when you enable Music
+responsivity. Microphone input is reduced to a live sound-level value in
+memory; audio is never recorded, stored, uploaded, or shared.
+
+When you choose Save, Mandaza writes the generated image to the device's media
+library. Settings, favorites, and recent designs remain on the device. The app
+contains no account, advertising, analytics, tracking, or third-party data
+collection SDK.
+
+The separately distributed Android build may check Luke Steuber's public
+Mandaza release catalog for updates. That check sends only the ordinary
+technical information inherent in an HTTPS request and is not present in the
+Google Play build.
 
 ## Mandaza for Apple TV (tvOS)
 

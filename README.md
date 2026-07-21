@@ -8,7 +8,9 @@ by the same deterministic engine. On Apple TV it runs as a fullscreen ambient
 experience with on-screen quick controls (Apple TV has no third-party
 WidgetKit surface).
 
-100% on-device. No network. No analytics. No account.
+The creative experience runs on-device with no analytics or account. The
+Google Play build makes no network requests; the direct-download build checks
+the Mandaza release catalog once per day for updates.
 
 ## Features
 
@@ -174,5 +176,5 @@ MIT — see [LICENSE](LICENSE).
 
 Version **1.2** is live. Version **1.3** is prepared with music responsivity,
 clock forms, tilt parallax, Watch companion, and Home/StandBy widgets.
-The documented privacy-policy URL currently returns 404 and must be published
-and verified before submission.
+The privacy policy is maintained in `docs/index.md`. GitHub Pages must be
+enabled and the public URL verified before store submission.

@@ -40,7 +40,7 @@ android {
         }
         create("play") {
             dimension = "distribution"
-            versionCode = 10304
+            versionCode = 10305
         }
     }
 

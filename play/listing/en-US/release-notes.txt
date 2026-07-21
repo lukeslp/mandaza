@@ -1,0 +1,3 @@
+Welcome to the Mandaza closed test.
+
+Create procedural mandalas, tune 12 palettes, enter Zen with a clock overlay, try optional music response and tilt parallax, save artwork, and keep favorites. This Play build relies on Google Play for updates and contains no direct-download updater.
