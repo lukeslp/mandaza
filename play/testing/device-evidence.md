@@ -1,6 +1,8 @@
 # Android device evidence
 
-Evidence collected from the Play debug variant on 2026-07-20.
+Screenshots and accessibility evidence came from the Play debug variant on
+2026-07-20. The final signed 1.3.3 (10305) release then passed the same install
+and launch smoke test on both devices.
 
 ## Phone
 
@@ -10,6 +12,8 @@ Evidence collected from the Play debug variant on 2026-07-20.
 - Install: passed
 - Launch: passed
 - Main canvas, Zen clock, and Tune sheet: captured
+- Final signed release install and launch: passed; activity observed, no fatal
+  exception
 
 ## 7-inch tablet class
 
@@ -21,6 +25,8 @@ Evidence collected from the Play debug variant on 2026-07-20.
 - Install: passed
 - Launch: passed
 - Main canvas, Zen clock, and Tune sheet: captured
+- Final signed release install and launch: passed; activity observed, no fatal
+  exception
 
 ## Accessibility evidence
 

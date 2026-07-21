@@ -33,6 +33,8 @@ the user explicitly saves or exports an image.
   values affect the visual animation; raw audio is never recorded or retained.
 - `android.permission.WRITE_EXTERNAL_STORAGE` with `maxSdkVersion=28`: used
   only for user-initiated image export on older supported Android releases.
+- `android.permission.READ_EXTERNAL_STORAGE` with `maxSdkVersion=28`: Android's
+  compatibility manifest adds this for the same legacy media-library path.
 - Internet permission: absent from the Google Play flavor.
 
 ## Content and audience
