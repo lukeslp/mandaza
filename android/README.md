@@ -4,6 +4,10 @@ Native Jetpack Compose ports of Mandaza. The phone/tablet app is the supported
 Android release. It does not use a WebView or require a server. Experimental
 Wear OS source remains in the repository but is outside the release scope.
 
+The phone/tablet application ID is `app.mandaza.android`. Kotlin source keeps
+the established `com.lukesteuber.mandaza` namespace, and the experimental Wear
+OS application keeps its independent `com.lukesteuber.mandaza.wear` identity.
+
 ## Modules
 
 - `core` — deterministic geometry engine, all twelve palettes, snapshot and collection models
@@ -37,7 +41,8 @@ Install on a connected Android phone:
 ./gradlew :app:installDebug
 ```
 
-Build and stage the signed production APK through the shared release identity:
+Build and stage the signed production APK and Play AAB through the shared
+release identity:
 
 ```sh
 cd /Users/luke/workspace/android-release-toolkit

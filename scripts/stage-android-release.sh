@@ -17,15 +17,19 @@ case "$version" in
   *[!0-9A-Za-z._-]*|"") echo "Invalid Android version: $version" >&2; exit 1 ;;
 esac
 
-(cd "$android_dir" && ./gradlew clean :core:testDebugUnitTest :app:testDebugUnitTest :app:assembleRelease)
+(cd "$android_dir" && ./gradlew clean :core:testDebugUnitTest :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease)
 
 apk="$android_dir/app/build/outputs/apk/release/app-release.apk"
+aab="$android_dir/app/build/outputs/bundle/release/app-release.aab"
 test -f "$apk"
+test -f "$aab"
 build_tools="${ANDROID_HOME:-$HOME/Library/Android/sdk}/build-tools/36.0.0"
 "$build_tools/apksigner" verify --verbose "$apk"
+jarsigner -verify "$aab"
 
 stage_dir="$repo_root/dist/android/v$version"
 mkdir -p "$stage_dir"
 cp "$apk" "$stage_dir/Mandaza-$version.apk"
-(cd "$stage_dir" && shasum -a 256 "Mandaza-$version.apk" > SHA256SUMS.txt)
+cp "$aab" "$stage_dir/Mandaza-$version.aab"
+(cd "$stage_dir" && shasum -a 256 "Mandaza-$version.apk" "Mandaza-$version.aab" > SHA256SUMS.txt)
 echo "Staged signed Android artifact in $stage_dir"

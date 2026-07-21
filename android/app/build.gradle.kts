@@ -25,7 +25,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.lukesteuber.mandaza"
+        applicationId = "app.mandaza.android"
         minSdk = 24
         targetSdk = 35
         versionCode = 10303
