@@ -13,8 +13,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         state = MandazaAppState(applicationContext)
+        ReviewPromptTracker(applicationContext).recordSession()
         state.handleDeepLink(intent?.data)
-        setContent { MandazaApp(state) }
+        setContent { MandazaApp(state, this@MainActivity) }
     }
 
     override fun onNewIntent(intent: Intent) {

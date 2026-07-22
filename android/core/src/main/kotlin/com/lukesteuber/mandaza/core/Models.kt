@@ -1,6 +1,7 @@
 package com.lukesteuber.mandaza.core
 
 import kotlinx.serialization.Serializable
+import java.util.Locale
 
 @Serializable
 data class EngineConfig(
@@ -57,10 +58,10 @@ data class GeneratedMandaza(
     val loops: List<MandazaLoop>,
 ) {
     fun fingerprint(): String = buildString {
-        append(seed).append('|').append("%.4f".format(radius)).append('|')
+        append(seed).append('|').append("%.4f".format(Locale.ROOT, radius)).append('|')
         loops.forEach { loop ->
             loop.curves.forEach { curve ->
-                append("%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f;".format(
+                append("%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f;".format(Locale.ROOT,
                     curve.start.x, curve.start.y,
                     curve.control1.x, curve.control1.y,
                     curve.control2.x, curve.control2.y,

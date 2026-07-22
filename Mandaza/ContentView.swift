@@ -8,6 +8,7 @@
 
 #if !os(tvOS)
 import SwiftUI
+import StoreKit
 import UIKit
 #if canImport(WidgetKit)
 import WidgetKit
@@ -30,7 +31,9 @@ struct ContentView: View {
     @State private var toastMessage: String? = nil
     @State private var toastClearTask: Task<Void, Never>? = nil
     @State private var autoRegenTask: Task<Void, Never>? = nil
+    @State private var reviewRequestTask: Task<Void, Never>? = nil
     @State private var lastIdle: Bool = false
+    @State private var reviewTracker = ReviewPromptTracker()
 
     /// The bottom shelf fades after a short idle period. Once faded, the next
     /// screen tap only restores the controls; while visible, a canvas tap
@@ -58,6 +61,7 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.requestReview) private var requestReview
 
     // MARK: - Body
 
@@ -241,6 +245,7 @@ struct ContentView: View {
         }
         .onOpenURL { handleIncomingURL($0) }
         .onAppear {
+            reviewTracker.recordSession()
             scheduleControlsFade()
             applyTilt()
             WatchSyncController.shared.activate()
@@ -259,7 +264,10 @@ struct ContentView: View {
             }
             #endif
         }
-        .onDisappear { controlsFadeTask?.cancel() }
+        .onDisappear {
+            controlsFadeTask?.cancel()
+            reviewRequestTask?.cancel()
+        }
         // Persist the user's Music Mode intent. Only a user-initiated stop
         // leaves the reactor .idle with isActive false — interruptions and
         // failures must not erase the preference (nor may the forced stop
@@ -779,12 +787,14 @@ struct ContentView: View {
         let s = seed
         let pid = settings.paletteId
         let cfg = effectiveConfig
+        let theme = settings.canvasTheme
 
         Task.detached(priority: .userInitiated) {
             let image = MandazaEngine.renderImage(seed: s,
                                                   paletteId: pid,
                                                   config: cfg,
-                                                  size: size)
+                                                  size: size,
+                                                  theme: theme)
             await MainActor.run { handleRenderedImage(image) }
         }
     }
@@ -801,11 +811,34 @@ struct ContentView: View {
             do {
                 try await ExportService.saveToPhotos(image)
                 showToast("Saved to Photos")
+                reviewTracker.recordMeaningfulEvent()
+                scheduleReviewRequestIfAppropriate()
             } catch ExportError.noPermission {
                 exportAlert = .permissionDenied
             } catch {
                 exportAlert = .saveFailed(message: error.localizedDescription)
             }
+        }
+    }
+
+    private func scheduleReviewRequestIfAppropriate() {
+        guard let version = Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleShortVersionString"
+        ) as? String,
+        reviewTracker.shouldRequest(requirements: .imageExport, appVersion: version) else {
+            return
+        }
+
+        reviewRequestTask?.cancel()
+        reviewRequestTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled,
+                  scenePhase == .active,
+                  !showSettings,
+                  !exportInProgress,
+                  exportAlert == nil else { return }
+            reviewTracker.markRequest(appVersion: version)
+            requestReview()
         }
     }
 

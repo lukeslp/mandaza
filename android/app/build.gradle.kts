@@ -93,6 +93,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    add("playImplementation", "com.google.android.play:review:2.0.2")
+    add("playImplementation", "com.google.android.play:review-ktx:2.0.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
 }

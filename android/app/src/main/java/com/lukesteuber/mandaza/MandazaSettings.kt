@@ -110,7 +110,9 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
             )
         }
         if (state.favorites.isNotEmpty()) {
-            TextButton(onClick = onFavorites) { Text("All Favorites · ${state.favorites.size}") }
+            TextButton(onClick = { state.persist(); onFavorites() }) {
+                Text("All Favorites · ${state.favorites.size}")
+            }
         }
         Text(
             "100% on-device · no account · no analytics",

@@ -3,7 +3,8 @@ package com.lukesteuber.mandaza
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
+import android.os.Build
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -46,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -61,6 +63,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -77,35 +83,88 @@ private enum class Sheet { History, Favorites, Settings }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MandazaApp(state: MandazaAppState) {
+fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val tilt = remember { TiltMonitor(context) }
     val audio = remember { AudioLevelMonitor() }
     var sheet by remember { mutableStateOf<Sheet?>(null) }
-    var canvasWidth by remember { mutableStateOf(1f) }
-    var canvasHeight by remember { mutableStateOf(1f) }
+    var canvasWidth by remember { mutableFloatStateOf(1f) }
+    var canvasHeight by remember { mutableFloatStateOf(1f) }
     var saving by remember { mutableStateOf(false) }
+    var saveRequested by remember { mutableStateOf(false) }
     var showPermissionExplanation by remember { mutableStateOf(false) }
+    var showStoragePermissionExplanation by remember { mutableStateOf(false) }
     var availableUpdate by remember { mutableStateOf<AvailableUpdate?>(null) }
+    var appInForeground by remember {
+        mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+    }
     val micGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    var storageGranted by remember {
+        mutableStateOf(
+            Build.VERSION.SDK_INT >= 29 ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED,
+        )
+    }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted && state.zenMode && state.musicResponsive) audio.start()
         else if (!granted) showPermissionExplanation = true
     }
+    val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        storageGranted = granted
+        if (!granted) {
+            saveRequested = false
+            showStoragePermissionExplanation = true
+        }
+    }
 
-    DisposableEffect(state.parallaxEnabled) {
-        if (state.parallaxEnabled) tilt.start() else tilt.stop()
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> appInForeground = true
+                Lifecycle.Event.ON_STOP -> appInForeground = false
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    DisposableEffect(state.parallaxEnabled, appInForeground) {
+        if (state.parallaxEnabled && appInForeground) tilt.start() else tilt.stop()
         onDispose { tilt.stop() }
     }
-    LaunchedEffect(state.zenMode, state.musicResponsive, micGranted) {
-        if (state.zenMode && state.musicResponsive) {
+    LaunchedEffect(state.zenMode, state.musicResponsive, micGranted, appInForeground) {
+        if (appInForeground && state.zenMode && state.musicResponsive) {
             if (micGranted) audio.start() else micPermission.launch(Manifest.permission.RECORD_AUDIO)
         } else audio.stop()
     }
     DisposableEffect(Unit) { onDispose { audio.stop() } }
     LaunchedEffect(Unit) { availableUpdate = UpdateChecker.checkIfNeeded(context) }
+    LaunchedEffect(saveRequested, storageGranted) {
+        if (!saveRequested || !storageGranted || saving) return@LaunchedEffect
+        saving = true
+        try {
+            runCatching {
+                MandazaExporter.save(
+                    context,
+                    state.seed,
+                    state.paletteId,
+                    state.config,
+                    paperTheme = state.paperTheme,
+                )
+            }
+                .onSuccess {
+                    snackbar.showSnackbar("Saved $it to Pictures/Mandaza")
+                    ReviewRequester.recordSuccessfulExport(activity)
+                }
+                .onFailure { snackbar.showSnackbar("Couldn’t save: ${it.message}") }
+        } finally {
+            saving = false
+            saveRequested = false
+        }
+    }
 
     MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(
         primary = Cyan, background = Void, surface = Deep, onSurface = Paper,
@@ -120,12 +179,11 @@ fun MandazaApp(state: MandazaAppState) {
                     onHistory = { sheet = Sheet.History },
                     onSettings = { sheet = Sheet.Settings },
                     onSave = {
-                        if (!saving) scope.launch {
-                            saving = true
-                            runCatching { MandazaExporter.save(context, state.seed, state.paletteId, state.config) }
-                                .onSuccess { snackbar.showSnackbar("Saved $it to Pictures/Mandaza") }
-                                .onFailure { snackbar.showSnackbar("Couldn’t save: ${it.message}") }
-                            saving = false
+                        if (!saving && !saveRequested) {
+                            saveRequested = true
+                            if (!storageGranted) {
+                                storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            }
                         }
                     },
                     onFavorite = {
@@ -183,6 +241,12 @@ fun MandazaApp(state: MandazaAppState) {
             text = { Text("Music responsivity only reads the live sound level. Audio is never recorded, stored, or sent anywhere. You can enable access later in Android Settings.") },
             confirmButton = { TextButton(onClick = { showPermissionExplanation = false }) { Text("OK") } },
         )
+        if (showStoragePermissionExplanation) AlertDialog(
+            onDismissRequest = { showStoragePermissionExplanation = false },
+            title = { Text("Photos access unavailable") },
+            text = { Text("Android 9 and earlier need storage permission to save Mandaza images. You can enable it later in Android Settings.") },
+            confirmButton = { TextButton(onClick = { showStoragePermissionExplanation = false }) { Text("OK") } },
+        )
         availableUpdate?.let { update ->
             AlertDialog(
                 onDismissRequest = { availableUpdate = null },
@@ -190,7 +254,7 @@ fun MandazaApp(state: MandazaAppState) {
                 text = { Text("Version ${update.version} is ready to download.") },
                 confirmButton = {
                     TextButton(onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(update.downloadPage)))
+                        context.startActivity(Intent(Intent.ACTION_VIEW, update.downloadPage.toUri()))
                         availableUpdate = null
                     }) { Text("Download") }
                 },

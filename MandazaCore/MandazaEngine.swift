@@ -759,7 +759,8 @@ extension MandazaEngine {
     public static func renderImage(seed: String,
                                    paletteId: String,
                                    config: EngineConfig,
-                                   size: CGSize) -> UIImage? {
+                                   size: CGSize,
+                                   theme: CanvasTheme = .void) -> UIImage? {
         guard size.width > 1, size.height > 1 else { return nil }
         let format = UIGraphicsImageRendererFormat()
         format.opaque = true
@@ -767,7 +768,11 @@ extension MandazaEngine {
         let renderer = UIGraphicsImageRenderer(size: size, format: format)
         return renderer.image { rendererContext in
             let ctx = rendererContext.cgContext
-            ctx.setFillColor(UIColor.black.cgColor)
+            let isPaper = theme == .paper
+            let ground = isPaper
+                ? UIColor(red: 239 / 255, green: 232 / 255, blue: 220 / 255, alpha: 1)
+                : UIColor.black
+            ctx.setFillColor(ground.cgColor)
             ctx.fill(CGRect(origin: .zero, size: size))
 
             let engine = MandazaEngine(config: config, paletteId: paletteId)
@@ -787,8 +792,13 @@ extension MandazaEngine {
             for loop in engine.loops {
                 let path = engine.currentPath(for: loop)
                 let color = engine.color(for: loop, timeMs: 0)
-                ctx.setStrokeColor(color)
-                if config.glow {
+                ctx.setStrokeColor(UIColor(cgColor: color)
+                    .withAlphaComponent(isPaper ? 0.86 : 1.0).cgColor)
+                if isPaper {
+                    ctx.setShadow(offset: CGSize(width: 0, height: 1),
+                                  blur: max(1, strokeWidth * 0.8),
+                                  color: UIColor.black.withAlphaComponent(0.18).cgColor)
+                } else if config.glow {
                     let a = CGFloat(0.55 + 0.30 * glowScale)
                     let shadow = UIColor(cgColor: color).withAlphaComponent(a).cgColor
                     ctx.setShadow(offset: .zero, blur: glowRadius * glowScale, color: shadow)

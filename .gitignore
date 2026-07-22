@@ -42,6 +42,7 @@ Package.resolved
 
 # Android / Gradle
 android/.gradle/
+android/.kotlin/
 android/**/build/
 android/local.properties
 dist/android/

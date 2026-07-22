@@ -3,8 +3,10 @@ package com.lukesteuber.mandaza
 import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.edit
 import com.lukesteuber.mandaza.core.EngineConfig
 import com.lukesteuber.mandaza.core.MandazaPalettes
 import com.lukesteuber.mandaza.core.MandazaSnapshot
@@ -51,9 +53,9 @@ class MandazaAppState(context: Context) {
     var showDate by mutableStateOf(initial.showDate)
     var clockForm by mutableStateOf(initial.clockForm)
     var musicResponsive by mutableStateOf(initial.musicResponsive)
-    var reactivity by mutableStateOf(initial.reactivity)
+    var reactivity by mutableFloatStateOf(initial.reactivity)
     var parallaxEnabled by mutableStateOf(initial.parallaxEnabled)
-    var parallaxAmount by mutableStateOf(initial.parallaxAmount)
+    var parallaxAmount by mutableFloatStateOf(initial.parallaxAmount)
     var paperTheme by mutableStateOf(initial.paperTheme)
     var randomPalette by mutableStateOf(initial.randomPalette)
 
@@ -86,9 +88,10 @@ class MandazaAppState(context: Context) {
     }
 
     fun handleDeepLink(uri: Uri?) {
-        if (uri?.scheme != "mandaza") return
-        val incoming = uri.pathSegments.lastOrNull()?.takeIf { it.isNotBlank() }
-            ?: uri.host?.takeIf { it != "seed" }
+        if (uri?.scheme != "mandaza" || uri.host != "seed") return
+        val candidate = uri.pathSegments.singleOrNull()?.takeIf { it.isNotBlank() } ?: return
+        val incoming = runCatching { UUID.fromString(candidate).toString() }.getOrNull()
+            ?: candidate.takeIf { it.startsWith("widget-") && it.length <= 512 }
             ?: return
         seed = incoming
         uri.getQueryParameter("palette")?.let { paletteId = MandazaPalettes.byId(it).id }
@@ -101,6 +104,6 @@ class MandazaAppState(context: Context) {
             showSeconds, showDate, clockForm, musicResponsive, reactivity,
             parallaxEnabled, parallaxAmount, paperTheme, randomPalette,
         )
-        preferences.edit().putString("state", json.encodeToString(state)).apply()
+        preferences.edit { putString("state", json.encodeToString(state)) }
     }
 }

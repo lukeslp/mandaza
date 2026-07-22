@@ -93,8 +93,9 @@ fun MandazaWearApp() {
                 },
         ) {
             Canvas(Modifier.fillMaxSize()) {
-                art?.loops?.forEachIndexed { index, loop ->
-                    if (index >= art!!.loops.size * progress) return@forEachIndexed
+                val currentArt = art ?: return@Canvas
+                currentArt.loops.forEachIndexed { index, loop ->
+                    if (index >= currentArt.loops.size * progress) return@forEachIndexed
                     val path = Path()
                     loop.curves.forEachIndexed { curveIndex, curve ->
                         if (curveIndex == 0) path.moveTo(curve.start.x.toFloat(), curve.start.y.toFloat())

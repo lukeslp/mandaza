@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Mandaza"
-include(":core", ":app", ":wear", ":watchface")
+include(":core", ":app", ":wear")

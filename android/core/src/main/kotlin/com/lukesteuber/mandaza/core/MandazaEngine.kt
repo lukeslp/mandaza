@@ -129,7 +129,8 @@ class MandazaEngine(private val config: EngineConfig = EngineConfig()) {
         else sqrt(config.density) * 10.0 + (1 - sqrt(config.density)) * 100.0
         var candidate = sqrt(((width * height) / target) * 2 / 3 / HexConst.s)
         var valid = false
-        repeat(100) {
+        var attempts = 0
+        while (!valid && attempts < 100) {
             if (config.withMargin) {
                 columns = floor(((width - 20) / candidate + 0.5) / 1.5).toInt()
                 rows = floor((height - 20) / candidate / HexConst.s - 0.5).toInt() + 1
@@ -139,9 +140,10 @@ class MandazaEngine(private val config: EngineConfig = EngineConfig()) {
             }
             if (columns > 1 && rows > 1) {
                 valid = true
-                return@repeat
+            } else {
+                candidate *= 0.95
             }
-            candidate *= 0.95
+            attempts++
         }
         if (!valid) return false
         radius = candidate

@@ -25,7 +25,8 @@ case "$version" in
 esac
 
 (cd "$android_dir" && ./gradlew clean :core:testDebugUnitTest \
-  ":app:test${variant}DebugUnitTest" ":app:assemble${variant}Release" ":app:bundle${variant}Release")
+  ":app:test${variant}DebugUnitTest" ":app:lint${variant}Release" \
+  ":app:assemble${variant}Release" ":app:bundle${variant}Release")
 
 lower_distribution=$(printf '%s' "$distribution" | tr '[:upper:]' '[:lower:]')
 apk="$android_dir/app/build/outputs/apk/$lower_distribution/release/app-$lower_distribution-release.apk"
