@@ -17,7 +17,8 @@
 
 | Target        | Platform | Shared sources                    | Notes |
 |---------------|----------|-----------------------------------|-------|
-| Mandaza       | iOS/tvOS | `Mandaza/`, `MandazaTV/TVContentView.swift`, `MandazaCore/` | Widget + Watch embed on iOS; TV surface on tvOS |
+| Mandaza       | iOS      | `Mandaza/`, `MandazaCore/`             | Widget + Watch embed |
+| MandazaTV     | tvOS     | `MandazaTV/`, `MandazaCore/`           | Separate Apple TV app and store record |
 | MandazaWidgets| iOS      | `MandazaWidgets/`, `MandazaCore/`| Home + StandBy only (no Lock Screen accessory families) |
 | MandazaWatch  | watchOS  | `MandazaWatch/`, `MandazaCore/`  | Companion face |
 | MandazaTests  | iOS      | `MandazaTests/`, `MandazaCore/`   | Unit tests |
@@ -34,9 +35,9 @@
   invert), faint ambient parallax sway at rest, and Void/Paper canvas themes.
 - tvOS controls are intentionally two-tier: slim quick rail for frequent actions and Ambient Options for deeper tuning.
 - iOS icon + launch splash and tvOS brand assets derive from `scripts/apply-brand-assets.py`; rerun when refreshing store art.
-- **Device signing:** follow [PROVISIONING.md](PROVISIONING.md); the unified app
-  ID supports tvOS without a tvOS App Group entitlement, while iOS, widgets,
-  and the watch App ID retain App Group capability.
+- **Device signing:** follow [PROVISIONING.md](PROVISIONING.md); MandazaTV uses
+  `com.lukesteuber.mandaza.tv`, and all Apple product IDs use the shared App
+  Group where configured.
 - Optional: Apple TV **Top Shelf** extension (still images + deep link) for home-screen presence.
 - Refine **tvOS Brand Assets** in Xcode if actool warns about App Icon / Top Shelf collections (cosmetic; build can succeed with a primary tv icon).
 - Parallax follow-up: map CoreMotion gravity through the active interface
@@ -49,6 +50,6 @@
 ## Verification
 
 - `xcodebuild -scheme Mandaza -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max,OS=26.5' test`
-- `xcodebuild -scheme Mandaza -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' build`
+- `xcodebuild -scheme MandazaTV -destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' build`
 - **Release scripts:** `scripts/archive.sh` and `scripts/archive-tvos.sh` run the same gates by default (`SKIP_TESTS=1` skips them).
-- **tvOS store pipeline:** `scripts/archive-tvos.sh` → `scripts/export-ipa-tvos.sh` → `scripts/upload-testflight.sh --tvos` (same App Store Connect app record as iOS; see [TESTFLIGHT.md](TESTFLIGHT.md))
+- **tvOS store pipeline:** `scripts/archive-tvos.sh` → `scripts/export-ipa-tvos.sh` → `scripts/upload-testflight.sh --tvos` (standalone MandazaTV record; see [TESTFLIGHT.md](TESTFLIGHT.md))

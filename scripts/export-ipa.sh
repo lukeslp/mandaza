@@ -9,6 +9,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Xcode's packaging pipeline invokes Apple's openrsync, which starts a second
+# `rsync` through PATH. Prefer system tools so a Homebrew rsync cannot become
+# the incompatible peer and fail the IPA copy step.
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
+
 ARCHIVE="build/Mandaza.xcarchive"
 EXPORT_DIR="build/export"
 OPTIONS="scripts/ExportOptions.plist"

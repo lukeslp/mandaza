@@ -1,10 +1,11 @@
 # Mandaza App Store Pack
 
-This document is the single source of truth for App Store and TestFlight submission assets, metadata, copy, and runbooks for the multiplatform iOS/tvOS listing.
+This document is the single source of truth for App Store and TestFlight submission assets, metadata, copy, and runbooks for the separate iOS and tvOS listings.
 
 ## Scope
 
-- iOS/tvOS app listing: `com.lukesteuber.mandaza`
+- iOS app listing: `com.lukesteuber.mandaza`
+- tvOS app listing: `com.lukesteuber.mandaza.tv` (MandazaTV, Apple ID `6768536771`)
 - Widget extension bundle: `com.lukesteuber.mandaza.widgets` (not a separate store listing)
 
 ## IDs and Platform Records
@@ -13,11 +14,13 @@ This document is the single source of truth for App Store and TestFlight submiss
 |---|---|
 | Team ID | `596T7J7FB6` |
 | App Group | `group.com.lukesteuber.mandaza` |
-| App bundle ID | `com.lukesteuber.mandaza` |
+| iOS app bundle ID | `com.lukesteuber.mandaza` |
+| tvOS app bundle ID | `com.lukesteuber.mandaza.tv` |
+| tvOS Apple ID | `6768536771` |
 | Widgets bundle ID | `com.lukesteuber.mandaza.widgets` |
 
-iOS and tvOS ship from the same App Store Connect app record via the shared bundle ID.
-Version 1.2 is live; version 1.3 is prepared.
+iOS and tvOS ship from separate App Store Connect records and bundle IDs.
+Mandaza 1.3 is live on iOS; MandazaTV 1.2 is live, with 1.3 prepared here.
 
 ## App Store Metadata Pack
 
@@ -143,12 +146,11 @@ MandazaTV runs on-device and does not require an account.
 
 ### Apple TV (tvOS) — Privacy Policy in App Store Connect
 
-Apple asks for a **Privacy Policy URL** on the shared app record covering iOS
-and tvOS. You do **not** need a different domain for Apple TV if one policy
-covers both platforms.
+Apple asks for a **Privacy Policy URL** on the standalone MandazaTV record.
+The same policy URL can cover both apps.
 
 1. In [App Store Connect](https://appstoreconnect.apple.com), open the app
-   whose bundle ID is **`com.lukesteuber.mandaza`**.
+   whose bundle ID is **`com.lukesteuber.mandaza.tv`** (Apple ID `6768536771`).
 2. Go to **App Privacy** (left sidebar, under **General** or the app's trust
    section depending on ASC layout).
 3. Set **Privacy Policy** to the **same public URL** as iOS:
@@ -240,8 +242,8 @@ Tap the center button to drop into Zen. Nothing is collected, ever.
 ### Preconditions
 
 - App IDs exist and are capability-aligned.
-- App Group `group.com.lukesteuber.mandaza` is enabled for iOS, widgets, and
-  watch IDs; the unified tvOS build omits the entitlement.
+- App Group `group.com.lukesteuber.mandaza` is enabled for iOS, widgets,
+  watch, and standalone tvOS App IDs.
 - App records exist in App Store Connect for both iOS and tvOS bundle IDs.
 - `~/.appstoreconnect/env.sh` selects the API key and issuer, and the matching
   key is present in `~/.appstoreconnect/private_keys/`.
@@ -259,7 +261,8 @@ scripts/upload-testflight.sh
 
 ### tvOS Build and Upload
 
-`archive-tvos.sh` runs a **Debug tvOS Simulator build** smoke, then archives the shared `Mandaza` scheme for a tvOS destination. Same `SKIP_TESTS=1` escape hatch.
+`archive-tvos.sh` runs a **Debug tvOS Simulator build** smoke, then archives the
+standalone `MandazaTV` scheme. Same `SKIP_TESTS=1` escape hatch.
 
 ```bash
 scripts/archive-tvos.sh

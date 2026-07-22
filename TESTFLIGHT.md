@@ -4,47 +4,51 @@ Everything in this doc is one-time user-side work in Apple's web consoles.
 Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.sh`
 → `scripts/upload-testflight.sh`) handle every subsequent upload.
 
-**Status today (2026-07-11):**
+**Status today (2026-07-22):**
 
 | Step | Status |
 |---|---|
 | App Icon (1024×1024) | ✅ Generated programmatically (`scripts/render-icon.swift`) |
-| Bundle IDs | ✅ App, widgets, and watch companion IDs configured |
+| Bundle IDs | ✅ App, widgets, watch companion, and standalone TV IDs configured |
 | Team ID | ✅ `596T7J7FB6` |
 | App Group entitlement | ✅ `group.com.lukesteuber.mandaza` |
 | Photos permission usage string | ✅ |
 | Export compliance flag | ✅ `ITSAppUsesNonExemptEncryption = false` |
 | Privacy nutrition label | ✅ Data collected: None |
 | Privacy policy URL | ❌ Currently returns 404; publish before 1.3 submission |
-| Distribution archive | ✅ Local archive works |
-| Distribution provisioning profile | ❌ Needs App Store Connect app record first |
+| Distribution archive | ✅ Standalone tvOS signed archive and App Store IPA export verified |
+| Distribution provisioning profile | ✅ MandazaTV App Store profile refreshed through automatic signing |
 | TestFlight beta review | ❌ Submitted after first upload |
 | Public TestFlight link | ❌ Generated after beta review passes |
-| **tvOS app** | ✅ Ships from the shared `com.lukesteuber.mandaza` app record |
+| **tvOS app** | ✅ Separate MandazaTV record (`com.lukesteuber.mandaza.tv`, Apple ID `6768536771`) |
 | Microphone permission usage string (1.3, music responsivity) | ✅ On iOS + watchOS targets |
 | Apple Watch companion app | ✅ Ships embedded in the iOS build (`WKCompanionAppBundleIdentifier` set); gets its own `APP_WATCH_ULTRA` screenshot set in the iOS listing, not a separate record |
 
-## tvOS — App Store Connect & upload
+## tvOS (MandazaTV) — App Store Connect & upload
 
-The Apple TV app now uses the same app target and bundle id, **`com.lukesteuber.mandaza`**, via `supportedDestinations: [iOS, tvOS]` in `project.yml`. Do not create a second App Store Connect app for tvOS.
+MandazaTV is an existing standalone Apple TV app with bundle ID
+**`com.lukesteuber.mandaza.tv`** and
+[Apple ID `6768536771`](https://apps.apple.com/us/app/mandazatv/id6768536771).
+Its TestFlight and App Review track are separate from the iOS Mandaza record.
 
 ### A. Developer Portal (Identifiers)
 
-1. Confirm the **App ID** for `com.lukesteuber.mandaza` is enabled for iOS and
-   tvOS. The unified tvOS build intentionally carries no App Group entitlement.
+1. Confirm the **App ID** for `com.lukesteuber.mandaza.tv` exists with
+   **App Groups** enabled and `group.com.lukesteuber.mandaza` selected.
 2. Register a physical Apple TV for **development** if you need on-device debugging (optional for store upload).
 
-### B. App Store Connect — shared app record
+### B. App Store Connect — standalone app record
 
-Use the existing Mandaza app record. Add Apple TV screenshots and platform metadata there as needed; privacy remains **Data collected: None** with the same privacy policy URL.
+Use the existing **MandazaTV** record (Apple ID `6768536771`). Keep its privacy
+answer at **Data collected: None** and use the same public privacy policy URL.
 
 ### C. Build, export, upload (command line)
 
 Same API key and `ASC_API_ISSUER` as iOS ([step 5](#5-generate-an-app-store-connect-api-key)). Then:
 
 ```bash
-scripts/archive-tvos.sh        # build/Mandaza-tvOS.xcarchive
-scripts/export-ipa-tvos.sh     # build/export-tvos/*.ipa
+scripts/archive-tvos.sh        # build/MandazaTV.xcarchive
+scripts/export-ipa-tvos.sh     # build/export-tvos/MandazaTV.ipa
 scripts/upload-testflight.sh --tvos   # uses altool --type appletvos
 ```
 
@@ -199,7 +203,7 @@ After the first upload works once, every subsequent build is just:
 scripts/archive.sh && scripts/export-ipa.sh && scripts/upload-testflight.sh
 ```
 
-Apple TV (same app record and API key):
+Apple TV (same API key, separate MandazaTV app record):
 
 ```bash
 scripts/archive-tvos.sh && scripts/export-ipa-tvos.sh && scripts/upload-testflight.sh --tvos

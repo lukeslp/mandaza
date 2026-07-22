@@ -8,7 +8,7 @@
 #   scripts/export-ipa.sh         # produces build/Mandaza.ipa
 #   scripts/upload-testflight.sh  # uploads to App Store Connect
 #
-# tvOS uses the same Mandaza scheme and bundle ID via project.yml supportedDestinations:
+# tvOS uses the standalone MandazaTV scheme and App Store product:
 # scripts/archive-tvos.sh → export-ipa-tvos.sh → upload-testflight.sh --tvos
 #
 # Requires: xcodegen, Xcode 26.4+, Apple Developer membership.
@@ -31,7 +31,7 @@ SCHEME="Mandaza"
 CONFIG="Release"
 ARCHIVE="build/Mandaza.xcarchive"
 
-# Allocate first, then regenerate so every unified target receives the number.
+# Allocate first, then regenerate so every target receives the number.
 BUILD_NUMBER="$(scripts/build-number.sh --next)"
 echo "→ Build number: ${BUILD_NUMBER}"
 xcodegen --quiet

@@ -4,7 +4,7 @@
 # Primary operation: Select the greatest of the tracked counter plus one,
 # project floor, and git commit count.
 # I/O: --peek prints the next value; --next persists it to the counter and
-# project.yml before XcodeGen regenerates the unified project.
+# project.yml before XcodeGen regenerates the project.
 
 set -euo pipefail
 
@@ -38,7 +38,7 @@ build="$((counter + 1))"
 if [[ "$mode" == "--next" ]]; then
     printf '%s\n' "$build" > "$counter_file"
     python3 - "$build" <<'PY'
-# File Purpose: Update the unified XcodeGen build number during allocation.
+# File Purpose: Update the XcodeGen build number during allocation.
 # Primary Functions/Classes: One exact CURRENT_PROJECT_VERSION substitution.
 # Inputs and Outputs (I/O): Reads project.yml and writes the allocated number.
 from pathlib import Path

@@ -8,7 +8,8 @@ This repo already sets **Automatic signing** and **Development Team** in XcodeGe
 |--------|--------|
 | **Development Team ID** | `596T7J7FB6` |
 | **App Group** (entitlements) | `group.com.lukesteuber.mandaza` |
-| **iOS/tvOS app** | `com.lukesteuber.mandaza` |
+| **iOS app** | `com.lukesteuber.mandaza` |
+| **tvOS app** | `com.lukesteuber.mandaza.tv` |
 | **iOS widgets** | `com.lukesteuber.mandaza.widgets` |
 | **watchOS app** | `com.lukesteuber.mandaza.watchkitapp` |
 | **Unit tests** | `com.lukesteuber.mandaza.tests` |
@@ -20,7 +21,7 @@ Portal: [Certificates, Identifiers & Profiles](https://developer.apple.com/accou
 ## A. Run on Simulator only (no physical device)
 
 1. Open `Mandaza.xcodeproj` (after `xcodegen`).
-2. Scheme **Mandaza** → destination **iPhone / Apple TV … Simulator** (not a gray “Any … Device”).
+2. Scheme **Mandaza** for iPhone/iPad, or **MandazaTV** for an Apple TV Simulator.
 3. **Signing & Capabilities** for that target → **Automatically manage signing** → Team **Luke Steuber** (or the team for `596T7J7FB6`).
 
 Simulator builds do **not** require a registered Apple TV.
@@ -41,26 +42,28 @@ Apple only creates an **tvOS App Development** profile if your team has **at lea
 
 Until this step succeeds, you will keep seeing *“Your team has no devices from which to generate a provisioning profile”*.
 
-### 2) Shared App ID for tvOS
+### 2) Standalone App ID for tvOS
 
-The unified target uses the same **App ID** as iOS,
-`com.lukesteuber.mandaza`, but its tvOS build does not include the App Group
-entitlement. tvOS settings are local `UserDefaults.standard` values.
+The Apple TV product uses its own **App ID**, `com.lukesteuber.mandaza.tv`,
+and the shared `group.com.lukesteuber.mandaza` App Group entitlement.
 
 1. [Identifiers](https://developer.apple.com/account/resources/identifiers/list) → **+** (or select existing).
-2. Edit the **App ID** for **`com.lukesteuber.mandaza`** and ensure tvOS is enabled for it.
-3. Do not add an App Group entitlement to the tvOS build configuration.
+2. Edit the **App ID** for **`com.lukesteuber.mandaza.tv`** and enable App Groups.
+3. Configure it to use `group.com.lukesteuber.mandaza`.
 
 If the App Group identifier does not exist yet: [Identifiers → App Groups](https://developer.apple.com/account/resources/identifiers/list/applicationGroup) → **+** → `group.com.lukesteuber.mandaza`.
 
-### 3) Xcode on the Mandaza target
+### 3) Xcode on the MandazaTV target
 
-1. Select **Mandaza** target → **Signing & Capabilities**.
+1. Select **MandazaTV** target → **Signing & Capabilities**.
 2. **Team**: same team as `596T7J7FB6`.
 3. **Automatically manage signing**: ON.
 4. Run destination: your **physical Apple TV** (not Simulator).
 
-Xcode should create or refresh the tvOS development profile for `com.lukesteuber.mandaza`. If not: **File → Workspace Settings** (or Project) → **Accounts** → download profiles; or toggle **Automatically manage signing** off/on.
+Xcode should create or refresh the tvOS development profile for
+`com.lukesteuber.mandaza.tv`. If not: **File → Workspace Settings** (or
+Project) → **Accounts** → download profiles; or toggle **Automatically manage
+signing** off/on.
 
 ---
 
@@ -77,7 +80,7 @@ exist independently even though the watch companion ships inside the iOS app.
 
 ## D. Distribution (TestFlight / App Store)
 
-- **Archive** still needs **Distribution** certificates and **App Store** provisioning profiles — Xcode **Organizer** + **Distribute App** usually handles this with automatic signing once the shared app record exists in App Store Connect.
+- **Archive** still needs **Distribution** certificates and **App Store** provisioning profiles — Xcode **Organizer** + **Distribute App** usually handles this with automatic signing once both app records exist in App Store Connect.
 
 ---
 

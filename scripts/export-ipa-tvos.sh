@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# Export a signed tvOS .ipa from the Mandaza tvOS xcarchive.
+# Export a signed tvOS .ipa from the MandazaTV xcarchive.
 #
 #   scripts/export-ipa-tvos.sh
 #
 # Requires: scripts/archive-tvos.sh to have run first.
-# Output: build/export-tvos/*.ipa
+# Output: build/export-tvos/MandazaTV.ipa
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ARCHIVE="build/Mandaza-tvOS.xcarchive"
+# Xcode's packaging pipeline invokes Apple's openrsync, which starts a second
+# `rsync` through PATH. Prefer system tools so a Homebrew rsync cannot become
+# the incompatible peer and fail the IPA copy step.
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
+
+ARCHIVE="build/MandazaTV.xcarchive"
 EXPORT_DIR="build/export-tvos"
 OPTIONS="scripts/ExportOptions.plist"
 

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Archive Mandaza for App Store / TestFlight (tvOS destination).
+# Archive MandazaTV for App Store / TestFlight (tvOS).
 #
 #   scripts/archive-tvos.sh
 #
-# Output: build/Mandaza-tvOS.xcarchive
+# Output: build/MandazaTV.xcarchive
 # Then run:
-#   scripts/export-ipa-tvos.sh     # produces build/export-tvos/*.ipa
+#   scripts/export-ipa-tvos.sh     # produces build/export-tvos/MandazaTV.ipa
 #   scripts/upload-testflight.sh --tvos
 #
 # Requires: xcodegen, Xcode with tvOS SDK, Apple Developer membership.
@@ -24,9 +24,9 @@ fi
 trap 'rmdir "${ARCHIVE_LOCK}" 2>/dev/null || true' EXIT
 
 PROJECT="Mandaza.xcodeproj"
-SCHEME="Mandaza"
+SCHEME="MandazaTV"
 CONFIG="Release"
-ARCHIVE="build/Mandaza-tvOS.xcarchive"
+ARCHIVE="build/MandazaTV.xcarchive"
 
 BUILD_NUMBER="$(scripts/build-number.sh --next)"
 echo "→ tvOS build number: ${BUILD_NUMBER}"
@@ -61,9 +61,9 @@ xcodebuild \
     archive \
     2>&1 | (which xcbeautify >/dev/null 2>&1 && xcbeautify --quiet || tail -40) || {
         echo "✗ tvOS archive failed. Common causes:" >&2
-        echo "    • App ID 'com.lukesteuber.mandaza' is not enabled for tvOS"
-        echo "    • A stale tvOS profile expects an App Group entitlement"
-        echo "    • No matching App Store distribution profile installed"
+        echo "    • App ID 'com.lukesteuber.mandaza.tv' is missing or App Groups is not enabled"
+        echo "    • App Group 'group.com.lukesteuber.mandaza' is not enabled on the tvOS App ID"
+        echo "    • No matching App Store distribution profile is installed"
         echo "  See PROVISIONING.md and TESTFLIGHT.md." >&2
         exit 1
     }
