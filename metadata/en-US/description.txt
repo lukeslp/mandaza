@@ -4,10 +4,11 @@ Tap the canvas for a new pattern, tune the look, and save high-resolution images
 
 Features:
 - Real-time generative canvas with smooth animated loop drawing
-- 11 curated color palettes
+- 12 curated color palettes
+- Two canvas moods: luminous Void and ink-on-parchment Paper
 - Zen Mode from the center footer button — optional clock overlay with digital, stacked, and editorial forms, plus opacity, type, size, and eight positions
 - Music responsivity in Zen: the mandala pumps on the beat and quickens with nearby sound (Reactivity slider). Audio is never recorded or stored
-- Tilt parallax for gentle depth on iPhone and Apple Watch
+- Adjustable tilt parallax on iPhone and Apple Watch, with layered depth, axis control, and a faint ambient sway while Zen rests
 - Favorites with quick recall and Previous history
 - Home Screen and StandBy widgets
 - Export presets for iPhone, iPad, and Square 4K

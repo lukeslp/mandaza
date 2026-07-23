@@ -46,6 +46,7 @@ Tap the canvas for a new pattern, tune the look, and save high-resolution images
 Features:
 - Real-time generative canvas with smooth animated loop drawing
 - 12 curated color palettes
+- Two canvas moods: luminous Void and ink-on-parchment Paper
 - Zen Mode from the center footer button — optional clock overlay with digital, stacked, and editorial forms, plus opacity, type, size, and eight positions
 - Music responsivity in Zen: the mandala pumps on the beat and quickens with nearby sound (Reactivity slider). Audio is never recorded or stored
 - Adjustable tilt parallax on iPhone and Apple Watch, with layered depth,
@@ -106,6 +107,8 @@ Generate endlessly varied procedural mandalas, switch palettes, and tune Zen opt
 
 Features:
 - Fullscreen animated procedural mandalas
+- 12 curated color palettes, including Canopy and Terrain
+- Two canvas moods: luminous Void and ink-on-parchment Paper
 - Play/Pause to generate a new composition
 - Menu to hide controls in ambient mode and restore them when hidden
 - Directional swipe restores controls when hidden
@@ -191,7 +194,7 @@ Prepare and upload these per-store listing:
   - Apple Watch Ultra screenshot set (rides the iOS listing, `APP_WATCH_ULTRA` display type — not a separate record)
   - Optional app preview video
 - tvOS listing:
-  - Apple TV screenshots (unchanged in 1.3 — reuse existing set)
+  - Apple TV screenshots (current 1.3 set staged in `screenshots/tvOS/en-US/`)
   - Optional tvOS app preview video
 
 Use short, legible overlays with one core message per frame. Staging directory: `screenshots/en-US/` (see `NOTES.md` there — iPhone 1320×2868 heroes and four Watch Ultra faces are ASC-ready).
@@ -236,6 +239,16 @@ Zen mode grew up.
 • Tilt for depth — tune the amount, layer separation, direction, and axes on iPhone or Apple Watch. In Zen, a faint ambient sway keeps the depth alive at rest.
 
 Tap the center button to drop into Zen. Nothing is collected, ever.
+
+### tvOS
+
+MandazaTV settles deeper into the room.
+
+• Choose luminous Void or a warm ink-on-parchment Paper canvas.
+• Explore 12 palettes, including Canopy and Terrain.
+• Move smoothly between the ambient canvas, quick controls, and deeper Zen settings with the Siri Remote.
+
+Everything still runs on your Apple TV, with no account required.
 
 ## Submission Runbook
 

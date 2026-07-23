@@ -1,0 +1,15 @@
+MandazaTV is a fullscreen ambient visual experience for Apple TV.
+
+Generate endlessly varied procedural mandalas, switch palettes, and tune Zen options from an ambient-first quick control rail with a secondary deep settings sheet.
+
+Features:
+- Fullscreen animated procedural mandalas
+- 12 curated color palettes, including Canopy and Terrain
+- Two canvas moods: luminous Void and ink-on-parchment Paper
+- Play/Pause to generate a new composition
+- Menu to hide controls in ambient mode and restore them when hidden
+- Directional swipe restores controls when hidden
+- Zen clock and date overlays with style controls for opacity, container, font, and position
+- Shared visual language with Mandaza on iPhone and Apple Watch
+
+MandazaTV runs on-device and does not require an account.
