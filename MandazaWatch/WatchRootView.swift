@@ -130,9 +130,10 @@ struct WatchRootView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Mandaza pattern")
             .accessibilityValue("\(paletteName) palette")
-            .accessibilityHint("Double tap for a new pattern. Swipe up or down to change the palette.")
+            .accessibilityHint("Double tap for a new pattern. Swipe up or down to change the palette. Use Actions for Settings.")
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { regenerate() }
+            .accessibilityAction(named: "Settings") { showSheet = true }
             .accessibilityAdjustableAction { direction in
                 switch direction {
                 case .increment: adjustPalette(by: 1)

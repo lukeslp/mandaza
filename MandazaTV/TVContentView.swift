@@ -658,6 +658,8 @@ private struct TVZenOptionsSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Zen controls")
+        .accessibilityValue(showZenDetails ? "Expanded" : "Collapsed")
         .accessibilityHint(showZenDetails ? "Collapse Zen tuning." : "Expand Zen tuning.")
     }
 

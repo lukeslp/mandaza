@@ -881,7 +881,7 @@ private struct ExportAlert: Identifiable {
 // MARK: - Settings sheet
 
 private struct SettingsSheet: View {
-    private static let websiteURL = URL(string: "https://dr.eamer.dev")
+    private static let websiteURL = URL(string: "https://mandaza.app/")
 
     @Bindable var settings: MandazaSettings
     let loadFavorite: (MandazaSnapshot) -> Void
@@ -1035,10 +1035,10 @@ private struct SettingsSheet: View {
                     .pickerStyle(.segmented)
                     .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
                 } header: {
-                    blHeader("Look", accent: accent)
+                    blHeader("Canvas", accent: accent)
                 } footer: {
                     Text(settings.canvasTheme == .paper
-                         ? "Warm parchment with soft ink shadows — a light-theme experiment. Glow adds a colored bloom under the ink."
+                         ? "Warm parchment with soft ink shadows. Glow adds a colored bloom under the ink."
                          : "Deep black with neon glow. Switch to Paper for ink-on-parchment depth.")
                         .font(.bl(12))
                         .foregroundStyle(BL.muted)
@@ -1163,7 +1163,7 @@ private struct SettingsSheet: View {
                                   range: 0.5 ... 3.0,
                                   accent: accent,
                                   format: { String(format: "%.1f×", $0) })
-                } header: { blHeader("Look", accent: accent) }
+                } header: { blHeader("Color & Stroke", accent: accent) }
                 .listRowBackground(BL.deep)
 
                 Section {
@@ -1226,10 +1226,10 @@ private struct SettingsSheet: View {
 
                 Section {
                     if let websiteURL = Self.websiteURL {
-                        Link("dr.eamer.dev", destination: websiteURL)
+                        Link("mandaza.app", destination: websiteURL)
                             .font(.bl(15))
                             .foregroundStyle(BL.paper)
-                            .accessibilityLabel("Open dr.eamer.dev")
+                            .accessibilityLabel("Open mandaza.app")
                             .accessibilityHint("Opens the website in your browser.")
                     }
                 }
