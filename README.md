@@ -181,5 +181,5 @@ MIT — see [LICENSE](LICENSE).
 
 Version **1.2** is live. Version **1.3** is prepared with music responsivity,
 clock forms, tilt parallax, Watch companion, and Home/StandBy widgets.
-The privacy policy is maintained in `docs/index.md`. GitHub Pages must be
-enabled and the public URL verified before store submission.
+The privacy policy is maintained in `docs/index.md` and `docs/privacy.html` and
+is published at [mandaza.app/privacy.html](https://mandaza.app/privacy.html).

@@ -143,9 +143,9 @@ MandazaTV runs on-device and does not require an account.
 
 ### Privacy Policy URL
 
-- Intended URL: `https://lukeslp.github.io/mandaza/`
-- **Unresolved blocker:** this URL currently returns 404. Publish and verify it
-  before submitting 1.3; do not mark privacy metadata complete until it loads.
+- Live URL: `https://mandaza.app/privacy.html`
+- Verified HTTP 200 and set on the iOS 1.4 and standalone MandazaTV 1.3 review
+  records on 2026-07-22.
 
 ### Apple TV (tvOS) — Privacy Policy in App Store Connect
 
@@ -157,7 +157,7 @@ The same policy URL can cover both apps.
 2. Go to **App Privacy** (left sidebar, under **General** or the app's trust
    section depending on ASC layout).
 3. Set **Privacy Policy** to the **same public URL** as iOS:
-   `https://lukeslp.github.io/mandaza/`
+   `https://mandaza.app/privacy.html`
 4. Complete **App Privacy** answers for the tvOS app (**Data collection: None**,
    **Tracking: No**) so they match the iOS app and match your
    `PrivacyInfo.xcprivacy` / nutrition label story.
@@ -295,7 +295,7 @@ scripts/upload-testflight.sh --tvos
 
 - [ ] Metadata pasted (name, subtitle, promo text, description, keywords)
 - [ ] Privacy label completed (None)
-- [ ] Privacy policy URL verified live on the shared iOS/tvOS app record in ASC
+- [x] Privacy policy URL verified live on the separate iOS and tvOS records in ASC
 - [ ] Icons verified in ASC preview
 - [ ] Screenshots uploaded for active platform listing
 - [ ] Review notes pasted

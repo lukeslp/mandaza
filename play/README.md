@@ -5,7 +5,7 @@ closed-testing handoff for `app.mandaza.android`.
 
 ## Upload order
 
-1. Verify that `https://lukeslp.github.io/mandaza/` serves `docs/index.md`.
+1. Verify that `https://mandaza.app/privacy.html` serves the Mandaza policy.
 2. In Google Play Console, open Mandaza and complete App content using
    `compliance/console-answers.md`.
 3. Populate the Main store listing from `listing/en-US/` and upload every asset

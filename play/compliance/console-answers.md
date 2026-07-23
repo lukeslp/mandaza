@@ -57,7 +57,6 @@ assigns the rating.
 ## Privacy and contact
 
 - Privacy policy source: `docs/index.md`
-- Intended public URL: `https://lukeslp.github.io/mandaza/`
+- Public URL: `https://mandaza.app/privacy.html`
 - Support email: `luke@lukesteuber.com`
-- Public URL status on 2026-07-20: **404. Enable GitHub Pages and verify the
-  rendered policy before submission.**
+- Public URL status on 2026-07-22: **HTTP 200 and verified.**

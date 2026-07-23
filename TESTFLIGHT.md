@@ -15,7 +15,7 @@ Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.
 | Photos permission usage string | ✅ |
 | Export compliance flag | ✅ `ITSAppUsesNonExemptEncryption = false` |
 | Privacy nutrition label | ✅ Data collected: None |
-| Privacy policy URL | ❌ Currently returns 404; publish before 1.3 submission |
+| Privacy policy URL | ✅ `https://mandaza.app/privacy.html` is live and set on the iOS and standalone TV review records |
 | Distribution archive | ✅ Standalone tvOS signed archive and App Store IPA export verified |
 | Distribution provisioning profile | ✅ MandazaTV App Store profile refreshed through automatic signing |
 | TestFlight beta review | ❌ Submitted after first upload |
@@ -109,38 +109,21 @@ After creation, in the new app's left sidebar:
   - **Content Rights**: Tick "Does not contain, show, or access third-party content"
 - **Privacy** → **App Privacy** → **Get Started**:
   - **Data Types Collected**: select **None**. (Mandaza collects zero data.)
-  - **Privacy Policy URL**: required. Quickest: enable GitHub Pages on the
-    `lukeslp/mandaza` repo and host `PRIVACY.md` (see step 4).
+  - **Privacy Policy URL**: `https://mandaza.app/privacy.html`
 
-### 4. Privacy policy (one file in the repo)
+### 4. Privacy policy
 
-Mandaza collects no data. A two-paragraph policy is sufficient. From the
-repo root:
+The public policy is available at:
 
-```bash
-mkdir -p docs
-cat > docs/index.md <<'EOF'
-# Mandaza — Privacy Policy
+- `https://mandaza.app/privacy.html`
 
-Mandaza does not collect, store, or transmit any personal data. The app
-runs entirely on your device. It makes no network requests, includes no
-analytics SDKs, and does not create an account.
+The deployed HTML source is [`docs/privacy.html`](docs/privacy.html), with the
+long-form Markdown policy maintained in [`docs/index.md`](docs/index.md). The
+policy covers the iOS app, widgets, Watch companion, and standalone MandazaTV
+app. Keep the same live URL on both App Store Connect records.
 
-The only system permission Mandaza requests is one-time write access to
-your Photo Library, used solely to save the image you tap "Save"
-on. No image data is sent off-device.
-
-For questions: luke@lukesteuber.com
-EOF
-```
-
-Then on GitHub:
-- Repo Settings → Pages → Source: deploy from branch → `main` / `/docs`
-- Wait ~30s. Privacy URL: `https://lukeslp.github.io/mandaza/`
-
-Paste that URL into App Store Connect → App Privacy → Privacy Policy URL.
-The URL currently returns 404; this is an unresolved release blocker, not a
-completed setup step.
+Before a release submission, confirm the URL returns HTTP 200 and that the
+corresponding App Store Connect app-info localization contains that exact URL.
 
 ### 5. Configure the active App Store Connect API key
 
