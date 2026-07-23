@@ -4,7 +4,7 @@ title: Mandaza — Privacy Policy
 
 # Mandaza — Privacy Policy
 
-_Last updated: 2026-07-20_
+_Last updated: 2026-07-22_
 
 Mandaza does not collect, store, or transmit any personal data. The app
 runs entirely on your device. It makes no network requests, includes no
@@ -46,7 +46,9 @@ request Photos access (saving to Photos is not offered on tvOS). It does not
 use the camera or microphone.
 
 Settings and preferences are stored locally on Apple TV using standard system
-preferences. The tvOS build does not use the App Group entitlement.
+preferences. Although the signed app retains the Mandaza App Group entitlement,
+the current tvOS code does not read from or write to the shared container. The
+entitlement itself does not transmit data.
 
 ## Mandaza for Apple Watch (watchOS)
 
