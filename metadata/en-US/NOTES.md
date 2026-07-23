@@ -1,23 +1,20 @@
-# 1.3 metadata staging
+# Apple metadata staging
 
-Prepared for the Mandaza 1.3 App Store update (music responsivity, clock
-forms, tilt parallax, Watch companion). Ready for
-`asc_ship.py metadata com.lukesteuber.mandaza IOS 1.3 metadata/en-US`
-per `~/.claude/skills/app-store-ship/SKILL.md`.
+The iOS app, widgets, and Watch companion are prepared as Mandaza 1.4. The
+standalone Apple TV product remains MandazaTV 1.3.
 
-**Not yet pushed to App Store Connect.** This repo uses `asc_ship.py`
-(ASC REST API) rather than `fastlane deliver` — see
-`~/.claude/skills/app-store-ship/reference/gotchas.md` #8: fastlane's
-`deliver` crashes non-interactively, so this project's pipeline has always
-gone through the API script directly. `description.txt` / `keywords.txt` /
-`promotional_text.txt` / `release_notes.txt` here are exactly what that
-script expects.
+The files in this directory are the iOS metadata source of truth for
+`com.lukesteuber.mandaza`. Check App Store Connect immediately before staging;
+repository state does not prove whether metadata has already been uploaded.
 
-tvOS now ships under the shared `com.lukesteuber.mandaza` app record. Add
-Apple TV platform screenshots/metadata on that record when staging tvOS assets.
+MandazaTV uses its existing separate record, bundle ID
+`com.lukesteuber.mandaza.tv`, and Apple ID `6768536771`. Its metadata lives in
+`../tvOS/en-US/`, with screenshots in `../../screenshots/tvOS/en-US/`.
 
 Before running the ship pipeline for real:
 1. Confirm iPhone 1320×2868 heroes + Watch Ultra faces in
    `../../screenshots/en-US/` (see `NOTES.md` there — currently ASC-ready).
-2. Confirm with Luke whether this is a stage-only pass or a submit-for-review
-   pass — the skill requires that boundary be explicit before touching ASC.
+2. Confirm the four 3840×2160 MandazaTV images in
+   `../../screenshots/tvOS/en-US/` remain attached to the standalone TV record.
+3. Confirm with Luke whether this is a stage-only pass or a submit-for-review
+   pass; that boundary must be explicit before touching App Store Connect.
