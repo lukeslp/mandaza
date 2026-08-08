@@ -1,0 +1,87 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    id("com.android.application")
+    kotlin("android")
+    kotlin("plugin.compose")
+    kotlin("plugin.serialization")
+}
+
+val signingValues = listOf(
+    "MANDAZA_ANDROID_STORE_FILE",
+    "MANDAZA_ANDROID_STORE_PASSWORD",
+    "MANDAZA_ANDROID_KEY_ALIAS",
+    "MANDAZA_ANDROID_KEY_PASSWORD",
+).associateWith { providers.environmentVariable(it).orNull }
+val hasReleaseSigning = signingValues.values.all { !it.isNullOrBlank() }
+
+val marketingVersion = rootProject.file("../project.yml").readText()
+    .let { Regex("MARKETING_VERSION:\\s*\"?([0-9]+(?:\\.[0-9]+){0,2})").find(it)?.groupValues?.get(1) }
+    ?: "1.0"
+// TV track patch: 0 = first Fire TV scaffold (distinct from phone .3)
+val tvPatchVersion = 0
+
+android {
+    namespace = "com.lukesteuber.mandaza.tv"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "app.mandaza.tv"
+        minSdk = 24
+        targetSdk = 36
+        // 20300+ band reserved for MandazaTV-on-Android (phone uses 103xx)
+        versionCode = 20300
+        versionName = "$marketingVersion.$tvPatchVersion"
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(signingValues.getValue("MANDAZA_ANDROID_STORE_FILE")!!)
+                storePassword = signingValues.getValue("MANDAZA_ANDROID_STORE_PASSWORD")
+                keyAlias = signingValues.getValue("MANDAZA_ANDROID_KEY_ALIAS")
+                keyPassword = signingValues.getValue("MANDAZA_ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (hasReleaseSigning) signingConfig = signingConfigs.getByName("release")
+        }
+    }
+
+    buildFeatures { compose = true }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
+    packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+}
+
+tasks.register("printVersion") {
+    doLast { println(android.defaultConfig.versionName) }
+}
+
+dependencies {
+    implementation(project(":core"))
+    val composeBom = platform("androidx.compose:compose-bom:2025.10.01")
+    implementation(composeBom)
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
+    implementation("androidx.core:core-ktx:1.17.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+    testImplementation("junit:junit:4.13.2")
+}

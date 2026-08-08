@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Leanback / Fire TV banner (320×180 dp logical). Placeholder brand block. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#05060A"
+        android:pathData="M0,0h320v180h-320z" />
+    <path
+        android:fillColor="#1A0F2E"
+        android:pathData="M0,0h320v180h-320z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M40,90m-48,0a48,48 0,1 1,96 0a48,48 0,1 1,-96 0"
+        android:strokeWidth="2"
+        android:strokeColor="#9D4EDD" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M40,90m-32,0a32,32 0,1 1,64 0a32,32 0,1 1,-64 0"
+        android:strokeWidth="1.5"
+        android:strokeColor="#48BFE3" />
+    <path
+        android:fillColor="#E8E6F0"
+        android:pathData="M108,72h160v14h-160z" />
+    <path
+        android:fillColor="#9AA5B4"
+        android:pathData="M108,96h120v10h-120z" />
+</vector>

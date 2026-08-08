@@ -12,6 +12,7 @@ OS application keeps its independent `com.lukesteuber.mandaza.wear` identity.
 
 - `core` — deterministic geometry engine, all twelve palettes, snapshot and collection models
 - `app` — Android phone/tablet canvas, collections, Zen, parallax, music responsivity, settings, deep links, and PNG export
+- `tv` — **MandazaTV for Fire TV / Android TV** (`app.mandaza.tv`, Leanback). See [FIRE-TV.md](FIRE-TV.md).
 - `wear` — experimental Wear OS source; not built or distributed as part of the supported release
 
 Android parallax is available in both standard and Zen presentation. There are
@@ -38,6 +39,13 @@ Install on a connected Android phone:
 
 ```sh
 ./gradlew :app:installDebug
+```
+
+Build MandazaTV (Fire TV / leanback):
+
+```sh
+./gradlew :tv:assembleDebug
+# adb install -r tv/build/outputs/apk/debug/tv-debug.apk
 ```
 
 Build and stage a signed direct-distribution release through the shared release
