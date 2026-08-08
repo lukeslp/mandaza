@@ -57,3 +57,12 @@ Clock overlay and Void/Paper theme toggles live in the dock.
 ## Ambient Time
 
 Use Ambient Time only for **sideload practice** on Fire Stick while MandazaTV Fire is finished. Do not block MandazaTV store work on Ambient Time feature development.
+
+## Staged for Amazon (2026-08-08)
+
+- Listing pack: `tv/amazon-listing/` (icons, 5 screenshots, `amazon.txt`)
+- In-app banner: real Top Shelf–derived PNG
+- Signed release: `tv/dist/release/MandazaTV-1.3.0-release.apk` (local; gitignored)
+- Device smoke: installed/launched on Pixel 9a (not a Fire Stick — still run Fire Stick gate before submit)
+
+See [AMAZON-RELEASE.md](AMAZON-RELEASE.md).

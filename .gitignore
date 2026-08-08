@@ -59,3 +59,7 @@ __pycache__/
 
 # Claude Code runtime artifacts
 .claude/
+
+# MandazaTV staged APKs (store binaries stay local)
+android/tv/dist/
+android/tv/build/

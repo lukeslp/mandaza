@@ -1,0 +1,53 @@
+AMAZON APPSTORE — MandazaTV (Fire TV first)
+Paste into the Amazon developer console listing fields.
+========================================================================
+
+== Title ==
+MandazaTV
+
+== Short description ==
+Fullscreen ambient mandalas for your TV. Generate living patterns with the remote, switch palettes, and leave a quiet Zen clock on the wall. Free, no ads, no account, fully on-device.
+
+== Long description ==
+MandazaTV turns your living room into a generative ambient canvas.
+
+Procedural mandalas draw themselves in real time across the screen—twelve curated palettes, from Aurora and Ember to Canopy and Terrain, plus luminous Void and warm ink-on-parchment Paper moods. Press Select or Play for a new composition; step left and right through palettes; press Back to hide the control dock and let the art fill the room.
+
+A quiet Zen clock and date can sit over the pattern when you want the time as well as the light. Everything runs on the device: no account, no tracking, no ads, and nothing to buy.
+
+Built for the Fire TV remote. Shared visual language with Mandaza on iPhone, Apple Watch, and Apple TV.
+
+Made by Luke Steuber.
+
+== Product feature bullets ==
+- Fullscreen animated procedural mandalas for the living room
+- 12 color palettes including Canopy and Terrain
+- Void and Paper canvas moods
+- Remote-first: Select/Play for a new pattern, Back to hide controls
+- Optional Zen clock and date overlay
+- On-device only — no account, ads, or tracking
+- Free
+
+== Keywords ==
+mandala,ambient,generative,art,tv,screensaver,zen,procedural,palette,visual,clock,fire tv
+
+== URLs ==
+Website: https://mandaza.app/
+Support: https://mandaza.app/
+Privacy policy: https://mandaza.app/privacy.html
+
+== Release notes ==
+First Fire TV release of MandazaTV.
+
+• Fullscreen ambient mandalas driven by the remote
+• Twelve palettes and Void / Paper themes
+• Optional Zen clock overlay
+• Control dock auto-hides for pure ambient viewing
+
+Everything runs on your Fire TV. No account required.
+
+== Package ==
+Application ID: app.mandaza.tv
+Version name: see staged release
+Version code: 20300+
+Target devices: Fire TV first (Fire tablet optional later)
