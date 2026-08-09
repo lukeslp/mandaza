@@ -4,7 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -17,12 +17,18 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.lukesteuber.mandaza.core.EngineConfig
 import com.lukesteuber.mandaza.core.GeneratedMandaza
+import com.lukesteuber.mandaza.core.MandazaCubic
 import com.lukesteuber.mandaza.core.MandazaEngine
 import com.lukesteuber.mandaza.core.MandazaPalettes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlin.math.sin
+
+private data class DrawableLoop(
+    val prepared: PreparedLoop,
+    val completePath: Path,
+)
 
 /**
  * TV canvas — same engine as phone Mandaza, no tilt/audio coupling.
@@ -50,64 +56,106 @@ fun MandazaCanvas(
             MandazaEngine(config).generate(w, h, seed)
         }
     }
-    var elapsed by remember(generated) { mutableFloatStateOf(0f) }
-    LaunchedEffect(generated, config.drawSpeed) {
+    val drawableLoops = remember(generated) {
+        generated?.loops.orEmpty().map { loop ->
+            val prepared = prepareLoop(loop)
+            DrawableLoop(prepared, pathFor(loop.curves))
+        }
+    }
+    var elapsedMs by remember(generated) { mutableDoubleStateOf(0.0) }
+    LaunchedEffect(generated) {
         var previous = 0L
         while (isActive) {
             withFrameNanos { now ->
                 if (previous != 0L) {
-                    elapsed += (now - previous) / 1_000_000_000f *
-                        (0.35f + config.drawSpeed.toFloat() * 1.9f)
+                    val frameMs = (now - previous) / 1_000_000.0
+                    // Do not fast-forward after sleep, app switching, or a debugger pause.
+                    elapsedMs += if (frameMs > 1_000.0) 1_000.0 / 60.0 else frameMs
                 }
                 previous = now
             }
         }
     }
-    val ground = if (paperTheme) Color(0xFFF1E6CF) else Color(0xFF05060A)
+    val ground = if (paperTheme) Color(0xFFF1E6CF) else Color.Black
     val palette = remember(paletteId) { MandazaPalettes.byId(paletteId) }
 
     Canvas(modifier = modifier) {
         drawRect(ground)
         val art = generated ?: return@Canvas
-        val totalCurves = art.loops.sumOf { it.curves.size }.coerceAtLeast(1)
-        val visible = (elapsed * totalCurves / 4f).toInt().coerceAtMost(totalCurves)
-        var consumed = 0
+        // Slow reveals create a new Skia path mask for too long on Fire OS 7.
+        // Keep the Apple speed curve, with a TV-only floor for this hardware class.
+        val renderSpeed = config.drawSpeed.coerceAtLeast(0.45)
+        val drawDistance = drawDistanceAt(elapsedMs, renderSpeed)
+        val pixelsPerMs = drawDistanceAt(1.0, renderSpeed)
         val baseWidth = (art.radius / 30 * config.lineWidth).toFloat().coerceAtLeast(1f)
-        art.loops.forEach { loop ->
-            val count = (visible - consumed).coerceIn(0, loop.curves.size)
-            consumed += loop.curves.size
-            if (count <= 0) return@forEach
+        val glowRadius = (art.radius / 5.0 * config.glowStrength).toFloat()
+        val bloomPasses = listOf(
+            (baseWidth + glowRadius * 1.8f) to 0.045f,
+            (baseWidth + glowRadius * 0.55f) to 0.11f,
+        )
+        drawableLoops.forEach { drawable ->
+            val prepared = drawable.prepared
+            val loop = prepared.source
+            val complete = drawDistance >= prepared.totalLength
+            val path = if (complete) {
+                drawable.completePath
+            } else {
+                val cubics = visibleCubics(prepared, drawDistance)
+                if (cubics.isEmpty()) return@forEach
+                pathFor(cubics)
+            }
             var colorPosition =
                 if (loop.colorTotal > 1) loop.colorIndex.toDouble() / (loop.colorTotal - 1) else 0.5
-            if (config.idlePulse) colorPosition += 0.18 * sin(elapsed / 2.5 + loop.colorIndex * 0.6)
+            if (config.idlePulse) {
+                colorPosition += 0.18 * sin(elapsedMs / 2_500.0 + loop.colorIndex * 0.6)
+            }
             if (colorPosition < 0) colorPosition = -colorPosition
             if (colorPosition > 1) colorPosition = 2 - colorPosition
             val color = Color(palette.colorAt(colorPosition).toInt())
-            val path = Path()
-            loop.curves.take(count).forEachIndexed { index, curve ->
-                if (index == 0) path.moveTo(curve.start.x.toFloat(), curve.start.y.toFloat())
-                path.cubicTo(
-                    curve.control1.x.toFloat(), curve.control1.y.toFloat(),
-                    curve.control2.x.toFloat(), curve.control2.y.toFloat(),
-                    curve.end.x.toFloat(), curve.end.y.toFloat(),
-                )
+            val bloomProgress = if (config.glow && complete) {
+                ((drawDistance - prepared.totalLength) / (pixelsPerMs * 450.0))
+                    .toFloat()
+                    .coerceIn(0f, 1f)
+            } else {
+                0f
             }
-            if (config.glow) {
-                drawPath(
-                    path,
-                    color.copy(alpha = 0.16f + 0.22f * config.glowStrength.toFloat()),
-                    style = Stroke(
-                        width = baseWidth * (3f + config.glowStrength.toFloat() * 3f),
-                        cap = StrokeCap.Round,
-                        join = StrokeJoin.Round,
-                    ),
-                )
+            if (bloomProgress > 0f) {
+                // Fire OS 7 cannot use RenderEffect blur. Two low-opacity passes
+                // fade in after reveal, keeping animated mask churn to one stroke.
+                bloomPasses.forEach { (width, alpha) ->
+                    drawPath(
+                        path,
+                        color.copy(alpha = alpha * bloomProgress),
+                        style = Stroke(
+                            width = width,
+                            cap = StrokeCap.Round,
+                            join = StrokeJoin.Round,
+                        ),
+                    )
+                }
             }
             drawPath(
                 path,
                 if (paperTheme) color.copy(alpha = 0.86f) else color,
-                style = Stroke(width = baseWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
+                style = Stroke(
+                    width = baseWidth,
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round,
+                ),
             )
         }
     }
+}
+
+private fun pathFor(cubics: List<MandazaCubic>): Path {
+    val path = Path()
+    cubics.forEachIndexed { index, curve ->
+        if (index == 0) path.moveTo(curve.start.x.toFloat(), curve.start.y.toFloat())
+        path.cubicTo(
+            curve.control1.x.toFloat(), curve.control1.y.toFloat(),
+            curve.control2.x.toFloat(), curve.control2.y.toFloat(),
+            curve.end.x.toFloat(), curve.end.y.toFloat(),
+        )
+    }
+    return path
 }

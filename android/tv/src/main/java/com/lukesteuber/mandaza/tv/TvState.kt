@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
+import kotlin.random.Random
 
 @Serializable
 private data class PersistedTv(
@@ -46,7 +47,11 @@ class TvState(context: Context) {
 
     fun newPattern() {
         seed = UUID.randomUUID().toString()
-        if (randomPalette) paletteId = MandazaPalettes.all.random().id
+        val random = Random.Default
+        config = randomizedTvConfig(config, random)
+        if (randomPalette) {
+            paletteId = MandazaPalettes.all.filter { it.id != paletteId }.random(random).id
+        }
         persist()
     }
 
@@ -73,4 +78,22 @@ class TvState(context: Context) {
         )
         preferences.edit { putString("state", json.encodeToString(state)) }
     }
+}
+
+/** Apple-style New Pattern variety, with a Fire TV-safe drawing-speed floor. */
+internal fun randomizedTvConfig(
+    current: EngineConfig,
+    random: Random = Random.Default,
+): EngineConfig {
+    val geometry = listOf(null, 1, 3, 5, 6).random(random)
+    val glow = random.nextDouble() < 0.42
+    return current.copy(
+        density = random.nextDouble(0.12, 0.92),
+        drawSpeed = random.nextDouble(0.45, 1.0),
+        lineWidth = random.nextDouble(0.65, 2.8),
+        randomPattern = geometry == null,
+        geometry = geometry ?: current.geometry,
+        glow = glow,
+        glowStrength = if (glow) random.nextDouble(0.34, 0.58) else 1.0,
+    )
 }
