@@ -919,11 +919,11 @@
 
     function startOver() {
       CFG.colormode = nextPalette();
-      // Keep the backing canvas at 1080p even on a 4K panel. CSS scales it to
-      // the full screen; four times fewer pixels leaves the TV GPU room for flow.
+      // This 2020 panel's Tizen GPU stays smoother at 1600×900. CSS scales the
+      // backing canvas to 4K; the thick luminous curves retain their clarity.
       const viewportWidth = window.innerWidth || screen.width || 1920;
       const viewportHeight = window.innerHeight || screen.height || 1080;
-      const renderScale = mmin(1, 1920 / viewportWidth, 1080 / viewportHeight);
+      const renderScale = mmin(1, 1600 / viewportWidth, 900 / viewportHeight);
       maxx = mmax(2, mround(viewportWidth * renderScale));
       maxy = mmax(2, mround(viewportHeight * renderScale));
       canv.width = maxx;
