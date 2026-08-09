@@ -424,10 +424,6 @@
 // so you interrupt and go "NAY! me first love be the C"
 
     class Cell {
-      static xs = [-0.5, 0.5, 1, 0.5, -0.5, -1];
-      static ys = [-msqrt(3) / 2, -msqrt(3) / 2, 0, msqrt(3) / 2, msqrt(3) / 2, 0];
-      static xperp = [0, -msqrt(3) / 2, -msqrt(3) / 2, 0, msqrt(3) / 2, msqrt(3) / 2];
-      static yperp = [1, 0.5, -0.5, -1, -0.5, 0.5];
       constructor(kx, ky) {
         this.kx = kx;
         this.odd = this.kx & 1;
@@ -579,6 +575,13 @@
         }
       }
     }
+    // Keep this bundle parseable by the Chromium generation in 2020 Tizen TVs.
+    // Public static class fields are newer syntax than that runtime supports.
+    Cell.xs = [-0.5, 0.5, 1, 0.5, -0.5, -1];
+    Cell.ys = [-msqrt(3) / 2, -msqrt(3) / 2, 0, msqrt(3) / 2, msqrt(3) / 2, 0];
+    Cell.xperp = [0, -msqrt(3) / 2, -msqrt(3) / 2, 0, msqrt(3) / 2, msqrt(3) / 2];
+    Cell.yperp = [1, 0.5, -0.5, -1, -0.5, 0.5];
+
     class Dot {
       constructor(cell, kedge, index) {
         this.cell = cell;
@@ -594,7 +597,7 @@
         this.start = dot;
         while (true) {
           if (!this.extend(true)) break;
-          if (this.pairs[0][0].other == this.pairs.at(-1)[1]) {
+          if (this.pairs[0][0].other == this.pairs[this.pairs.length - 1][1]) {
             this.closed = true;
             break;
           }
@@ -608,7 +611,7 @@
       extend(direct) {
         let dot0, dot1;
         if (this.pairs.length == 0) dot0 = this.start;
-        else if (direct) dot0 = this.pairs.at(-1)[1].other;
+        else if (direct) dot0 = this.pairs[this.pairs.length - 1][1].other;
         else dot0 = this.pairs[0][0].other;
         if (!dot0 || dot0.closed) return false;
         dot1 = dot0.cell.pickNextDot(dot0, direct);
