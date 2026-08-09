@@ -206,7 +206,7 @@
       centered: true,
       regularity: 5,
       // Long enough to watch the weave form; the former value completed too quickly on TV.
-      drawspeed: 0.52,
+      drawspeed: 0.45,
       glow: true,
       idlepulse: true,
       linewidth: 1.2,
@@ -687,7 +687,9 @@
       }
       drawPath(time) {
         // Never turn a missed TV frame into a large visible jump in the reveal.
-        let dt = mmax(0, mmin(time - this.prevTime, 50));
+        // A missed refresh should lengthen an ambient reveal, not make its tip
+        // leap forward. Cap progression to one 30 Hz display interval.
+        let dt = mmax(0, mmin(time - this.prevTime, 1000 / 30));
         this.prevTime = time;
         const previousPos = this.pos;
         this.pos = mmin(this.totalLength, this.pos + dt * drawSpeed);
@@ -919,11 +921,11 @@
 
     function startOver() {
       CFG.colormode = nextPalette();
-      // This 2020 panel's Tizen GPU stays smoother at 1600×900. CSS scales the
-      // backing canvas to 4K; the thick luminous curves retain their clarity.
+      // Keep a crisp 1080p backing canvas on the 4K panel; animation cadence,
+      // rather than pixel fill, is the limiting factor on this Tizen runtime.
       const viewportWidth = window.innerWidth || screen.width || 1920;
       const viewportHeight = window.innerHeight || screen.height || 1080;
-      const renderScale = mmin(1, 1600 / viewportWidth, 900 / viewportHeight);
+      const renderScale = mmin(1, 1920 / viewportWidth, 1080 / viewportHeight);
       maxx = mmax(2, mround(viewportWidth * renderScale));
       maxy = mmax(2, mround(viewportHeight * renderScale));
       canv.width = maxx;
