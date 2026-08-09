@@ -206,7 +206,7 @@
       centered: true,
       regularity: 5,
       // Long enough to watch the weave form; the former value completed too quickly on TV.
-      drawspeed: 0.45,
+      drawspeed: 0.42,
       glow: false,
       idlepulse: true,
       linewidth: 1.2,
@@ -681,6 +681,7 @@
         this.colorIndex = index;
         this.colorTotal = total;
         this.randomHue = rndCol.intAlea(360);
+        this.revealColor = paletteColor(this, 0);
         this.totalLength = this.lengths.reduce((sum, length) => sum + length, 0);
         this.prevTime = performance.now();
         this.pos = 0;
@@ -722,7 +723,7 @@
           }
           curveStart = curveEnd;
         }
-        if (started) strokeMandazaPath(framePath, paletteColor(this, 0));
+        if (started) strokeMandazaPath(framePath, this.revealColor);
         return this.pos < this.totalLength;
       }
     }
@@ -886,7 +887,6 @@
           animState = 0;
           idleStartTime = 0;
         }
-        syncClock();
         window.requestAnimationFrame(animate);
         switch (animState) {
           case 0:
