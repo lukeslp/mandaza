@@ -27,6 +27,7 @@ private data class PersistedTv(
     val showDate: Boolean = true,
     val paperTheme: Boolean = false,
     val randomPalette: Boolean = true,
+    val zenMode: Boolean = false,
 )
 
 /** Lightweight TV state — ambient-first; separate prefs from phone Mandaza. */
@@ -44,6 +45,7 @@ class TvState(context: Context) {
     var showDate by mutableStateOf(initial.showDate)
     var paperTheme by mutableStateOf(initial.paperTheme)
     var randomPalette by mutableStateOf(initial.randomPalette)
+    var zenMode by mutableStateOf(initial.zenMode); private set
 
     fun newPattern() {
         seed = UUID.randomUUID().toString()
@@ -72,15 +74,32 @@ class TvState(context: Context) {
         persist()
     }
 
+    fun enterZen() {
+        zenMode = true
+        persist()
+    }
+
+    fun exitZen() {
+        zenMode = false
+        persist()
+    }
+
     private fun persist() {
         val state = PersistedTv(
-            seed, paletteId, config, showClock, showDate, paperTheme, randomPalette,
+            seed = seed,
+            paletteId = paletteId,
+            config = config,
+            showClock = showClock,
+            showDate = showDate,
+            paperTheme = paperTheme,
+            randomPalette = randomPalette,
+            zenMode = zenMode,
         )
         preferences.edit { putString("state", json.encodeToString(state)) }
     }
 }
 
-/** Apple-style New Pattern variety, with a Fire TV-safe drawing-speed floor. */
+/** Mobile Mandaza-style pattern variety, with a Fire TV-safe drawing-speed floor. */
 internal fun randomizedTvConfig(
     current: EngineConfig,
     random: Random = Random.Default,

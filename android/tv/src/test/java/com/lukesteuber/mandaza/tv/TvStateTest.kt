@@ -46,4 +46,21 @@ class TvStateTest {
         assertTrue(looks.any(EngineConfig::glow))
         assertTrue(looks.any { !it.glow })
     }
+
+    @Test
+    fun remoteSelectionWrapsWithinTheActiveRail() {
+        val remote = TvRemoteBridge()
+
+        remote.moveHorizontal(-1)
+        assertEquals(2, remote.selectedIndex)
+
+        remote.tuneOpen = true
+        remote.selectedRow = TvRemoteBridge.TUNE_ROW
+        remote.selectedIndex = 0
+        remote.moveHorizontal(-1)
+        assertEquals(3, remote.selectedIndex)
+
+        remote.moveHorizontal(1)
+        assertEquals(0, remote.selectedIndex)
+    }
 }
