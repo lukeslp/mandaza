@@ -62,21 +62,17 @@ clock over the canvas.
 - Efficiency: frame advancement is bounded to one 30 Hz interval, palette
   colors are cached, the clock updates only while visible in Zen, and the
   canvas frame loop stops when the longest path completes.
-- Device evidence: debug APK installed/launched; D-pad primary/Tune rails and
-  Zen verified; 1920×1080 screenshot captured. After a measured reveal, total
+- Device evidence: signed `1.3.1 (20301)` APK installed/launched; D-pad
+  primary/Tune rails and Zen verified; five 1920×1080 screenshots captured.
+  After a measured reveal, total
   rendered frames held at 338 across later idle samples (median 22 ms, p90
   31 ms during the reveal).
 
 ## Still to do before Amazon submit
 
-1. Rebuild the signed release APK; the retained 2026-08-08 artifact predates
-   the 2026-08-09 renderer and mobile-style rail work.
-2. Run sleep/wake, Home/resume, and 30+ minute device gates; watch the
+1. Run sleep/wake, Home/resume, and 30+ minute device gates; watch the
    purgeable Skia path-mask cache during the long run.
-3. Replace the inherited tvOS listing screenshots with current physical Fire
-   captures of the primary rail, Zen, and Tune states.
-4. Bump the Fire version code for the first Amazon upload.
-5. Optional: consolidate `tv` canvas with phone `MandazaCanvas` after release.
+2. Optional: consolidate `tv` canvas with phone `MandazaCanvas` after release.
 
 ## Ambient Time
 
@@ -84,12 +80,13 @@ Use Ambient Time only for **sideload practice** on Fire Stick while MandazaTV Fi
 
 ## Amazon staging status
 
-- Listing copy/icons: `tv/amazon-listing/`; screenshots are placeholders from
-  tvOS and must be replaced with current Fire captures.
+- Listing copy/icons: `tv/amazon-listing/`; five physical Fire screenshots from
+  the signed release cover the main rail, Zen, Tune, Paper, and ambient states.
 - In-app banner: real Top Shelf–derived PNG
-- Signed release: retained `tv/dist/release/MandazaTV-1.3.0-release.apk` is stale
-  and must be rebuilt.
-- Device smoke: physical AFTTI43 Fire TV installed/launched and interactively
-  exercised on 2026-08-09; long-run gates remain open.
+- Signed release: `tv/dist/release/MandazaTV-1.3.1-release.apk`, version code
+  `20301`, SHA-256 `1dfbfeee87d3a87cee31f68c150d96f58a1a0134b4c9350f799139ed44499023`.
+- Device smoke: that exact signed APK is installed/launched on the physical
+  AFTTI43 and the primary, Zen, Tune, Paper, and hidden-control flows were
+  exercised on 2026-08-09; lifecycle and long-run gates remain open.
 
 See [AMAZON-RELEASE.md](AMAZON-RELEASE.md).

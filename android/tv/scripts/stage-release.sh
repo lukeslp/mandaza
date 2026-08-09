@@ -26,6 +26,11 @@ test -f "$apk"
 
 build_tools=$(ls -d "$ANDROID_HOME"/build-tools/*/ 2>/dev/null | sort -V | tail -1)
 "$build_tools/apksigner" verify --verbose "$apk"
+version_code=$("$build_tools/aapt2" dump badging "$apk" | sed -n "s/.*versionCode='\([^']*\)'.*/\1/p" | head -1)
+if [ -z "$version_code" ]; then
+  echo "Could not read versionCode from $apk" >&2
+  exit 1
+fi
 
 stage_dir="$android_dir/tv/dist/release"
 mkdir -p "$stage_dir"
@@ -37,7 +42,7 @@ cp "$apk" "$out_apk"
   {
     echo "MandazaTV $version"
     echo "applicationId app.mandaza.tv"
-    echo "versionCode 20300 (check aapt if rebuilt)"
+    echo "versionCode $version_code"
     echo "built $(date -u +%Y-%m-%dT%H:%MZ)"
     echo "track Fire TV Amazon Appstore"
   } > PROVENANCE.txt

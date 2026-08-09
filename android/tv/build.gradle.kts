@@ -18,8 +18,8 @@ val hasReleaseSigning = signingValues.values.all { !it.isNullOrBlank() }
 val marketingVersion = rootProject.file("../project.yml").readText()
     .let { Regex("MARKETING_VERSION:\\s*\"?([0-9]+(?:\\.[0-9]+){0,2})").find(it)?.groupValues?.get(1) }
     ?: "1.0"
-// TV track patch: 0 = first Fire TV scaffold (distinct from phone .3)
-val tvPatchVersion = 0
+// TV track patch is independent from the phone app.
+val tvPatchVersion = 1
 
 android {
     namespace = "com.lukesteuber.mandaza.tv"
@@ -30,7 +30,7 @@ android {
         minSdk = 24
         targetSdk = 36
         // 20300+ band reserved for MandazaTV-on-Android (phone uses 103xx)
-        versionCode = 20300
+        versionCode = 20301
         versionName = "$marketingVersion.$tvPatchVersion"
     }
 
