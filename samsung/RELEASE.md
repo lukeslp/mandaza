@@ -5,7 +5,8 @@ The Samsung track is independent from Fire TV and Apple TV. Advance it only when
 - [x] Scaffold: offline widget, `config.xml`, icon, remote controls.
 - [x] Build: signed `.wgt` exists under the ignored `tizen/dist/platforms/tizen/` output root.
 - [x] Validate: widget contents, version, icon, checksum, archive integrity, and signing state inspected.
-- [ ] Device test: installed and launched successfully on UN50TU8000FXZA (`192.168.0.123`) on 2026-08-08. Physical remote, visible output, offline relaunch, sleep/wake, and long-run checks remain.
+- [x] Device install: UN50TU8000FXZA (`192.168.0.123`) — re-packaged + installed + launched 2026-08-08 evening with clock/remote fixes (`ea8222b` content).
+- [ ] Device QA: physical remote (Select/Play new pattern, arrows dock, Back hide), clock not stuck on `--:--`, offline relaunch, sleep/wake, long-run.
 - [ ] Store stage: Samsung certificate profile and Seller Office assets/checklist are ready.
 - [ ] Submit: human-authorized Seller Office upload only.
 
