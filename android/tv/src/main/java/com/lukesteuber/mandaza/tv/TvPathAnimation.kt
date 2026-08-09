@@ -4,6 +4,29 @@ import com.lukesteuber.mandaza.core.MandazaCubic
 import com.lukesteuber.mandaza.core.MandazaLoop
 import com.lukesteuber.mandaza.core.MandazaPoint
 import kotlin.math.hypot
+import kotlin.math.min
+import kotlin.math.roundToInt
+
+internal data class TvRenderSize(val width: Int, val height: Int)
+
+/**
+ * Fire TV currently exposes a 1920×1080 framebuffer on its 4K panel. Keep that
+ * as the maximum render surface if a firmware or `wm size reset` later exposes
+ * the physical 3840×2160 mode.
+ */
+internal fun resolveTvRenderSize(width: Float, height: Float): TvRenderSize {
+    val safeWidth = width.takeIf { it > 2f } ?: 1920f
+    val safeHeight = height.takeIf { it > 2f } ?: 1080f
+    val scale = min(1f, min(1920f / safeWidth, 1080f / safeHeight))
+    return TvRenderSize(
+        width = (safeWidth * scale).roundToInt().coerceAtLeast(2),
+        height = (safeHeight * scale).roundToInt().coerceAtLeast(2),
+    )
+}
+
+/** Missed refreshes lengthen the reveal instead of producing a visible leap. */
+internal fun boundedTvFrameMs(rawFrameMs: Double): Double =
+    rawFrameMs.coerceIn(0.0, 1000.0 / 30.0)
 
 internal data class PreparedCurve(
     val cubic: MandazaCubic,
@@ -28,6 +51,9 @@ internal fun drawDistanceAt(elapsedMs: Double, drawSpeed: Double): Double {
     val pixelsPerMs = (10.0 + 1990.0 * drawSpeed * drawSpeed) / 1000.0
     return elapsedMs.coerceAtLeast(0.0) * pixelsPerMs
 }
+
+internal fun revealDurationMs(totalLength: Double, drawSpeed: Double): Double =
+    totalLength.coerceAtLeast(0.0) / drawDistanceAt(elapsedMs = 1.0, drawSpeed = drawSpeed)
 
 /** Returns complete cubics plus the in-flight cubic fragment at [distance]. */
 internal fun visibleCubics(loop: PreparedLoop, distance: Double): List<MandazaCubic> {

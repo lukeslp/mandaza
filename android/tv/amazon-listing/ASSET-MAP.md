@@ -15,6 +15,8 @@ Upload from this folder (`android/tv/amazon-listing/`).
 | Screenshot 5 | `screenshots/05_top_shelf-1920x1080.jpg` | 1920×1080 |
 | Listing copy | `amazon.txt` | — |
 
-Sources: Mandaza Play icon, MandazaTV top-shelf brand art, `screenshots/tvOS/en-US/` store captures.
+Icons and background derive from Mandaza brand art. The five screenshot files
+currently derive from the older tvOS capture set and are placeholders only;
+replace them with current 1920×1080 physical Fire captures before submission.
 
 In-app Leanback banner: `tv/src/main/res/drawable*/tv_banner.png` (from Top Shelf).

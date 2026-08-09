@@ -1,11 +1,13 @@
 package com.lukesteuber.mandaza.tv
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
@@ -35,6 +37,7 @@ class TvActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN && handleRemoteKey(event.keyCode)) {
             return true
@@ -43,6 +46,9 @@ class TvActivity : ComponentActivity() {
         return super.dispatchKeyEvent(event)
     }
 
+    // Fire/Android TV remotes deliver a hardware Back key. This TV-only
+    // activity handles it directly; touch back gestures are outside its input contract.
+    @SuppressLint("GestureBackNavigation")
     private fun handleRemoteKey(keyCode: Int): Boolean {
         return when (keyCode) {
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
@@ -169,8 +175,8 @@ class TvRemoteBridge {
 
     var showChrome by mutableStateOf(true)
     var tuneOpen by mutableStateOf(false)
-    var selectedRow by mutableStateOf(PRIMARY_ROW)
-    var selectedIndex by mutableStateOf(0)
+    var selectedRow by mutableIntStateOf(PRIMARY_ROW)
+    var selectedIndex by mutableIntStateOf(0)
 
     fun moveHorizontal(delta: Int) {
         val count = if (selectedRow == TUNE_ROW && tuneOpen) 4 else 3

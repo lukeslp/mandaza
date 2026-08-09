@@ -48,6 +48,12 @@ Build MandazaTV (Fire TV / leanback):
 # adb install -r tv/build/outputs/apk/debug/tv-debug.apk
 ```
 
+The physical Fire TV gate currently targets an AFTTI43 at a 1920×1080 Amazon
+framebuffer override on its 4K panel. The TV renderer caps logical geometry at
+1080p, disables glow and continuous idle pulsing, and stops invalidating the
+canvas when its reveal completes. See [FIRE-TV.md](FIRE-TV.md) for current
+device evidence and [AMAZON-RELEASE.md](AMAZON-RELEASE.md) for open gates.
+
 Build and stage a signed direct-distribution release through the shared release
 identity:
 

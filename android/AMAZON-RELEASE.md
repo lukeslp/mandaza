@@ -42,18 +42,32 @@ export ANDROID_HOME="$HOME/Library/Android/sdk"
 ./tv/scripts/stage-release.sh
 ```
 
-## Device gate (Fire Stick / Cube)
+## Device gate (Fire TV / Stick / Cube)
 
 Record model + Fire OS version, then verify:
 
 1. Install APK without network if possible
 2. App appears in Fire TV **Apps** row with banner
-3. D-pad: Select/Play → new pattern; ←/→ palette; Back toggles dock
-4. Dock auto-hides; ambient canvas remains focused
-5. Clock toggle works; theme Void/Paper works
-6. Home → resume; sleep/wake; ~30+ min run without crash
+3. D-pad: navigate New / Zen / Tune, move between Tune rows, and activate each item
+4. With controls hidden, Select/Play generates and a direction restores controls
+5. Back leaves Zen, closes Tune, then toggles the primary rail
+6. Clock toggle works; Void/Paper theme and palette controls work
+7. Confirm `wm size` keeps the app override at 1920×1080 on 4K Fire panels
+8. Home → resume; sleep/wake; ~30+ min run without crash
 
 Capture at least three device screenshots if replacing listing art.
+
+### Current device evidence — 2026-08-09
+
+- AFTTI43 (`brandenburg`), Fire OS 7 / Android 9, physical 4K panel with
+  Amazon/Android 1920×1080 framebuffer override.
+- Debug APK installed and launched over ADB at `192.168.0.120:5555`.
+- New / Zen / Tune navigation and current glow-free renderer captured at
+  1920×1080.
+- The bounded render loop stopped at 338 rendered frames and remained there
+  during later idle samples. Reveal cadence measured median 22 ms / p90 31 ms.
+- Open: Home/resume, sleep/wake, 30+ minute run, rebuilt signed artifact, and
+  current Fire-native listing screenshots.
 
 ## Console sequence (human only)
 

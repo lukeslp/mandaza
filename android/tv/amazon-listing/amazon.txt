@@ -11,7 +11,7 @@ Fullscreen ambient mandalas for your TV. Generate living patterns with the remot
 == Long description ==
 MandazaTV turns your living room into a generative ambient canvas.
 
-Procedural mandalas draw themselves in real time across the screen—twelve curated palettes, from Aurora and Ember to Canopy and Terrain, plus luminous Void and warm ink-on-parchment Paper moods. Press Select or Play for a new composition; step left and right through palettes; press Back to hide the control dock and let the art fill the room.
+Procedural mandalas draw themselves in real time across the screen—twelve curated palettes, from Aurora and Ember to Canopy and Terrain, plus crisp Void and warm ink-on-parchment Paper moods. Use the New, Zen, and Tune rail to shape the room; Play creates another composition from anywhere, and Back clears the controls from the canvas.
 
 A quiet Zen clock and date can sit over the pattern when you want the time as well as the light. Everything runs on the device: no account, no tracking, no ads, and nothing to buy.
 
@@ -42,7 +42,7 @@ First Fire TV release of MandazaTV.
 • Fullscreen ambient mandalas driven by the remote
 • Twelve palettes and Void / Paper themes
 • Optional Zen clock overlay
-• Control dock auto-hides for pure ambient viewing
+• Compact New / Zen / Tune controls for remote-first navigation
 
 Everything runs on your Fire TV. No account required.
 

@@ -18,7 +18,7 @@ done
 export JAVA_HOME="${JAVA_HOME:-$(/usr/libexec/java_home -v 21)}"
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 
-./gradlew :core:testDebugUnitTest :tv:testDebugUnitTest :tv:assembleRelease
+./gradlew :core:testDebugUnitTest :tv:testDebugUnitTest :tv:lintRelease :tv:assembleRelease
 
 version=$(./gradlew --quiet :tv:printVersion | awk 'NF { value=$0 } END { print value }')
 apk="$android_dir/tv/build/outputs/apk/release/tv-release.apk"

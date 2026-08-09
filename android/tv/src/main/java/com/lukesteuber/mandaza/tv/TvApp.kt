@@ -51,10 +51,11 @@ fun TvApp(
 ) {
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(state.zenMode, state.showClock) {
+        if (!state.zenMode || !state.showClock) return@LaunchedEffect
         while (true) {
             nowMs = System.currentTimeMillis()
-            delay(1_000)
+            delay(60_050L - (nowMs % 60_000L))
         }
     }
     val timeText = remember(nowMs) {

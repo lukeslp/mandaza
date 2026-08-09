@@ -1,10 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MandazaTV</string>
-    <string name="canvas_cd">Mandaza canvas. Press Select or Play to generate a new pattern. Press Back to show or hide controls.</string>
-    <string name="dock_new">New pattern</string>
-    <string name="dock_palette">Palette</string>
-    <string name="dock_clock">Clock</string>
-    <string name="dock_theme">Theme</string>
-    <string name="hint_ambient">Press Back for controls</string>
 </resources>

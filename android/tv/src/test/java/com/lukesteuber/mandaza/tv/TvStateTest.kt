@@ -43,8 +43,8 @@ class TvStateTest {
         assertTrue(looks.any(EngineConfig::randomPattern))
         assertTrue(looks.any { !it.randomPattern })
         assertTrue(looks.map { it.geometry }.toSet().size > 2)
-        assertTrue(looks.any(EngineConfig::glow))
-        assertTrue(looks.any { !it.glow })
+        assertTrue(looks.none(EngineConfig::glow))
+        assertTrue(looks.none(EngineConfig::idlePulse))
     }
 
     @Test

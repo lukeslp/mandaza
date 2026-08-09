@@ -19,8 +19,8 @@ private data class PersistedTv(
     val paletteId: String = "aurora",
     val config: EngineConfig = EngineConfig(
         density = 0.45,
-        glow = true,
-        glowStrength = 0.85,
+        glow = false,
+        idlePulse = false,
         lineWidth = 1.35,
     ),
     val showClock: Boolean = true,
@@ -34,9 +34,13 @@ private data class PersistedTv(
 class TvState(context: Context) {
     private val preferences = context.getSharedPreferences("mandaza_tv", Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
-    private val initial = preferences.getString("state", null)?.let {
+    private val restored = preferences.getString("state", null)?.let {
         runCatching { json.decodeFromString<PersistedTv>(it) }.getOrNull()
     } ?: PersistedTv()
+    // Normalize prior installs that persisted randomly enabled Fire bloom/pulse.
+    private val initial = restored.copy(
+        config = restored.config.copy(glow = false, idlePulse = false),
+    )
 
     var seed by mutableStateOf(initial.seed); private set
     var paletteId by mutableStateOf(initial.paletteId)
@@ -105,14 +109,14 @@ internal fun randomizedTvConfig(
     random: Random = Random.Default,
 ): EngineConfig {
     val geometry = listOf(null, 1, 3, 5, 6).random(random)
-    val glow = random.nextDouble() < 0.42
     return current.copy(
         density = random.nextDouble(0.12, 0.92),
         drawSpeed = random.nextDouble(0.45, 1.0),
         lineWidth = random.nextDouble(0.65, 2.8),
         randomPattern = geometry == null,
         geometry = geometry ?: current.geometry,
-        glow = glow,
-        glowStrength = if (glow) random.nextDouble(0.34, 0.58) else 1.0,
+        glow = false,
+        idlePulse = false,
+        glowStrength = 1.0,
     )
 }
