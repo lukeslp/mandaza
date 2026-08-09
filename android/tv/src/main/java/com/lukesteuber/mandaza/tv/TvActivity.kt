@@ -5,16 +5,21 @@ import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
+/**
+ * Host for MandazaTV. Remote keys are handled both here ([dispatchKeyEvent]) and
+ * in Compose — Samsung / Fire remotes often never reach [onKeyDown] once Compose
+ * owns focus.
+ */
 class TvActivity : ComponentActivity() {
     private lateinit var state: TvState
-    private var chromeVisible: () -> Boolean = { true }
-    private var setChromeVisible: (Boolean) -> Unit = {}
-    private var regenerate: () -> Unit = {}
-    private var cyclePalette: (Int) -> Unit = {}
+    val remote = TvRemoteBridge()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,55 +31,65 @@ class TvActivity : ComponentActivity() {
         }
         state = TvState(applicationContext)
         setContent {
-            TvApp(
-                state = state,
-                onChromeBinding = { visible, setVisible, regen, palette ->
-                    chromeVisible = visible
-                    setChromeVisible = setVisible
-                    regenerate = regen
-                    cyclePalette = palette
-                },
-            )
+            TvApp(state = state, remote = remote)
         }
     }
 
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        when (keyCode) {
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && handleRemoteKey(event.keyCode)) {
+            return true
+        }
+        // Let Compose buttons still receive focus moves when chrome is open.
+        return super.dispatchKeyEvent(event)
+    }
+
+    private fun handleRemoteKey(keyCode: Int): Boolean {
+        return when (keyCode) {
             KeyEvent.KEYCODE_DPAD_CENTER,
+            KeyEvent.KEYCODE_BUTTON_A,
+            KeyEvent.KEYCODE_BUTTON_SELECT,
             KeyEvent.KEYCODE_ENTER,
             KeyEvent.KEYCODE_NUMPAD_ENTER,
+            KeyEvent.KEYCODE_SPACE,
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
             KeyEvent.KEYCODE_MEDIA_PLAY,
             -> {
-                regenerate()
-                return true
+                state.newPattern()
+                true
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
-                if (chromeVisible()) cyclePalette(-1)
-                else setChromeVisible(true)
-                return true
+                if (remote.showChrome) state.cyclePalette(-1)
+                else remote.showChrome = true
+                true
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                if (chromeVisible()) cyclePalette(1)
-                else setChromeVisible(true)
-                return true
+                if (remote.showChrome) state.cyclePalette(1)
+                else remote.showChrome = true
+                true
             }
             KeyEvent.KEYCODE_DPAD_UP,
             KeyEvent.KEYCODE_DPAD_DOWN,
             -> {
-                if (!chromeVisible()) {
-                    setChromeVisible(true)
-                    return true
+                if (!remote.showChrome) {
+                    remote.showChrome = true
+                    true
+                } else {
+                    false // allow focus travel in dock
                 }
             }
             KeyEvent.KEYCODE_BACK,
             KeyEvent.KEYCODE_ESCAPE,
+            KeyEvent.KEYCODE_BUTTON_B,
             -> {
-                // Toggle chrome instead of finishing when ambient — living-room recovery.
-                setChromeVisible(!chromeVisible())
-                return true
+                remote.showChrome = !remote.showChrome
+                true
             }
+            else -> false
         }
-        return super.onKeyDown(keyCode, event)
     }
+}
+
+/** Shared mutable chrome flag for Activity key path + Compose UI. */
+class TvRemoteBridge {
+    var showChrome by mutableStateOf(true)
 }

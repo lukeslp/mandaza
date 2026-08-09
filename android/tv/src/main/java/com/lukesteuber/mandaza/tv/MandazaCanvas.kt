@@ -42,10 +42,12 @@ fun MandazaCanvas(
         initialValue = null,
         seed, config, canvasWidth, canvasHeight,
     ) {
-        if (canvasWidth > 1 && canvasHeight > 1) {
-            value = withContext(Dispatchers.Default) {
-                MandazaEngine(config).generate(canvasWidth.toDouble(), canvasHeight.toDouble(), seed)
-            }
+        // Fall back to 1920×1080 if layout has not measured yet (some TV shells
+        // report 0/1 until the first frame — that left a black "crashed" canvas).
+        val w = canvasWidth.toDouble().takeIf { it > 2.0 } ?: 1920.0
+        val h = canvasHeight.toDouble().takeIf { it > 2.0 } ?: 1080.0
+        value = withContext(Dispatchers.Default) {
+            MandazaEngine(config).generate(w, h, seed)
         }
     }
     var elapsed by remember(generated) { mutableFloatStateOf(0f) }
