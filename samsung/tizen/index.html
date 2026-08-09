@@ -441,6 +441,17 @@
       ];
     }
 
+    function sliceC(cubic, start, end) {
+      let segment = cubic;
+      let segmentEnd = end;
+      if (start > 0) {
+        segment = splitC(segment, start)[1];
+        segmentEnd = (end - start) / (1 - start);
+      }
+      if (segmentEnd < 1) segment = splitC(segment, segmentEnd)[0];
+      return segment;
+    }
+
 // this is my favorite joke
 // what's a pirate's favorite letter?
 // and everyone inevitably says "arrr"
@@ -660,44 +671,57 @@
       createPath(index, total) {
         this.path = new Path2D();
         this.path.moveTo(this.bezier[0][0].x, this.bezier[0][0].y);
+        this.bezier.forEach((cubic) => {
+          this.path.bezierCurveTo(
+            cubic[1].x, cubic[1].y,
+            cubic[2].x, cubic[2].y,
+            cubic[3].x, cubic[3].y
+          );
+        });
         this.colorIndex = index;
         this.colorTotal = total;
         this.randomHue = rndCol.intAlea(360);
-        this.nextToDraw = 0;
-        this.pathLength = 0;
+        this.totalLength = this.lengths.reduce((sum, length) => sum + length, 0);
         this.prevTime = performance.now();
         this.pos = 0;
       }
       drawPath(time) {
-        let alpha, frag, nPath, idx;
         // Never turn a missed TV frame into a large visible jump in the reveal.
         let dt = mmax(0, mmin(time - this.prevTime, 50));
         this.prevTime = time;
-        if (this.nextToDraw < this.bezier.length) {
-          this.pos += dt * drawSpeed;
-          while (
-            this.nextToDraw < this.bezier.length &&
-            this.pos >= this.pathLength + this.lengths[this.nextToDraw]
-          ) {
-            idx = this.nextToDraw;
-            this.path.bezierCurveTo(
-              this.bezier[idx][1].x, this.bezier[idx][1].y,
-              this.bezier[idx][2].x, this.bezier[idx][2].y,
-              this.bezier[idx][3].x, this.bezier[idx][3].y
-            );
-            this.pathLength += this.lengths[this.nextToDraw];
-            ++this.nextToDraw;
+        const previousPos = this.pos;
+        this.pos = mmin(this.totalLength, this.pos + dt * drawSpeed);
+        if (this.pos <= previousPos) return this.pos < this.totalLength;
+
+        // Paint only the newly revealed section. The prior implementation
+        // cleared the 1080p canvas and replayed every accumulated path each RAF.
+        const framePath = new Path2D();
+        let curveStart = 0;
+        let started = false;
+        for (let index = 0; index < this.bezier.length; ++index) {
+          const curveLength = this.lengths[index];
+          const curveEnd = curveStart + curveLength;
+          if (this.pos <= curveStart) break;
+          if (previousPos < curveEnd && this.pos > curveStart) {
+            const localStart = mmax(0, (previousPos - curveStart) / curveLength);
+            const localEnd = mmin(1, (this.pos - curveStart) / curveLength);
+            if (localEnd > localStart) {
+              const fragment = sliceC(this.bezier[index], localStart, localEnd);
+              if (!started) {
+                framePath.moveTo(fragment[0].x, fragment[0].y);
+                started = true;
+              }
+              framePath.bezierCurveTo(
+                fragment[1].x, fragment[1].y,
+                fragment[2].x, fragment[2].y,
+                fragment[3].x, fragment[3].y
+              );
+            }
           }
+          curveStart = curveEnd;
         }
-        nPath = new Path2D(this.path);
-        if (this.nextToDraw < this.bezier.length) {
-          alpha = (this.pos - this.pathLength) / this.lengths[this.nextToDraw];
-          frag = splitC(this.bezier[this.nextToDraw], alpha)[0];
-          nPath.bezierCurveTo(frag[1].x, frag[1].y, frag[2].x, frag[2].y, frag[3].x, frag[3].y);
-        }
-        const color = paletteColor(this, CFG.idlepulse ? time : 0);
-        strokeMandazaPath(nPath, color);
-        return this.nextToDraw < this.bezier.length;
+        if (started) strokeMandazaPath(framePath, paletteColor(this, 0));
+        return this.pos < this.totalLength;
       }
     }
     // want another joke?
@@ -867,8 +891,6 @@
             if (startOver()) ++animState;
             break;
           case 1:
-            ctx.fillStyle = "#000";
-            ctx.fillRect(0, 0, maxx, maxy);
             let alive = false;
             loops.forEach((loop) => (alive |= loop.drawPath(tStamp)));
             if (!alive) {
