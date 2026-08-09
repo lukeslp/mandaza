@@ -29,6 +29,8 @@
       display: block;
       position: absolute;
       inset: 0;
+      width: 100%;
+      height: 100%;
     }
 
     .controls {
@@ -203,7 +205,8 @@
       concentric: true,
       centered: true,
       regularity: 5,
-      drawspeed: 0.707,
+      // Long enough to watch the weave form; the former value completed too quickly on TV.
+      drawspeed: 0.52,
       glow: true,
       idlepulse: true,
       linewidth: 1.2,
@@ -356,6 +359,26 @@
       if (t < 0) t = -t;
       if (t > 1) t = 2 - t;
       return interpStops(pal.stops, mmax(0, mmin(1, t)));
+    }
+
+    // Tizen's live shadow blur is disproportionately expensive. Layered bloom
+    // keeps the luminous Mandaza look while remaining smooth on 2020 TV GPUs.
+    function strokeMandazaPath(path, color) {
+      const coreWidth = (radius / 30) * CFG.linewidth;
+      ctx.shadowBlur = 0;
+      if (CFG.glow) {
+        ctx.globalAlpha = 0.07;
+        ctx.lineWidth = coreWidth + radius * 0.20;
+        ctx.strokeStyle = color;
+        ctx.stroke(path);
+        ctx.globalAlpha = 0.15;
+        ctx.lineWidth = coreWidth + radius * 0.07;
+        ctx.stroke(path);
+      }
+      ctx.globalAlpha = 1;
+      ctx.lineWidth = coreWidth;
+      ctx.strokeStyle = color;
+      ctx.stroke(path);
     }
 
     function Mash(seed) {
@@ -647,7 +670,8 @@
       }
       drawPath(time) {
         let alpha, frag, nPath, idx;
-        let dt = time - this.prevTime;
+        // Never turn a missed TV frame into a large visible jump in the reveal.
+        let dt = mmax(0, mmin(time - this.prevTime, 50));
         this.prevTime = time;
         if (this.nextToDraw < this.bezier.length) {
           this.pos += dt * drawSpeed;
@@ -672,16 +696,7 @@
           nPath.bezierCurveTo(frag[1].x, frag[1].y, frag[2].x, frag[2].y, frag[3].x, frag[3].y);
         }
         const color = paletteColor(this, CFG.idlepulse ? time : 0);
-        ctx.lineWidth = (radius / 30) * CFG.linewidth;
-        ctx.strokeStyle = color;
-        if (CFG.glow) {
-          ctx.shadowBlur = radius / 5;
-          ctx.shadowColor = color;
-        } else {
-          ctx.shadowBlur = 0;
-        }
-        ctx.stroke(nPath);
-        ctx.shadowBlur = 0;
+        strokeMandazaPath(nPath, color);
         return this.nextToDraw < this.bezier.length;
       }
     }
@@ -867,15 +882,8 @@
             const t = CFG.idlepulse ? tStamp : 0;
             loops.forEach((loop) => {
               const color = paletteColor(loop, t);
-              ctx.lineWidth = (radius / 30) * CFG.linewidth;
-              ctx.strokeStyle = color;
-              if (CFG.glow) {
-                ctx.shadowBlur = radius / 5;
-                ctx.shadowColor = color;
-              }
-              ctx.stroke(loop.path);
+              strokeMandazaPath(loop.path, color);
             });
-            ctx.shadowBlur = 0;
             // auto-regen after idle period
             if (tStamp - idleStartTime > CFG.autoRegenIdleMs) {
               messages.push({
@@ -889,9 +897,13 @@
 
     function startOver() {
       CFG.colormode = nextPalette();
-      // Samsung Tizen can report 0×0 briefly; fall back to screen metrics / 1080p.
-      maxx = Math.max(window.innerWidth || 0, screen.width || 0, 1920);
-      maxy = Math.max(window.innerHeight || 0, screen.height || 0, 1080);
+      // Keep the backing canvas at 1080p even on a 4K panel. CSS scales it to
+      // the full screen; four times fewer pixels leaves the TV GPU room for flow.
+      const viewportWidth = window.innerWidth || screen.width || 1920;
+      const viewportHeight = window.innerHeight || screen.height || 1080;
+      const renderScale = mmin(1, 1920 / viewportWidth, 1080 / viewportHeight);
+      maxx = mmax(2, mround(viewportWidth * renderScale));
+      maxy = mmax(2, mround(viewportHeight * renderScale));
       canv.width = maxx;
       canv.height = maxy;
       withMargin = CFG.withmargin;
