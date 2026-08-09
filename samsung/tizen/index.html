@@ -128,12 +128,13 @@
 
     .hm {
       position: relative;
-      font-family: "Cormorant Garamond", "Times New Roman", serif;
-      font-weight: 600;
-      font-size: 12vh;
+      /* System UI fonts — Cormorant is not bundled on Tizen and can fail to paint digits. */
+      font-family: "SamsungOneUI", "Samsung Sans", Arial, "Helvetica Neue", sans-serif;
+      font-weight: 500;
+      font-size: 11vh;
       line-height: 1.08;
-      letter-spacing: 0.1em;
-      padding-left: 0.1em;
+      letter-spacing: 0.06em;
+      padding-left: 0.06em;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       color: rgba(244, 248, 252, 0.96);
@@ -186,11 +187,11 @@
       <strong>MandazaTV</strong>
       <span id="paletteLabel">Aurora palette</span>
     </div>
-    <button class="control" id="newButton" type="button">New Pattern</button>
-    <button class="control" id="paletteButton" type="button">Next Palette</button>
-    <button class="control" id="clockButton" type="button">Clock: On</button>
+    <button class="control" id="newButton" type="button" tabindex="0">New Pattern</button>
+    <button class="control" id="paletteButton" type="button" tabindex="0">Next Palette</button>
+    <button class="control" id="clockButton" type="button" tabindex="0">Clock: On</button>
   </nav>
-  <div class="remote-hint" aria-hidden="true">Press an arrow for controls · Play/Pause for a new pattern</div>
+  <div class="remote-hint" aria-hidden="true">Arrow · show controls · Select / Play · new pattern · Back · hide</div>
   <script>
     "use strict";
     const CFG = {
@@ -816,13 +817,19 @@
     function pad2(n) { return n < 10 ? "0" + n : "" + n; }
     let lastAnnouncedMin = -1;
     function syncClock() {
-      const d = new Date();
-      const h = d.getHours(), m = d.getMinutes();
-      const label = pad2(h) + ":" + pad2(m);
-      if (hmEl) hmEl.textContent = label;
-      if (m !== lastAnnouncedMin) {
-        lastAnnouncedMin = m;
-        if (srEl) srEl.textContent = label + " local time.";
+      try {
+        const d = new Date();
+        const h = d.getHours();
+        const m = d.getMinutes();
+        if (!Number.isFinite(h) || !Number.isFinite(m)) return;
+        const label = pad2(h) + ":" + pad2(m);
+        if (hmEl) hmEl.textContent = label;
+        if (m !== lastAnnouncedMin) {
+          lastAnnouncedMin = m;
+          if (srEl) srEl.textContent = label + " local time.";
+        }
+      } catch (_) {
+        /* keep last painted time */
       }
     }
 
@@ -879,8 +886,9 @@
 
     function startOver() {
       CFG.colormode = nextPalette();
-      maxx = window.innerWidth;
-      maxy = window.innerHeight;
+      // Samsung Tizen can report 0×0 briefly; fall back to screen metrics / 1080p.
+      maxx = Math.max(window.innerWidth || 0, screen.width || 0, 1920);
+      maxy = Math.max(window.innerHeight || 0, screen.height || 0, 1080);
       canv.width = maxx;
       canv.height = maxy;
       withMargin = CFG.withmargin;
@@ -981,10 +989,30 @@
       resetControlsTimer();
     });
 
+    // Tizen / Samsung Smart Remote keycodes
+    // https://developer.samsung.com/smarttv/develop/guides/user-interaction/remote-control.html
+    const KEY = {
+      LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40,
+      ENTER: 13, ENTER_ALT: 29443,
+      RETURN: 10009,
+      PLAY: 415, PAUSE: 19, PLAY_PAUSE: 10252,
+      STOP: 413, FF: 417, RW: 412,
+    };
+
+    function isEnterKey(code) {
+      return code === KEY.ENTER || code === KEY.ENTER_ALT;
+    }
+
+    function isPlayKey(code) {
+      return code === KEY.PLAY || code === KEY.PLAY_PAUSE || code === KEY.PAUSE;
+    }
+
     document.addEventListener("keydown", (event) => {
-      const code = event.keyCode;
-      if (code === 10009) {
+      const code = event.keyCode || event.which;
+      // Back / Return: hide dock first, then exit
+      if (code === KEY.RETURN) {
         event.preventDefault();
+        event.stopPropagation();
         if (controlsVisible) {
           hideControls();
         } else {
@@ -992,32 +1020,59 @@
         }
         return;
       }
-      if (code === 415 || code === 10252) {
+      // Play / Pause always regenerates (works with dock hidden)
+      if (isPlayKey(code)) {
         event.preventDefault();
+        event.stopPropagation();
         mouseClick();
         announce("New Mandaza pattern.");
+        resetControlsTimer();
         return;
       }
-      if (code >= 37 && code <= 40) {
+      // D-pad arrows
+      if (code >= KEY.LEFT && code <= KEY.DOWN) {
         event.preventDefault();
+        event.stopPropagation();
         if (!controlsVisible) {
           showControls(0);
           return;
         }
         const current = focusedButtonIndex();
-        if (code === 37) controlButtons[(current + controlButtons.length - 1) % controlButtons.length].focus();
-        if (code === 39) controlButtons[(current + 1) % controlButtons.length].focus();
+        if (code === KEY.LEFT) {
+          controlButtons[(current + controlButtons.length - 1) % controlButtons.length].focus();
+        }
+        if (code === KEY.RIGHT) {
+          controlButtons[(current + 1) % controlButtons.length].focus();
+        }
+        if (code === KEY.UP || code === KEY.DOWN) {
+          // Keep focus on the dock; show it if something stole focus.
+          controlButtons[current].focus();
+        }
         resetControlsTimer();
         return;
       }
-      if (code === 13 && controlsVisible) {
+      // Select / OK / Enter
+      if (isEnterKey(code)) {
         event.preventDefault();
-        controlButtons[focusedButtonIndex()].click();
+        event.stopPropagation();
+        if (controlsVisible) {
+          const btn = controlButtons[focusedButtonIndex()];
+          if (btn) btn.click();
+        } else {
+          // Ambient mode: Select = new pattern (Apple TV / Fire TV expectation)
+          mouseClick();
+          announce("New Mandaza pattern.");
+        }
+        return;
       }
-    });
+    }, true);
 
     try {
-      tizen.tvinputdevice.registerKeyBatch(["MediaPlayPause", "MediaPlay"]);
+      // Without registerKey, MediaPlay* never reaches the app on many Tizen builds.
+      tizen.tvinputdevice.registerKeyBatch([
+        "MediaPlayPause", "MediaPlay", "MediaPause", "MediaStop",
+        "MediaFastForward", "MediaRewind",
+      ]);
     } catch (_) {}
 
     syncClockVisibility();
@@ -1030,7 +1085,10 @@
         message: "click"
       }), 200);
     });
+    // Paint clock immediately and on a wall-clock timer so it never stays "--:--"
+    // even if requestAnimationFrame is delayed or stalls on first layout.
     syncClock();
+    setInterval(syncClock, 1000);
     requestAnimationFrame(animate);
   </script>
 </body>
