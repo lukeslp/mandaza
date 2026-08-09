@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets"
+        xmlns:tizen="http://tizen.org/ns/widgets"
+        id="https://mandaza.app/tv/samsung"
+        version="1.3.0"
+        viewmodes="maximized">
+  <tizen:application id="MandazaTV1.MandazaTV"
+                     package="MandazaTV1"
+                     required_version="5.5"/>
+  <tizen:profile name="tv"/>
+  <name>MandazaTV</name>
+  <description>Generative ambient art for Samsung TV.</description>
+  <author href="https://mandaza.app">Luke Steuber</author>
+  <content src="index.html"/>
+  <icon src="icon.png"/>
+  <tizen:setting screen-orientation="landscape"
+                 context-menu="disable"
+                 background-support="disable"
+                 encryption="disable"
+                 install-location="auto"/>
+  <feature name="http://tizen.org/feature/screen.size.all"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+</widget>

@@ -1,0 +1,1038 @@
+<!doctype html>
+<!--
+  Mandaza: procedural hexagonal cells trace an aurora-colored mandala on true
+  black — full-viewport geometry for rooms and TV. Local HH:MM sits as a classy
+  centered Cormorant legend over a soft dark well. Click or idle regenerates.
+  A clock from Luke Steuber's gallery: https://datapoems.io/clocks/mandaza/
+  Author: Luke Steuber · lukesteuber.com · @lukesteuber.com (Bluesky)
+  Copyright 2026 Luke Steuber. MIT License. Reuse freely, keep this credit.
+-->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>MandazaTV</title>
+  <meta name="description" content="MandazaTV generative ambient art for Samsung TV.">
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    canvas {
+      display: block;
+      position: absolute;
+      inset: 0;
+    }
+
+    .controls {
+      position: fixed;
+      z-index: 10;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 24px 52px 30px;
+      background: rgba(9, 11, 18, 0.94);
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .controls.hidden {
+      opacity: 0;
+      transform: translateY(100%);
+      pointer-events: none;
+    }
+
+    .brand {
+      min-width: 270px;
+      margin-right: auto;
+    }
+
+    .brand strong {
+      display: block;
+      color: #f4f7fb;
+      font: 600 25px/1.15 Arial, sans-serif;
+    }
+
+    .brand span,
+    .remote-hint {
+      color: #aeb8c7;
+      font: 18px/1.3 Arial, sans-serif;
+    }
+
+    .control {
+      min-width: 176px;
+      padding: 17px 24px;
+      border: 2px solid rgba(255, 255, 255, 0.28);
+      border-radius: 12px;
+      color: #f4f7fb;
+      background: rgba(255, 255, 255, 0.06);
+      font: 600 21px/1 Arial, sans-serif;
+      text-align: center;
+    }
+
+    .control:focus {
+      outline: 4px solid #48bfe3;
+      outline-offset: 3px;
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .remote-hint {
+      position: fixed;
+      z-index: 8;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%);
+      opacity: 0.68;
+      pointer-events: none;
+    }
+
+    .controls:not(.hidden) + .remote-hint { opacity: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .controls { transition: none; }
+    }
+
+    /*
+      Classy clock overlay: centered Cormorant legend over a soft dark well so
+      the aurora weave stays the subject and the time remains glance-readable.
+    */
+    .readout {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 2;
+      text-align: center;
+      width: 78vw;
+      padding: 3vh 3vw;
+      background:
+        radial-gradient(
+          ellipse 72% 62% at 50% 52%,
+          rgba(0, 0, 0, 0.72) 0%,
+          rgba(0, 0, 0, 0.42) 48%,
+          rgba(0, 0, 0, 0.12) 74%,
+          transparent 88%
+        );
+    }
+
+    .hm {
+      position: relative;
+      font-family: "Cormorant Garamond", "Times New Roman", serif;
+      font-weight: 600;
+      font-size: 12vh;
+      line-height: 1.08;
+      letter-spacing: 0.1em;
+      padding-left: 0.1em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      color: rgba(244, 248, 252, 0.96);
+      text-shadow:
+        0 0 0.04em rgba(0, 0, 0, 1),
+        0 0 0.12em rgba(0, 0, 0, 0.95),
+        0 0 0.36em rgba(0, 0, 0, 0.8),
+        0 2px 14px rgba(0, 0, 0, 0.55),
+        0 0 0.05em rgba(255, 255, 255, 0.18);
+    }
+
+    .hm::after {
+      content: "";
+      display: block;
+      width: 42%;
+      height: 1px;
+      margin: 0.42em auto 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(233, 246, 255, 0.42) 20%,
+        rgba(233, 246, 255, 0.55) 50%,
+        rgba(233, 246, 255, 0.42) 80%,
+        transparent
+      );
+      opacity: 0.85;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="readout" aria-hidden="true">
+    <div class="hm" id="hm">--:--</div>
+  </div>
+  <div class="sr-only" id="sr" aria-live="polite">Loading Mandaza.</div>
+  <nav class="controls" id="controls" aria-label="MandazaTV controls">
+    <div class="brand">
+      <strong>MandazaTV</strong>
+      <span id="paletteLabel">Aurora palette</span>
+    </div>
+    <button class="control" id="newButton" type="button">New Pattern</button>
+    <button class="control" id="paletteButton" type="button">Next Palette</button>
+    <button class="control" id="clockButton" type="button">Clock: On</button>
+  </nav>
+  <div class="remote-hint" aria-hidden="true">Press an arrow for controls · Play/Pause for a new pattern</div>
+  <script>
+    "use strict";
+    const CFG = {
+      cellsizerandom: true,
+      cellsize: 0.8, // unused (random)
+      randompattern: true,
+      geometry: 6, // unused (random)
+      withmargin: true,
+      concentric: true,
+      centered: true,
+      regularity: 5,
+      drawspeed: 0.707,
+      glow: true,
+      idlepulse: true,
+      linewidth: 1.2,
+      autoRegenIdleMs: 22000,
+      colormode: "aurora"
+    };
+    let canv, ctx;
+    let maxx, maxy;
+    let grid, nbx, nby;
+    let offsx, offsy;
+    let radius;
+    const MIN_NB_CELLS = 10;
+    const MAX_NB_CELLS = 100;
+    const tbRelProbaNbPoints = [
+      [0, 1, 0, 0],
+      [0, 0, 1, 0],
+      [0, 0, 0, 1],
+      [0, 1, 1, 0],
+      [0, 1, 0, 1],
+      [0, 0, 2, 1],
+      [0, 1, 3, 1]
+    ];
+    let geometryChoice;
+    let concentric, uncentered;
+    let internRegularity;
+    let withMargin;
+    let drawSpeed = (10 + 1990 * CFG.drawspeed * CFG.drawspeed) / 1000;
+    let rndStruct, rndCol, rndGen;
+    let loops;
+    let messages;
+    let idleStartTime = 0;
+    // I love math
+    const mfloor = Math.floor,
+      mround = Math.round,
+      mceil = Math.ceil;
+    const mabs = Math.abs,
+      mmin = Math.min,
+      mmax = Math.max;
+    const m2PI = Math.PI * 2;
+    const msin = Math.sin,
+      mhypot = Math.hypot,
+      msqrt = Math.sqrt;
+    const PALETTES = {
+      aurora: {
+        stops: ["#3c096c", "#5a189a", "#9d4edd", "#48bfe3", "#80ffdb"]
+      },
+      sunset: {
+        stops: ["#ff006e", "#fb5607", "#ffbe0b", "#fee440", "#fff3b0"]
+      },
+      ember: {
+        stops: ["#370617", "#9d0208", "#dc2f02", "#f48c06", "#ffba08"]
+      },
+      bioluminescent: {
+        stops: ["#03045e", "#0077b6", "#00b4d8", "#48cae4", "#caf0f8"]
+      },
+      vaporwave: {
+        stops: ["#ff71ce", "#b967ff", "#01cdfe", "#05ffa1", "#fffb96"]
+      },
+      cyberpunk: {
+        stops: ["#ff006e", "#fb5607", "#ffbe0b", "#8338ec", "#3a86ff"]
+      },
+      riso: {
+        stops: ["#ff5e5b", "#ffed66", "#00cecb", "#5c5cff"]
+      },
+      oxblood: {
+        stops: ["#1a0a0c", "#3d0c11", "#7a1722", "#c1292e", "#f1d4af"]
+      },
+      arctic: {
+        stops: ["#03045e", "#0077b6", "#48cae4", "#90e0ef", "#caf0f8"]
+      },
+      dichromat: {
+        stops: ["#0072b2", "#56b4e9", "#f0e442", "#e69f00", "#d55e00"]
+      },
+      amber: {
+        stops: ["#1f1000", "#522e0a", "#a55a17", "#dba34a", "#fdd99b"]
+      }
+    };
+    const PALETTE_KEYS = Object.keys(PALETTES);
+    let _lastPaletteIdx = -1;
+    let _forcedPaletteIdx = null;
+
+    try {
+      const savedPalette = parseInt(localStorage.getItem("mandazaPaletteIndex"), 10);
+      if (!isNaN(savedPalette)) {
+        _lastPaletteIdx = savedPalette % PALETTE_KEYS.length;
+        _forcedPaletteIdx = _lastPaletteIdx;
+      }
+    } catch (_) {}
+
+    function nextPalette() {
+      if (PALETTE_KEYS.length <= 1) return PALETTE_KEYS[0];
+      let idx;
+      if (_forcedPaletteIdx !== null) {
+        idx = _forcedPaletteIdx;
+        _forcedPaletteIdx = null;
+      } else {
+        do {
+          idx = mfloor(Math.random() * PALETTE_KEYS.length);
+        } while (idx === _lastPaletteIdx);
+      }
+      _lastPaletteIdx = idx;
+      try { localStorage.setItem("mandazaPaletteIndex", String(idx)); } catch (_) {}
+      window.setTimeout(updatePaletteLabel, 0);
+      return PALETTE_KEYS[idx];
+    }
+
+    function prettyPaletteName(key) {
+      return key.charAt(0).toUpperCase() + key.slice(1);
+    }
+
+    function updatePaletteLabel() {
+      const label = document.getElementById("paletteLabel");
+      if (label && _lastPaletteIdx >= 0) {
+        label.textContent = prettyPaletteName(PALETTE_KEYS[_lastPaletteIdx]) + " palette";
+      }
+    }
+
+    function cyclePalette(delta) {
+      const current = _lastPaletteIdx >= 0 ? _lastPaletteIdx : 0;
+      _forcedPaletteIdx = (current + delta + PALETTE_KEYS.length) % PALETTE_KEYS.length;
+      messages.push({ message: "click" });
+    }
+    // my sister was once bitten by a moose
+    function hexToRgb(hex) {
+      const h = hex.replace("#", "");
+      return [parseInt(h.substr(0, 2), 16), parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16)];
+    }
+
+    function interpStops(stops, t) {
+      t = mmax(0, mmin(0.99999, t));
+      if (stops.length === 1) {
+        const c = hexToRgb(stops[0]);
+        return `rgb(${c[0]},${c[1]},${c[2]})`;
+      }
+      const seg = t * (stops.length - 1);
+      const i = mfloor(seg);
+      const f = seg - i;
+      const a = hexToRgb(stops[i]);
+      const b = hexToRgb(stops[i + 1]);
+      return `rgb(${mround(a[0]+(b[0]-a[0])*f)},${mround(a[1]+(b[1]-a[1])*f)},${mround(a[2]+(b[2]-a[2])*f)})`;
+    }
+
+    function paletteColor(loop, time) {
+      const total = loop.colorTotal || 1;
+      const index = loop.colorIndex || 0;
+      const pal = PALETTES[CFG.colormode];
+      if (!pal) return `hsl(${(loop.randomHue + time/100) % 360} 100% 60%)`;
+      let t = total > 1 ? index / (total - 1) : 0.5;
+      t = t + 0.18 * msin(time / 2500 + index * 0.6);
+      if (t < 0) t = -t;
+      if (t > 1) t = 2 - t;
+      return interpStops(pal.stops, mmax(0, mmin(1, t)));
+    }
+
+    function Mash(seed) {
+      let n = 0xefc8249d;
+      let intSeed = (seed || Math.random()).toString();
+
+      function mash(data) {
+        if (data) {
+          data = data.toString();
+          for (var i = 0; i < data.length; i++) {
+            n += data.charCodeAt(i);
+            var h = 0.02519603282416938 * n;
+            n = h >>> 0;
+            h -= n;
+            h *= n;
+            n = h >>> 0;
+            h -= n;
+            n += h * 0x100000000;
+          }
+          return (n >>> 0) * 2.3283064365386963e-10;
+        } else n = 0xefc8249d;
+      }
+      mash(intSeed);
+      let mmash = () => mash("A");
+      mmash.intAlea = function(min, max) {
+        if (typeof max == "undefined") {
+          max = min;
+          min = 0;
+        }
+        return mfloor(min + (max - min) * this());
+      };
+      mmash.alea = function(min, max) {
+        if (typeof max == "undefined") return min * this();
+        return min + (max - min) * this();
+      };
+      return mmash;
+    }
+
+    function lerp(p0, p1, alpha) {
+      return {
+        x: alpha * p1.x + (1 - alpha) * p0.x,
+        y: alpha * p1.y + (1 - alpha) * p0.y
+      };
+    }
+
+    function distance(p0, p1) {
+      return mhypot(p1.x - p0.x, p1.y - p0.y);
+    }
+
+    function splitC(cubic, alpha) {
+      const pa = lerp(cubic[0], cubic[1], alpha);
+      const pb = lerp(cubic[1], cubic[2], alpha);
+      const pc = lerp(cubic[2], cubic[3], alpha);
+      const pd = lerp(pa, pb, alpha);
+      const pe = lerp(pb, pc, alpha);
+      const pf = lerp(pd, pe, alpha);
+      return [
+        [cubic[0], pa, pd, pf],
+        [pf, pe, pc, cubic[3]]
+      ];
+    }
+
+// this is my favorite joke
+// what's a pirate's favorite letter?
+// and everyone inevitably says "arrr"
+// so you interrupt and go "NAY! me first love be the C"
+
+    class Cell {
+      static xs = [-0.5, 0.5, 1, 0.5, -0.5, -1];
+      static ys = [-msqrt(3) / 2, -msqrt(3) / 2, 0, msqrt(3) / 2, msqrt(3) / 2, 0];
+      static xperp = [0, -msqrt(3) / 2, -msqrt(3) / 2, 0, msqrt(3) / 2, msqrt(3) / 2];
+      static yperp = [1, 0.5, -0.5, -1, -0.5, 0.5];
+      constructor(kx, ky) {
+        this.kx = kx;
+        this.odd = this.kx & 1;
+        this.ky = ky;
+      }
+
+// that's pretty good, right?
+
+      setNeighbors() {
+        this.neighbors = [];
+        for (let dir = 0; dir < 6; ++dir) {
+          let kx = this.kx + [0, 1, 1, 0, -1, -1][dir];
+          let ky = this.ky + [
+            [-1, -1, 0, 1, 0, -1],
+            [-1, 0, 1, 1, 1, 0]
+          ][this.odd][dir];
+          this.neighbors[dir] = grid[ky] && grid[ky][kx];
+        }
+      }
+      flattenDots() {
+        this.flatDots = [];
+        for (let k = 0; k < 6; ++k)
+          if (this.dots[k]) this.flatDots = this.flatDots.concat(this.dots[k]);
+      }
+
+// you people don't deserve me
+
+      makeConnectables() {
+        this.connectables = [
+          []
+        ];
+        this.flatDots.forEach((d) => {
+          if (!d.closed) this.connectables[0].push(d);
+        });
+        this.actives = this.connectables[0].slice();
+      }
+      pickNextDot(dotin, direct) {
+        let k0, k1;
+        for (let kcon = 0; kcon < this.connectables.length; ++kcon) {
+          k0 = this.connectables[kcon].indexOf(dotin);
+          if (k0 == -1) continue;
+          if (concentric && rndStruct.intAlea(internRegularity) != 0) {
+            if (direct) k1 = (k0 + 1) % this.connectables[kcon].length;
+            else k1 = (k0 + this.connectables[kcon].length - 1) % this.connectables[kcon].length;
+          } else {
+            k1 = rndStruct.intAlea(this.connectables[kcon].length / 2) * 2 + ((k0 & 1) ^ 1);
+          }
+          const dotout = this.connectables[kcon][k1];
+          if (k1 < k0)[k0, k1] = [k1, k0];
+          let narr = this.connectables[kcon].splice(k0, k1 + 1 - k0);
+          narr.shift();
+          narr.pop();
+          if (narr.length > 0) this.connectables.push(narr);
+          if (this.connectables[kcon].length == 0) this.connectables.splice(kcon, 1);
+          return dotout;
+        }
+      }
+      nextcw(dot) {
+        let k = this.actives.indexOf(dot);
+        let n = this.actives[(k + 1) % this.actives.length];
+        return n.loop ? false : n;
+      }
+      nextccw(dot) {
+        let k = this.actives.indexOf(dot);
+        let n = this.actives[(k + this.actives.length - 1) % this.actives.length];
+        return n.loop ? false : n;
+      }
+      // here we enter the land of copypaste
+      toBezier(p0, p1) {
+        let pa, pb, dd, din, dout, kCommVert;
+        let bin = p0.kedge,
+          bout = p1.kedge;
+        switch (mabs(bout - bin)) {
+          case 0:
+            dd = 0.2 * radius;
+            pa = {
+              x: p0.x + Cell.xperp[bin] * dd,
+              y: p0.y + Cell.yperp[bin] * dd
+            };
+            pb = {
+              x: p1.x + Cell.xperp[bout] * dd,
+              y: p1.y + Cell.yperp[bout] * dd
+            };
+            break;
+          case 1:
+          case 5:
+            kCommVert = (bout - bin == -1 || bout - bin == 5) ? bin : bout;
+            din = distance(this.vertices[kCommVert], p0);
+            dout = distance(this.vertices[kCommVert], p1);
+            dd = 0.75;
+            pa = {
+              x: p0.x + Cell.xperp[bin] * dd * dout,
+              y: p0.y + Cell.yperp[bin] * dd * dout
+            };
+            pb = {
+              x: p1.x + Cell.xperp[bout] * dd * din,
+              y: p1.y + Cell.yperp[bout] * dd * din
+            };
+            break;
+          case 2:
+          case 4:
+            dd = 0.6 * radius;
+            pa = {
+              x: p0.x + Cell.xperp[bin] * dd,
+              y: p0.y + Cell.yperp[bin] * dd
+            };
+            pb = {
+              x: p1.x + Cell.xperp[bout] * dd,
+              y: p1.y + Cell.yperp[bout] * dd
+            };
+            break;
+          case 3:
+            dd = 0.5 * radius;
+            pa = {
+              x: p0.x + Cell.xperp[bin] * dd,
+              y: p0.y + Cell.yperp[bin] * dd
+            };
+            pb = {
+              x: p1.x + Cell.xperp[bout] * dd,
+              y: p1.y + Cell.yperp[bout] * dd
+            };
+            break;
+        }
+        return [p0, pa, pb, p1];
+      }
+      size() {
+        this.xc = offsx + this.kx * 1.5 * radius;
+        this.yc = offsy + this.ky * radius * msqrt(3) + 0.5 * this.odd * radius * msqrt(3);
+        this.vertices = [];
+        for (let k = 0; k < 6; ++k) {
+          this.vertices[k] = {
+            x: this.xc + Cell.xs[k] * radius,
+            y: this.yc + Cell.ys[k] * radius
+          };
+        }
+        // blah blah blah
+        for (let kedge = 0; kedge < 6; ++kedge) {
+          if (!this.ndots[kedge]) continue;
+          let p0 = this.vertices[kedge];
+          let p1 = this.vertices[(kedge + 1) % 6];
+          let matdots = [
+            [1 / 2],
+            [3 / 8, 5 / 8],
+            [9 / 32, 1 / 2, 23 / 32]
+          ][this.ndots[kedge] - 1];
+          for (let kdot = 0; kdot < this.ndots[kedge]; ++kdot) {
+            Object.assign(this.dots[kedge][kdot], lerp(p0, p1, matdots[kdot]));
+          }
+        }
+      }
+    }
+    class Dot {
+      constructor(cell, kedge, index) {
+        this.cell = cell;
+        this.kedge = kedge; // ur mom's a kedge
+        this.index = index;
+      }
+    }
+    class Loop {
+      constructor() {
+        this.pairs = [];
+      }
+      build(dot) {
+        this.start = dot;
+        while (true) {
+          if (!this.extend(true)) break;
+          if (this.pairs[0][0].other == this.pairs.at(-1)[1]) {
+            this.closed = true;
+            break;
+          }
+        }
+        if (!this.closed)
+          do; while (this.extend(false));
+        this.pairs.forEach((p) => {
+          p[0].loop = p[1].loop = this;
+        });
+      }
+      extend(direct) {
+        let dot0, dot1;
+        if (this.pairs.length == 0) dot0 = this.start;
+        else if (direct) dot0 = this.pairs.at(-1)[1].other;
+        else dot0 = this.pairs[0][0].other;
+        if (!dot0 || dot0.closed) return false;
+        dot1 = dot0.cell.pickNextDot(dot0, direct);
+        if (direct) this.pairs.push([dot0, dot1]);
+        else this.pairs.unshift([dot1, dot0]);
+        return true;
+      }
+      toBezier() {
+        this.bezier = [];
+        this.pairs.forEach((pair) => {
+          this.bezier.push(pair[0].cell.toBezier(pair[0], pair[1]));
+        });
+        delete this.pairs;
+        this.lengths = this.bezier.map((cubic) => {
+          const dec0 = splitC(cubic, 0.5);
+          const dec1 = splitC(dec0[0], 0.5);
+          const dec2 = splitC(dec0[1], 0.5);
+          return distance(dec1[0][0], dec1[0][3]) + distance(dec1[1][0], dec1[1][3]) +
+            distance(dec2[0][0], dec2[0][3]) + distance(dec2[1][0], dec2[1][3]);
+        });
+        return this.bezier;
+      }
+      createPath(index, total) {
+        this.path = new Path2D();
+        this.path.moveTo(this.bezier[0][0].x, this.bezier[0][0].y);
+        this.colorIndex = index;
+        this.colorTotal = total;
+        this.randomHue = rndCol.intAlea(360);
+        this.nextToDraw = 0;
+        this.pathLength = 0;
+        this.prevTime = performance.now();
+        this.pos = 0;
+      }
+      drawPath(time) {
+        let alpha, frag, nPath, idx;
+        let dt = time - this.prevTime;
+        this.prevTime = time;
+        if (this.nextToDraw < this.bezier.length) {
+          this.pos += dt * drawSpeed;
+          while (
+            this.nextToDraw < this.bezier.length &&
+            this.pos >= this.pathLength + this.lengths[this.nextToDraw]
+          ) {
+            idx = this.nextToDraw;
+            this.path.bezierCurveTo(
+              this.bezier[idx][1].x, this.bezier[idx][1].y,
+              this.bezier[idx][2].x, this.bezier[idx][2].y,
+              this.bezier[idx][3].x, this.bezier[idx][3].y
+            );
+            this.pathLength += this.lengths[this.nextToDraw];
+            ++this.nextToDraw;
+          }
+        }
+        nPath = new Path2D(this.path);
+        if (this.nextToDraw < this.bezier.length) {
+          alpha = (this.pos - this.pathLength) / this.lengths[this.nextToDraw];
+          frag = splitC(this.bezier[this.nextToDraw], alpha)[0];
+          nPath.bezierCurveTo(frag[1].x, frag[1].y, frag[2].x, frag[2].y, frag[3].x, frag[3].y);
+        }
+        const color = paletteColor(this, CFG.idlepulse ? time : 0);
+        ctx.lineWidth = (radius / 30) * CFG.linewidth;
+        ctx.strokeStyle = color;
+        if (CFG.glow) {
+          ctx.shadowBlur = radius / 5;
+          ctx.shadowColor = color;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        ctx.stroke(nPath);
+        ctx.shadowBlur = 0;
+        return this.nextToDraw < this.bezier.length;
+      }
+    }
+    // want another joke?
+    function createGrid() {
+      let nbCells = CFG.cellsizerandom ?
+        rndGen.alea(MIN_NB_CELLS, MAX_NB_CELLS) :
+        msqrt(CFG.cellsize) * MIN_NB_CELLS + (1 - msqrt(CFG.cellsize)) * MAX_NB_CELLS;
+      radius = msqrt((((maxx * maxy) / nbCells) * 2) / 3 / msqrt(3));
+      for (let nbTries = 0; nbTries < 100; ++nbTries) {
+        if (withMargin) {
+          nbx = mfloor(((maxx - 20) / radius + 0.5) / 1.5);
+          nby = mfloor((maxy - 20) / radius / msqrt(3) - 0.5) + 1;
+        } else {
+          nbx = mceil((maxx / radius - 0.5) / 1.5) + 1;
+          nby = mceil(maxy / radius / msqrt(3) + 0.5);
+        }
+        if (nbx > 1 && nby > 1) break;
+        radius *= 0.95;
+      }
+      if (nbx <= 1 || nby <= 1) return false;
+      offsx = (maxx - radius * (0.5 + 1.5 * nbx)) / 2 + radius;
+      offsy = (maxy - radius * msqrt(3) * (0.5 + nby)) / 2 + (radius * msqrt(3)) / 2;
+      grid = new Array(nby).fill(0).map((v, ky) =>
+        new Array(nbx).fill(0).map((v, kx) => new Cell(kx, ky))
+      );
+      grid.forEach((line) => line.forEach((cell) => cell.setNeighbors()));
+      let tbNbPoints = [];
+      geometryChoice = CFG.randompattern ?
+        rndGen.intAlea(tbRelProbaNbPoints.length) :
+        CFG.geometry;
+      tbRelProbaNbPoints[geometryChoice].forEach((frq, nb) => {
+        for (let k = 0; k < frq; ++k) tbNbPoints.push(nb);
+      });
+      grid.forEach((line) => line.forEach((cell) => {
+        cell.ndots = cell.ndots || [];
+        for (let dir = 0; dir < 6; ++dir) {
+          if (cell.ndots[dir]) continue;
+          let other = cell.neighbors[dir];
+          if (!other) continue;
+          other.ndots = other.ndots || [];
+          let otherDir = (dir + 3) % 6;
+          cell.ndots[dir] = other.ndots[otherDir] = tbNbPoints[rndStruct.intAlea(tbNbPoints.length)];
+        }
+      }));
+      let odds = [];
+      grid.forEach((line) => line.forEach((cell) => {
+        let nb = cell.ndots.reduce((s, v) => s + v);
+        if (nb & 1) odds.push(cell);
+      }));
+      grid.forEach((line) => line.forEach((cell) => {
+        for (let dir = 0; dir < 6; ++dir) {
+          let nbdots = cell.ndots[dir];
+          if (!nbdots) continue;
+          let other = cell.neighbors[dir];
+          let otherDir = (dir + 3) % 6;
+          cell.dots = cell.dots || [];
+          if (cell.dots[dir]) continue;
+          cell.dots[dir] = [];
+          other.dots = other.dots || [];
+          other.dots[otherDir] = [];
+          for (let kdot = 0; kdot < nbdots; ++kdot) {
+            cell.dots[dir][kdot] = new Dot(cell, dir, kdot);
+            cell.dots[dir][kdot].other = other.dots[otherDir][nbdots - 1 - kdot] = new Dot(other, otherDir, nbdots - 1 - kdot);
+            other.dots[otherDir][nbdots - 1 - kdot].other = cell.dots[dir][kdot];
+          }
+        }
+      }));
+      grid.forEach((line) => line.forEach((cell) => cell.flattenDots()));
+      if (odds.length && !closeOne(0)) throw "unbelievable";
+      grid.forEach((line) => line.forEach((cell) => cell.size()));
+      grid.forEach((line) => line.forEach((cell) => cell.makeConnectables()));
+      return createLoops();
+
+      function closeOne(kodds) {
+        const cell = odds[kodds];
+        const dotsOrder = cell.flatDots.slice();
+        while (dotsOrder.length) {
+          let dot = dotsOrder.splice(rndStruct.intAlea(dotsOrder.length), 1)[0];
+          if (!dot.other || !dot.other.closed) {
+            dot.closed = true;
+            if (kodds == odds.length - 1) return true;
+            if (closeOne(kodds + 1)) return true;
+            delete dot.closed;
+          }
+        }
+        return false;
+      }
+    }
+
+    function createLoops() {
+      let loops = [];
+      let cell = uncentered ?
+        grid[rndStruct.intAlea(nby)][rndStruct.intAlea(nbx)] :
+        grid[mfloor((nby - 1) / 2)][mfloor((nbx - 1) / 2)];
+      while (cell.connectables[0].length == 0) {
+        cell = grid[rndStruct.intAlea(nby)][rndStruct.intAlea(nbx)];
+      }
+      let loop = new Loop();
+      loop.build(cell.connectables[0][mfloor(cell.connectables[0].length / 2)]);
+      loops.push(loop);
+      loop.toBezier();
+      let kLoop = 0;
+      while (kLoop < loops.length) {
+        let sl = loops[kLoop];
+        let foundDot;
+        for (let k = 0; k < sl.bezier.length; ++k) {
+          let dot0 = sl.bezier[k][0],
+            dot1 = sl.bezier[k][3];
+          if ((foundDot = dot0.cell.nextcw(dot0))) break;
+          if ((foundDot = dot1.cell.nextccw(dot1))) break;
+          if ((foundDot = dot0.cell.nextccw(dot0))) break;
+          if ((foundDot = dot1.cell.nextcw(dot1))) break;
+        }
+        if (!foundDot) ++kLoop;
+        else {
+          let loop = new Loop();
+          loop.build(foundDot);
+          loops.push(loop);
+          loop.toBezier();
+        }
+      }
+      grid.forEach((line) => line.forEach((cell) => cell.actives.forEach((dot) => {
+        if (!dot.loop) {
+          let loop = new Loop();
+          loop.build(dot);
+          loops.push(loop);
+          loop.toBezier();
+        }
+      })));
+      return loops;
+    }
+    // sometimes life is just disappointing
+    const hmEl = document.getElementById("hm");
+    const srEl = document.getElementById("sr");
+    function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+    let lastAnnouncedMin = -1;
+    function syncClock() {
+      const d = new Date();
+      const h = d.getHours(), m = d.getMinutes();
+      const label = pad2(h) + ":" + pad2(m);
+      if (hmEl) hmEl.textContent = label;
+      if (m !== lastAnnouncedMin) {
+        lastAnnouncedMin = m;
+        if (srEl) srEl.textContent = label + " local time.";
+      }
+    }
+
+    // actually I don't have any more
+    let animate; {
+      let animState = 0;
+      animate = function(tStamp) {
+        let message = messages.shift();
+        if (message && (message.message == "reset" || message.message == "click")) {
+          animState = 0;
+          idleStartTime = 0;
+        }
+        syncClock();
+        window.requestAnimationFrame(animate);
+        switch (animState) {
+          case 0:
+            if (startOver()) ++animState;
+            break;
+          case 1:
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, maxx, maxy);
+            let alive = false;
+            loops.forEach((loop) => (alive |= loop.drawPath(tStamp)));
+            if (!alive) {
+              ++animState;
+              idleStartTime = tStamp;
+            }
+            break;
+          case 2:
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, maxx, maxy);
+            const t = CFG.idlepulse ? tStamp : 0;
+            loops.forEach((loop) => {
+              const color = paletteColor(loop, t);
+              ctx.lineWidth = (radius / 30) * CFG.linewidth;
+              ctx.strokeStyle = color;
+              if (CFG.glow) {
+                ctx.shadowBlur = radius / 5;
+                ctx.shadowColor = color;
+              }
+              ctx.stroke(loop.path);
+            });
+            ctx.shadowBlur = 0;
+            // auto-regen after idle period
+            if (tStamp - idleStartTime > CFG.autoRegenIdleMs) {
+              messages.push({
+                message: "click"
+              });
+            }
+            break;
+        }
+      };
+    }
+
+    function startOver() {
+      CFG.colormode = nextPalette();
+      maxx = window.innerWidth;
+      maxy = window.innerHeight;
+      canv.width = maxx;
+      canv.height = maxy;
+      withMargin = CFG.withmargin;
+      concentric = CFG.concentric;
+      uncentered = !CFG.centered;
+      internRegularity = CFG.regularity <= 5 ? CFG.regularity : 5 + (95 / 5) * (CFG.regularity - 5);
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, maxx, maxy);
+      rndStruct = Mash();
+      rndCol = Mash();
+      rndGen = Mash();
+      if (!(loops = createGrid())) return false;
+      loops.forEach((loop, i) => loop.createPath(i, loops.length));
+      return true;
+    }
+
+    function mouseClick() {
+      messages.push({
+        message: "click"
+      });
+    }
+    canv = document.createElement("canvas");
+    canv.setAttribute("role", "img");
+    canv.setAttribute("aria-label", "A procedural aurora-colored mandala growing through concentric hexagonal cells, with local hours and minutes as a large centered Cormorant legend. Click to regenerate the weave.");
+    document.body.appendChild(canv);
+    ctx = canv.getContext("2d");
+    messages = [{
+      message: "reset"
+    }];
+    canv.addEventListener("click", mouseClick);
+    document.body.addEventListener("click", (e) => {
+      if (e.target === document.body) mouseClick();
+    });
+
+    const controlsEl = document.getElementById("controls");
+    const newButton = document.getElementById("newButton");
+    const paletteButton = document.getElementById("paletteButton");
+    const clockButton = document.getElementById("clockButton");
+    const controlButtons = [newButton, paletteButton, clockButton];
+    let controlsVisible = true;
+    let controlsTimer = 0;
+    let clockVisible = true;
+
+    try {
+      clockVisible = localStorage.getItem("mandazaClockVisible") !== "false";
+    } catch (_) {}
+
+    function announce(text) {
+      if (srEl) srEl.textContent = text;
+    }
+
+    function resetControlsTimer() {
+      clearTimeout(controlsTimer);
+      controlsTimer = setTimeout(hideControls, 18000);
+    }
+
+    function showControls(focusIndex) {
+      controlsVisible = true;
+      controlsEl.classList.remove("hidden");
+      const index = typeof focusIndex === "number" ? focusIndex : 0;
+      controlButtons[index].focus();
+      resetControlsTimer();
+    }
+
+    function hideControls() {
+      controlsVisible = false;
+      controlsEl.classList.add("hidden");
+      controlButtons.forEach((button) => button.blur());
+    }
+
+    function syncClockVisibility() {
+      document.querySelector(".readout").style.display = clockVisible ? "block" : "none";
+      clockButton.textContent = clockVisible ? "Clock: On" : "Clock: Off";
+      try { localStorage.setItem("mandazaClockVisible", String(clockVisible)); } catch (_) {}
+    }
+
+    function focusedButtonIndex() {
+      const index = controlButtons.indexOf(document.activeElement);
+      return index >= 0 ? index : 0;
+    }
+
+    newButton.addEventListener("click", () => {
+      mouseClick();
+      announce("New Mandaza pattern.");
+      resetControlsTimer();
+    });
+    paletteButton.addEventListener("click", () => {
+      cyclePalette(1);
+      announce("Next color palette.");
+      resetControlsTimer();
+    });
+    clockButton.addEventListener("click", () => {
+      clockVisible = !clockVisible;
+      syncClockVisibility();
+      announce(clockVisible ? "Clock on." : "Clock off.");
+      resetControlsTimer();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      const code = event.keyCode;
+      if (code === 10009) {
+        event.preventDefault();
+        if (controlsVisible) {
+          hideControls();
+        } else {
+          try { tizen.application.getCurrentApplication().exit(); } catch (_) { window.close(); }
+        }
+        return;
+      }
+      if (code === 415 || code === 10252) {
+        event.preventDefault();
+        mouseClick();
+        announce("New Mandaza pattern.");
+        return;
+      }
+      if (code >= 37 && code <= 40) {
+        event.preventDefault();
+        if (!controlsVisible) {
+          showControls(0);
+          return;
+        }
+        const current = focusedButtonIndex();
+        if (code === 37) controlButtons[(current + controlButtons.length - 1) % controlButtons.length].focus();
+        if (code === 39) controlButtons[(current + 1) % controlButtons.length].focus();
+        resetControlsTimer();
+        return;
+      }
+      if (code === 13 && controlsVisible) {
+        event.preventDefault();
+        controlButtons[focusedButtonIndex()].click();
+      }
+    });
+
+    try {
+      tizen.tvinputdevice.registerKeyBatch(["MediaPlayPause", "MediaPlay"]);
+    } catch (_) {}
+
+    syncClockVisibility();
+    showControls(0);
+    // debounced resize regen
+    let _resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(_resizeTimer);
+      _resizeTimer = setTimeout(() => messages.push({
+        message: "click"
+      }), 200);
+    });
+    syncClock();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+
+</html>

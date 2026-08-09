@@ -62,4 +62,5 @@ __pycache__/
 
 # MandazaTV staged APKs (store binaries stay local)
 android/tv/dist/
+samsung/tizen/dist/
 android/tv/build/
