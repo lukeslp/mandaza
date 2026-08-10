@@ -13,6 +13,7 @@ sources.
 | Screenshot 2 | `screenshots/02_ember-controls-1920x1080.jpg` | 1920×1080 JPG | <500 kB | Ready |
 | Screenshot 3 | `screenshots/03_vaporwave-ambient-1920x1080.jpg` | 1920×1080 JPG | <500 kB | Ready |
 | Screenshot 4 | `screenshots/04_riso-art-1920x1080.jpg` | 1920×1080 JPG | <500 kB | Ready |
+| App description | `MandazaTV_App_Description_v1.3.0_EN.pptx` | Samsung v1.42 English template, 9 slides | Seller Office upload | Ready |
 
 Samsung automatically generates the 16:9 and 1:1 full-color 1920×1080 icon
 assets from the transparent logo and background. Keep the provided full-color
@@ -53,3 +54,9 @@ device proof.
 
 Captions and alt text for every upload image are in
 `SCREENSHOT-METADATA.md`; hashes are in `SHA256SUMS.txt`.
+
+`MandazaTV_App_Description_v1.3.0_EN.pptx` is the completed English app
+description for Seller Office. It follows Samsung's supplied v1.42 PowerPoint
+template and records the actual shipped Tizen screen, remote behavior, exit
+flow, offline operation, and English-only language support. Its speaker notes
+identify the local source code and renderer captures used for each claim.
