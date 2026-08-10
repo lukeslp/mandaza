@@ -15,14 +15,18 @@ Upload from this folder (`android/tv/amazon-listing/`).
 | Screenshot 5 | `screenshots/05_ambient-canvas-1920x1080.jpg` | 1920×1080 |
 | Listing copy | `amazon.txt` | — |
 
-Icons and background derive from Mandaza brand art. The five screenshots are
-physical AFTTI43 Fire TV captures of the signed `1.3.1 (20301)` release. Captions
-and accessible descriptions are in `SCREENSHOT-METADATA.md`.
+The background is a direct 1920×1080 capture from the live `mandaza.app`
+renderer: pure Mandaza artwork with no clock, controls, logo, browser chrome, or
+marketing overlay. The five screenshots are distinct physical AFTTI43 Fire TV
+captures of the signed `1.3.1 (20301)` release. Captions and accessible
+descriptions for every marketing image are in `SCREENSHOT-METADATA.md`.
 
 ## Verified Fire TV screenshot requirements
 
-- Source: https://developer.amazon.com/docs/app-submission/appstore-details.html#fire-tv-assets
-- Retrieved: 2026-08-09
+- Primary source: https://developer.amazon.com/docs/app-submission/appstore-details.html#fire-tv-assets
+- Capture guidance: https://developer.amazon.com/docs/app-submission/taking-screenshots.html
+- Test criteria: https://developer.amazon.com/docs/app-testing/test-criteria.html
+- Retrieved: 2026-08-10
 - Source revision shown by Amazon: 2026-01-06
 - Target: Amazon Fire TV, AFTTI43 / Fire OS 7; Amazon Appstore submission
 - Requirement: 3–10 screenshots, 1920×1080 landscape, JPG or opaque 24-bit PNG
