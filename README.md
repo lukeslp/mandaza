@@ -200,6 +200,7 @@ MIT — see [LICENSE](LICENSE).
 Version **1.2** is live. Version **1.3** is prepared with music responsivity,
 clock forms, tilt parallax, Watch companion, and Home/StandBy widgets. The
 standalone tvOS release remains separate; Fire TV and Samsung TV are active
-device-tested release tracks with store/long-run gates still open.
+device-tested release tracks. Fire's lifecycle/long-run gate is complete;
+Samsung's remote/lifecycle/long-run and store-signing gates remain open.
 The privacy policy is maintained in `docs/index.md` and `docs/privacy.html` and
 is published at [mandaza.app/privacy.html](https://mandaza.app/privacy.html).

@@ -53,8 +53,9 @@
 - Profile whether always-on non-Zen motion should remain at 60 Hz or use a
   lower cadence; Zen ambient sway and Watch already stop under Reduce Motion,
   backgrounding, and Always-On dimming.
-- Fire: signed `1.3.1 (20301)` APK and five current physical-device listing
-  captures are complete; finish Home/resume, sleep/wake, and 30+ minute gates.
+- Fire: signed `1.3.1 (20301)` APK, five current physical-device listing
+  captures, Home/resume, sleep/wake, and the 30-minute stability gate are
+  complete. Only the human Amazon console/banner confirmation remains.
 - Samsung: complete remote, offline relaunch, sleep/wake, long-run, certificate,
   and Seller Office gates.
 

@@ -71,7 +71,11 @@ requirements and capture metadata are recorded in
   during later idle samples. Reveal cadence measured median 22 ms / p90 31 ms.
 - Five current 1920×1080 physical-device listing screenshots captured from that
   exact signed release.
-- Open: Home/resume, sleep/wake, and 30+ minute run.
+- Home/resume and sleep/wake passed. A 30-minute foreground observation retained
+  one process, settled at roughly 38–40 MB PSS after warm-up, kept the display
+  awake, and produced no app crash or ANR. The APK has no network permission.
+- Open: human confirmation of the production Apps-row banner and Amazon console
+  submission fields.
 
 ## Console sequence (human only)
 

@@ -67,16 +67,23 @@ clock over the canvas.
   After a measured reveal, total
   rendered frames held at 338 across later idle samples (median 22 ms, p90
   31 ms during the reveal).
+- Lifecycle evidence: Home/resume and sleep/wake completed on the signed release.
+  A 30-minute foreground observation retained one process, held the display
+  awake, settled at roughly 38–40 MB PSS after warm-up, and produced no
+  Mandaza crash or ANR entries. The APK requests no network permission, so the
+  cold-launch path has no service dependency.
 
 ## Still to do before Amazon submit
 
-1. Run sleep/wake, Home/resume, and 30+ minute device gates; watch the
-   purgeable Skia path-mask cache during the long run.
-2. Optional: consolidate `tv` canvas with phone `MandazaCanvas` after release.
+1. Confirm the production banner in the Amazon Apps row and attach the current
+   device evidence to the human-operated Appstore submission.
+2. Optional after release: consolidate the `tv` canvas with phone
+   `MandazaCanvas` without changing the validated TV cadence.
 
 ## Ambient Time
 
-Use Ambient Time only for **sideload practice** on Fire Stick while MandazaTV Fire is finished. Do not block MandazaTV store work on Ambient Time feature development.
+Ambient Time TV is a separate package and release track. Its development must
+not change MandazaTV's identity, artifact, listing evidence, or submission state.
 
 ## Amazon staging status
 
@@ -87,6 +94,7 @@ Use Ambient Time only for **sideload practice** on Fire Stick while MandazaTV Fi
   `20301`, SHA-256 `1dfbfeee87d3a87cee31f68c150d96f58a1a0134b4c9350f799139ed44499023`.
 - Device smoke: that exact signed APK is installed/launched on the physical
   AFTTI43 and the primary, Zen, Tune, Paper, and hidden-control flows were
-  exercised on 2026-08-09; lifecycle and long-run gates remain open.
+  exercised on 2026-08-09. Home/resume, sleep/wake, and the 30-minute
+  foreground stability gate completed on 2026-08-10.
 
 See [AMAZON-RELEASE.md](AMAZON-RELEASE.md).
