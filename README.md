@@ -202,5 +202,10 @@ clock forms, tilt parallax, Watch companion, and Home/StandBy widgets. The
 standalone tvOS release remains separate; Fire TV and Samsung TV are active
 device-tested release tracks. Fire's lifecycle/long-run gate is complete;
 Samsung's remote/lifecycle/long-run and store-signing gates remain open.
+**Decided 2026-08-10:** the tvOS platform consolidation onto the unified
+Mandaza record (`com.lukesteuber.mandaza`, whose TV_OS 1.0 version sits in
+PREPARE_FOR_SUBMISSION on App Store Connect) is **not happening** — MandazaTV
+(`com.lukesteuber.mandaza.tv`, Apple ID 6768536771) remains the shipping
+tvOS product.
 The privacy policy is maintained in `docs/index.md` and `docs/privacy.html` and
 is published at [mandaza.app/privacy.html](https://mandaza.app/privacy.html).
