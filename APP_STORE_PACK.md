@@ -8,6 +8,11 @@ This document is the single source of truth for App Store and TestFlight submiss
 - tvOS app listing: `com.lukesteuber.mandaza.tv` (MandazaTV, Apple ID `6768536771`)
 - Widget extension bundle: `com.lukesteuber.mandaza.widgets` (not a separate store listing)
 
+The `TV_OS` 1.0 draft visible inside the unified `com.lukesteuber.mandaza`
+record is a redundant abandoned record. Ignore it permanently. Never attach a
+build, upload this pack, or submit against that draft; tvOS work, if any, uses
+only the standalone MandazaTV record.
+
 ## IDs and Platform Records
 
 | Item | Value |

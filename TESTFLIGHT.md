@@ -1,5 +1,10 @@
 # TestFlight Setup
 
+> **Permanent tvOS boundary:** Ignore the `TV_OS` 1.0 draft under the unified
+> `com.lukesteuber.mandaza` record. It is a redundant abandoned record. Every
+> tvOS instruction below refers only to standalone MandazaTV,
+> `com.lukesteuber.mandaza.tv` (Apple ID `6768536771`).
+
 Everything in this doc is one-time user-side work in Apple's web consoles.
 Once it's done, the local scripts (`scripts/archive.sh` → `scripts/export-ipa.sh`
 → `scripts/upload-testflight.sh`) handle every subsequent upload.

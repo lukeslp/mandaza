@@ -14,6 +14,10 @@
 - **Shared:** Single `MandazaCore` engine and App Group–backed settings; `project.yml` + XcodeGen as the project source of truth. Brand refreshes: `scripts/apply-brand-assets.py --icon … [--tv-icon …] --splash … [--tv-splash …]` writes iOS icon/splash, tvOS layered icons, top shelf, and tv launch art. **Glow** defaults off; random regenerate may enable a soft bloom with probability under 0.5; manual Glow toggle uses full strength (`glowStrength`).
 - **Release:** Version 1.2 is live; version 1.3 is prepared. Archive numbering
   advances from a tracked monotonic counter above uploaded build 55.
+- **App Store record boundary:** Permanently ignore the abandoned `TV_OS` 1.0
+  draft under `com.lukesteuber.mandaza`. It is a redundant record, not a release
+  target. The standalone `com.lukesteuber.mandaza.tv` record is the only tvOS
+  identity.
 - **Privacy:** Music responsivity uses the microphone only while enabled for
   on-device modulation; audio is never recorded or stored. The privacy policy
   is published at `https://mandaza.app/privacy.html`.

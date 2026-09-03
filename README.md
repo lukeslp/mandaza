@@ -93,6 +93,11 @@ xcodebuild -scheme MandazaTV \
 [Apple ID 6768536771](https://apps.apple.com/us/app/mandazatv/id6768536771),
 with bundle ID `com.lukesteuber.mandaza.tv`:
 
+> The `TV_OS` 1.0 draft under the unified `com.lukesteuber.mandaza` App Store
+> record is an abandoned duplicate. Ignore it permanently: do not attach a
+> build, upload metadata, or submit it. Any Apple TV maintenance belongs only
+> to the standalone MandazaTV record above.
+
 ```sh
 scripts/archive-tvos.sh
 scripts/export-ipa-tvos.sh
@@ -202,10 +207,10 @@ clock forms, tilt parallax, Watch companion, and Home/StandBy widgets. The
 standalone tvOS release remains separate; Fire TV and Samsung TV are active
 device-tested release tracks. Fire's lifecycle/long-run gate is complete;
 Samsung's remote/lifecycle/long-run and store-signing gates remain open.
-**Decided 2026-08-10:** the tvOS platform consolidation onto the unified
-Mandaza record (`com.lukesteuber.mandaza`, whose TV_OS 1.0 version sits in
-PREPARE_FOR_SUBMISSION on App Store Connect) is **not happening** — MandazaTV
-(`com.lukesteuber.mandaza.tv`, Apple ID 6768536771) remains the shipping
-tvOS product.
+**Permanent distribution boundary:** the `TV_OS` 1.0 draft under the unified
+Mandaza record (`com.lukesteuber.mandaza`) is a redundant abandoned record. Do
+not attach, complete, submit, or otherwise revive it. The already-live
+MandazaTV record (`com.lukesteuber.mandaza.tv`, Apple ID 6768536771) remains
+the only Apple TV product.
 The privacy policy is maintained in `docs/index.md` and `docs/privacy.html` and
 is published at [mandaza.app/privacy.html](https://mandaza.app/privacy.html).
