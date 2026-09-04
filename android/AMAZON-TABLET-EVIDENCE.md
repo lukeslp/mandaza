@@ -58,15 +58,43 @@ Fire-specific checkbox below.
 
 ## Signed Fire-device gate
 
-- [ ] Cold launch and native renderer with networking unavailable.
-- [ ] Tap, Back, portrait/landscape, Home/resume, and sleep/wake.
-- [ ] New pattern, Zen, Tune/settings, palette, Void/Paper, and PNG export.
-- [ ] Microphone permission is requested only when music responsiveness is
+Test device: Amazon KFRASWI, Fire OS 8.0 / Android 11, build
+`0030132734852`, serial `GVW3T505623706SG`, 2026-09-04. The APK pulled back
+from the fresh install matched the candidate SHA-256 byte for byte and retained
+the certificate above.
+
+- [x] Cold launch and native renderer with networking unavailable.
+- [x] Tap, Back, portrait/landscape, Home/resume, and sleep/wake. The process
+  remained PID 3043 through the lifecycle checks.
+- [x] New pattern, Zen, Tune/settings, palette, Void/Paper, and PNG export.
+- [x] Microphone permission is requested only when music responsiveness is
   enabled; denial leaves the renderer usable; audio is not saved or sent.
-- [ ] VoiceView labels, focus order, state announcements, font scaling, and
+- [x] VoiceView labels, focus order, state announcements, font scaling, and
   touch targets.
-- [ ] 60-minute render session has no crash, ANR, persistent frame degradation,
+- [x] 60-minute render session has no crash, ANR, persistent frame degradation,
   or runaway memory growth.
+
+The fresh-install regression check entered Zen with microphone access still
+denied and observed no permission prompt. Turning music responsiveness on in
+Tune did not prompt there; the system request appeared only after entering
+Zen. Denial produced the documented local-only explanation and left the
+renderer usable.
+
+Fire OS VoiceView (`com.amazon.logan`) was enabled for the signed candidate and
+reported itself bound with spoken, haptic, and audible feedback. Keyboard focus
+walked the palette, labeled switches, sliders, and clock-form choices in logical
+order while the device TTS engine synthesized every step; both visible and
+scrolled Tune surfaces contained zero `NAF` nodes. The main surface remained
+usable at font scale 1.3, and the 63-pixel switch and 107-pixel footer targets
+remained intact. The device accessibility and font settings were restored.
+
+Five 800 × 1280 Fire-tablet captures from the exact installed APK are recorded
+in `android/amazon-listing/ASSET-MAP.md`. The uninterrupted render soak ran from
+2026-09-04 21:07:06Z through 22:07:10Z with PID 3043 throughout, zero crash or
+ANR records, and PSS samples of 171,419, 166,573, 171,300, 172,485, 175,792,
+175,518, and 171,009 KB. The app remained the foreground activity and finished
+slightly below its launch memory. Fire OS accessibility, font, rotation,
+airplane-mode, and stay-awake settings were restored after testing.
 
 Do not create the Amazon listing until the signed artifact—not a debug build—
 passes this sheet.
