@@ -25,6 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.lukesteuber.mandaza.core.MandazaPalettes
 
@@ -136,7 +138,11 @@ private fun SettingSection(title: String, content: @Composable () -> Unit) {
 private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onChange)
+        Switch(
+            checked = checked,
+            onCheckedChange = onChange,
+            modifier = Modifier.semantics { contentDescription = label },
+        )
     }
 }
 
@@ -147,6 +153,11 @@ private fun SliderRow(label: String, value: Float, range: ClosedFloatingPointRan
             Text(label, modifier = Modifier.weight(1f))
             Text("${(value * if (range.endInclusive <= 1f) 100 else 10).toInt()}${if (range.endInclusive <= 1f) "%" else ""}", color = Color(0xFF9AA5B4))
         }
-        Slider(value = value, onValueChange = onChange, valueRange = range)
+        Slider(
+            value = value,
+            onValueChange = onChange,
+            valueRange = range,
+            modifier = Modifier.semantics { contentDescription = label },
+        )
     }
 }

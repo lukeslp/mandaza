@@ -4,5 +4,5 @@ version: "1.3.3"
 platforms: [android, fire-tablet, fire-tv, android-tv]
 notes: |
   Fire tablet uses app.mandaza.android and the amazon flavor at version code
-  10307. Fire TV uses the independent app.mandaza.tv package and 203xx version
+  10308. Fire TV uses the independent app.mandaza.tv package and 203xx version
   band. Evidence, listings, and signing identity are tracked separately.
