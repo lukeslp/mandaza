@@ -15,6 +15,8 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
+internal const val DEFAULT_MUSIC_RESPONSIVE = false
+
 @Serializable
 private data class PersistedMandaza(
     val seed: String = UUID.randomUUID().toString(),
@@ -27,7 +29,7 @@ private data class PersistedMandaza(
     val showSeconds: Boolean = false,
     val showDate: Boolean = true,
     val clockForm: String = "digital",
-    val musicResponsive: Boolean = true,
+    val musicResponsive: Boolean = DEFAULT_MUSIC_RESPONSIVE,
     val reactivity: Float = 0.35f,
     val parallaxEnabled: Boolean = true,
     val parallaxAmount: Float = 0.32f,

@@ -136,8 +136,12 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         onDispose { tilt.stop() }
     }
     LaunchedEffect(state.zenMode, state.musicResponsive, micGranted, appInForeground) {
-        if (appInForeground && state.zenMode && state.musicResponsive) {
-            if (micGranted) audio.start() else micPermission.launch(Manifest.permission.RECORD_AUDIO)
+        if (shouldActivateAudio(appInForeground, state.zenMode, state.musicResponsive)) {
+            if (shouldRequestMicrophone(appInForeground, state.zenMode, state.musicResponsive, micGranted)) {
+                micPermission.launch(Manifest.permission.RECORD_AUDIO)
+            } else {
+                audio.start()
+            }
         } else audio.stop()
     }
     DisposableEffect(Unit) { onDispose { audio.stop() } }

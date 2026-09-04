@@ -37,7 +37,7 @@ Listing copy, art, capture metadata, and exact screenshot roles live under
 | Field | Value |
 |---|---|
 | Package | `app.mandaza.android` |
-| Version | `1.3.3 (10306)` |
+| Version | `1.3.3 (10307)` |
 | Flavor | `amazonRelease` |
 | Device family | Fire tablets only |
 | Console state | No record as of 2026-09-04 |
@@ -67,7 +67,7 @@ before preparing a listing. Tablet copy and asset provenance are tracked in
 - For the live TV record, install the Amazon-delivered version and record its
   version, package, Apps-row banner, signature lineage, and smoke result.
 - For the tablet track, create a separate standard Amazon app only after the
-  signed 10306 device gate passes. Confirm Fire-tablet-only targeting, disclose
+  signed 10307 device gate passes. Confirm Fire-tablet-only targeting, disclose
   the optional microphone behavior, apply the listing pack, and submit.
 
 No repository script logs into or publishes through Amazon.

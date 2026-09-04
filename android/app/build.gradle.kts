@@ -44,7 +44,7 @@ android {
         }
         create("amazon") {
             dimension = "distribution"
-            versionCode = 10306
+            versionCode = 10307
         }
     }
 

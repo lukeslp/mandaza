@@ -1,6 +1,6 @@
 # Amazon Appstore asset map — Mandaza tablet
 
-Target binary: `app.mandaza.android` 1.3.3 (10306), Fire tablets only.
+Target binary: `app.mandaza.android` 1.3.3 (10307), Fire tablets only.
 
 ## Copy sources
 
@@ -17,8 +17,8 @@ Target binary: `app.mandaza.android` 1.3.3 (10306), Fire tablets only.
 | Amazon field | Source | State |
 |---|---|---|
 | App icon | `Mandaza/Assets.xcassets/AppIcon.appiconset/icon-1024.png` | Source identified; export to Amazon's current dimensions |
-| Fire-tablet screenshots | Capture from the exact signed 10306 APK | Open; do not use phone, tvOS, Fire TV, or Samsung captures |
-| Promotional image | Derive from a current 10306 renderer frame if required | Open |
+| Fire-tablet screenshots | Capture from the exact signed 10307 APK | Open; do not use phone, tvOS, Fire TV, or Samsung captures |
+| Promotional image | Derive from a current 10307 renderer frame if required | Open |
 
 The screenshot sequence should show the main mandala canvas, Zen clock,
 Tune/settings, palette controls, and Void/Paper modes. Include microphone UI
