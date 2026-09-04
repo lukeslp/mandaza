@@ -1,31 +1,27 @@
-# Amazon Appstore — MandazaTV (Fire TV)
+# Amazon Appstore release tracks
 
-**Priority:** Fire TV living room. Fire tablet is second and not required for this submission.
+Mandaza uses independent Amazon packages, listings, artifacts, and evidence for
+Fire TV and Fire tablets. Never attach one binary to the other record.
 
-## Package
+## MandazaTV — live Fire TV record
 
-| | |
+| Field | Value |
 |---|---|
-| Application ID | `app.mandaza.tv` |
-| Module | `:tv` |
+| Title / SKU | Mandaza / `app.mandaza.tv` |
+| Package | `app.mandaza.tv` |
 | Version | `1.3.1 (20301)` |
-| Privacy | https://mandaza.app/privacy.html |
-| Listing pack | `tv/amazon-listing/` |
+| Artifact | `tv/dist/release/MandazaTV-1.3.1-release.apk` |
+| APK SHA-256 | `1dfbfeee87d3a87cee31f68c150d96f58a1a0134b4c9350f799139ed44499023` |
+| Portal app id | `amzn1.devportal.mobileapp.0130d2b1a19447bb9d6367e7741d1e3b` |
+| Portal release id | `amzn1.devportal.apprelease.c42c655564a64765b02f0124762f9c6f` |
+| Console state | Live, reverified 2026-09-04 |
 
-## Staged artifacts
+The repository’s signed candidate passed D-pad, lifecycle, offline, and
+30-minute stability gates on Amazon AFTTI43 in August. A final store-delivered
+install and Apps-row banner check remains deliberately open; local ADB evidence
+does not substitute for the Amazon-delivered package.
 
-After a signed release build:
-
-```
-android/tv/dist/release/
-  MandazaTV-<version>-release.apk
-  SHA256SUMS.txt
-  PROVENANCE.txt
-```
-
-Listing art and paste copy live in `tv/amazon-listing/` (see `ASSET-MAP.md`).
-
-## Build signed release
+Build or restage the immutable TV artifact only for independent verification:
 
 ```sh
 cd /Users/luke/workspace/android-release-toolkit
@@ -33,62 +29,43 @@ scripts/android-release with-signing --profile mandaza -- \
   /Users/luke/workspace/mandaza-ios/android/tv/scripts/stage-release.sh
 ```
 
-Or with env already loaded:
+Listing copy, art, capture metadata, and exact screenshot roles live under
+`tv/amazon-listing/`.
+
+## Mandaza — Fire tablet candidate
+
+| Field | Value |
+|---|---|
+| Package | `app.mandaza.android` |
+| Version | `1.3.3 (10306)` |
+| Flavor | `amazonRelease` |
+| Device family | Fire tablets only |
+| Console state | No record as of 2026-09-04 |
+| Privacy | No account, analytics, ads, or app networking |
+| Microphone | Optional local music responsiveness; audio is never stored or transmitted |
+
+The Amazon flavor has no direct updater, no Internet permission, and no Google
+Play Review dependency. Its native renderer remains representative of the
+public Mandaza experience.
 
 ```sh
-cd /Users/luke/workspace/mandaza-ios/android
-export JAVA_HOME=$(/usr/libexec/java_home -v 21)
-export ANDROID_HOME="$HOME/Library/Android/sdk"
-./tv/scripts/stage-release.sh
+cd /Users/luke/workspace/android-release-toolkit
+MANDAZA_DISTRIBUTION=amazon scripts/android-release with-signing \
+  --profile mandaza -- /Users/luke/workspace/mandaza-ios/scripts/stage-android-release.sh
 ```
 
-## Device gate (Fire TV / Stick / Cube)
+The stage script runs unit tests and release lint, verifies APK/AAB signatures,
+asserts package/version identity, rejects Internet permission and Google Play
+libraries, and writes immutable checksums under `dist/android/amazon/v1.3.3/`.
+Complete the exact signed-device gate in `android/AMAZON-TABLET-EVIDENCE.md`
+before preparing a listing.
 
-Record model + Fire OS version, then verify:
+## Human console checkpoints
 
-1. Install APK without network if possible
-2. App appears in Fire TV **Apps** row with banner
-3. D-pad: navigate New / Zen / Tune, move between Tune rows, and activate each item
-4. With controls hidden, Select/Play generates and a direction restores controls
-5. Back leaves Zen, closes Tune, then toggles the primary rail
-6. Clock toggle works; Void/Paper theme and palette controls work
-7. Confirm `wm size` keeps the app override at 1920×1080 on 4K Fire panels
-8. Home → resume; sleep/wake; ~30+ min run without crash
+- For the live TV record, install the Amazon-delivered version and record its
+  version, package, Apps-row banner, signature lineage, and smoke result.
+- For the tablet track, create a separate standard Amazon app only after the
+  signed 10306 device gate passes. Confirm Fire-tablet-only targeting, disclose
+  the optional microphone behavior, apply the listing pack, and submit.
 
-Capture at least three device screenshots if replacing listing art. Current
-requirements and capture metadata are recorded in
-`tv/amazon-listing/ASSET-MAP.md` and `SCREENSHOT-METADATA.md`.
-
-### Current device evidence — 2026-08-09
-
-- AFTTI43 (`brandenburg`), Fire OS 7 / Android 9, physical 4K panel with
-  Amazon/Android 1920×1080 framebuffer override.
-- Signed `1.3.1 (20301)` APK installed and launched over ADB at
-  `192.168.0.120:5555`; signature, manifest version, and staged SHA-256 verified.
-- New / Zen / Tune navigation and current glow-free renderer captured at
-  1920×1080.
-- The bounded render loop stopped at 338 rendered frames and remained there
-  during later idle samples. Reveal cadence measured median 22 ms / p90 31 ms.
-- Five current 1920×1080 physical-device listing screenshots captured from that
-  exact signed release.
-- Home/resume and sleep/wake passed. A 30-minute foreground observation retained
-  one process, settled at roughly 38–40 MB PSS after warm-up, kept the display
-  awake, and produced no app crash or ANR. The APK has no network permission.
-- Open: human confirmation of the production Apps-row banner and Amazon console
-  submission fields.
-
-## Console sequence (human only)
-
-1. Amazon Developer Console → create app **MandazaTV** (or update)
-2. Upload signed APK; confirm **Fire TV** device family
-3. Paste `tv/amazon-listing/amazon.txt`
-4. Upload icons, background, five screenshots per `ASSET-MAP.md`
-5. Content rating / audience / privacy URL
-6. Submit only after device gate notes are attached
-
-This repo never logs into Amazon for you.
-
-## Not this track
-
-- Phone Mandaza (`app.mandaza.android`) — separate product
-- Ambient Time — optional sideload practice only
+No repository script logs into or publishes through Amazon.

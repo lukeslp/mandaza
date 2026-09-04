@@ -8,7 +8,8 @@ distribution=${MANDAZA_DISTRIBUTION:-direct}
 case "$distribution" in
   direct) variant=Direct ;;
   play) variant=Play ;;
-  *) echo "MANDAZA_DISTRIBUTION must be direct or play" >&2; exit 1 ;;
+  amazon) variant=Amazon ;;
+  *) echo "MANDAZA_DISTRIBUTION must be direct, play, or amazon" >&2; exit 1 ;;
 esac
 
 for variable in MANDAZA_ANDROID_STORE_FILE MANDAZA_ANDROID_STORE_PASSWORD MANDAZA_ANDROID_KEY_ALIAS MANDAZA_ANDROID_KEY_PASSWORD; do
@@ -36,6 +37,28 @@ test -f "$aab"
 build_tools="${ANDROID_HOME:-$HOME/Library/Android/sdk}/build-tools/36.0.0"
 "$build_tools/apksigner" verify --verbose "$apk"
 jarsigner -verify "$aab"
+
+badging=$($build_tools/aapt2 dump badging "$apk")
+case "$badging" in
+  *"package: name='app.mandaza.android'"*) ;;
+  *) echo "Unexpected Android package identity" >&2; exit 1 ;;
+esac
+
+if [ "$distribution" = amazon ]; then
+  case "$badging" in
+    *"versionCode='10306'"*) ;;
+    *) echo "Amazon artifact must use version code 10306" >&2; exit 1 ;;
+  esac
+  if printf '%s\n' "$badging" | grep -q "uses-permission: name='android.permission.INTERNET'"; then
+    echo "Amazon artifact unexpectedly requests network access" >&2
+    exit 1
+  fi
+  if (cd "$android_dir" && ./gradlew --quiet :app:dependencies --configuration amazonReleaseRuntimeClasspath) \
+      | grep -q 'com.google.android.play:'; then
+    echo "Amazon artifact unexpectedly includes Google Play libraries" >&2
+    exit 1
+  fi
+fi
 
 stage_dir="$repo_root/dist/android/$distribution/v$version"
 mkdir -p "$stage_dir"

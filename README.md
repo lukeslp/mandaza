@@ -9,8 +9,8 @@ experience with on-screen quick controls (Apple TV has no third-party
 WidgetKit surface).
 
 The creative experience runs on-device with no analytics or account. The
-Google Play build makes no network requests; the direct-download build checks
-the Mandaza release catalog once per day for updates.
+Google Play and Amazon builds make no network requests; the direct-download
+build checks the Mandaza release catalog once per day for updates.
 
 ## Features
 
@@ -120,6 +120,11 @@ The non-Apple living-room tracks are independent packages:
 
 These tracks share Mandaza’s visual language but do not share store identities,
 signing, or release evidence with the standalone Apple TV app.
+
+The Fire-tablet build is a third independent release track: the native Android
+app uses package `app.mandaza.android`, the `amazon` flavor, and version code
+`10306`. It omits both the direct updater and Google Play Review. See
+[android/AMAZON-RELEASE.md](android/AMAZON-RELEASE.md).
 
 ## Submission Pack
 

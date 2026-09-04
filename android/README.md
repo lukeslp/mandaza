@@ -21,8 +21,8 @@ phone/tablet app; Home Screen widgets remain follow-up work.
 
 The `direct` flavor checks the public Drummer downloads catalog once per day
 and links to the Mandaza download page when a newer version is available. The
-`play` flavor contains no direct updater or network permission and relies on
-Google Play for updates.
+`play` and `amazon` flavors contain no direct updater or network permission and
+rely on their stores for updates. Only `play` links Google Play Review.
 
 ## Build and test
 
@@ -63,8 +63,10 @@ scripts/android-release with-signing --profile mandaza -- \
   /Users/luke/workspace/mandaza-ios/scripts/stage-android-release.sh
 ```
 
-Set `MANDAZA_DISTRIBUTION=play` to stage the Google Play flavor. The direct
-release uses version code `10303`; the Play release uses version code `10305`.
+Set `MANDAZA_DISTRIBUTION=play` or `MANDAZA_DISTRIBUTION=amazon` to stage the
+corresponding store flavor. Direct uses version code `10303`, Play uses `10305`,
+and the Fire-tablet candidate uses `10306`. The live Fire TV app remains the
+separate `app.mandaza.tv` package at `1.3.1 (20301)`.
 
 Release signing material remains outside the repository and its password stays
 in macOS Keychain. Google Play login, upload, and submission remain manual.

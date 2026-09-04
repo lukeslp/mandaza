@@ -42,6 +42,10 @@ android {
             dimension = "distribution"
             versionCode = 10305
         }
+        create("amazon") {
+            dimension = "distribution"
+            versionCode = 10306
+        }
     }
 
     signingConfigs {
