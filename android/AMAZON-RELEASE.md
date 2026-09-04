@@ -58,7 +58,9 @@ The stage script runs unit tests and release lint, verifies APK/AAB signatures,
 asserts package/version identity, rejects Internet permission and Google Play
 libraries, and writes immutable checksums under `dist/android/amazon/v1.3.3/`.
 Complete the exact signed-device gate in `android/AMAZON-TABLET-EVIDENCE.md`
-before preparing a listing.
+before preparing a listing. Tablet copy and asset provenance are tracked in
+`android/amazon-listing/ASSET-MAP.md`; Fire TV assets remain separate under
+`android/tv/amazon-listing/`.
 
 ## Human console checkpoints
 
