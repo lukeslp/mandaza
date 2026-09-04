@@ -59,7 +59,9 @@
   backgrounding, and Always-On dimming.
 - Fire: signed `1.3.1 (20301)` APK, five current physical-device listing
   captures, Home/resume, sleep/wake, and the 30-minute stability gate are
-  complete. Only the human Amazon console/banner confirmation remains.
+  complete. The exact `app.mandaza.tv` record is Live as of 2026-09-04; only
+  the Amazon-delivered install, production Apps-row banner, and smoke evidence
+  remain.
 - Samsung: complete remote, offline relaunch, sleep/wake, long-run, certificate,
   and Seller Office gates.
 

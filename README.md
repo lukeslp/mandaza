@@ -212,6 +212,8 @@ clock forms, tilt parallax, Watch companion, and Home/StandBy widgets. The
 standalone tvOS release remains separate; Fire TV and Samsung TV are active
 device-tested release tracks. Fire's lifecycle/long-run gate is complete;
 Samsung's remote/lifecycle/long-run and store-signing gates remain open.
+Amazon MandazaTV `app.mandaza.tv` 1.3.1 (20301) is Live; its final
+store-delivered install and Apps-row banner check remain open.
 **Permanent distribution boundary:** the `TV_OS` 1.0 draft under the unified
 Mandaza record (`com.lukesteuber.mandaza`) is a redundant abandoned record. Do
 not attach, complete, submit, or otherwise revive it. The already-live
