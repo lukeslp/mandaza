@@ -20,6 +20,12 @@ Automated evidence recorded 2026-09-04:
 - Certificate SHA-256: `de02c811472ce4808b30cae0abf7a13e72b38013c0bbecfbcfe590523ef8077a`
 - Manifest: touchscreen required, microphone optional, ordinary launcher only.
 
+Supplemental non-Fire smoke, 2026-09-04: the exact APK installed and launched
+on a Pixel 9a (Android 16), rendered the native canvas and Tune sheet in portrait
+and landscape, resumed after Home with the same process, and produced no crash
+buffer entry. This catches general Android regressions but does not satisfy any
+Fire-specific checkbox below.
+
 ## Signed Fire-device gate
 
 Record the exact APK hash, signing certificate, tablet model, Fire OS version,
