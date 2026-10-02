@@ -37,6 +37,8 @@ android {
         create("direct") {
             dimension = "distribution"
             versionCode = 10309
+            // Installed direct copies compare versionName with catalog.json, so a rebuild must raise it.
+            versionName = "$marketingVersion.4"
         }
         create("play") {
             dimension = "distribution"
