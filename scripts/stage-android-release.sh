@@ -20,11 +20,6 @@ for variable in MANDAZA_ANDROID_STORE_FILE MANDAZA_ANDROID_STORE_PASSWORD MANDAZ
   fi
 done
 
-version=$(cd "$android_dir" && ./gradlew --quiet :app:printVersion | awk 'NF { value=$0 } END { print value }')
-case "$version" in
-  *[!0-9A-Za-z._-]*|"") echo "Invalid Android version: $version" >&2; exit 1 ;;
-esac
-
 (cd "$android_dir" && ./gradlew clean :core:testDebugUnitTest \
   ":app:test${variant}DebugUnitTest" ":app:lint${variant}Release" \
   ":app:assemble${variant}Release" ":app:bundle${variant}Release")
@@ -42,6 +37,12 @@ badging=$($build_tools/aapt2 dump badging "$apk")
 case "$badging" in
   *"package: name='app.mandaza.android'"*) ;;
   *) echo "Unexpected Android package identity" >&2; exit 1 ;;
+esac
+
+# Name the staged files from the built flavor's own versionName; flavors may override the default.
+version=$(printf '%s\n' "$badging" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p" | head -1)
+case "$version" in
+  *[!0-9A-Za-z._-]*|"") echo "Invalid Android version: $version" >&2; exit 1 ;;
 esac
 
 if [ "$distribution" = amazon ]; then
