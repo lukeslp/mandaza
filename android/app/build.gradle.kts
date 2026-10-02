@@ -36,7 +36,7 @@ android {
     productFlavors {
         create("direct") {
             dimension = "distribution"
-            versionCode = 10303
+            versionCode = 10309
         }
         create("play") {
             dimension = "distribution"

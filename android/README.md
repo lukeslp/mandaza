@@ -64,7 +64,7 @@ scripts/android-release with-signing --profile mandaza -- \
 ```
 
 Set `MANDAZA_DISTRIBUTION=play` or `MANDAZA_DISTRIBUTION=amazon` to stage the
-corresponding store flavor. Direct uses version code `10303`, Play uses `10305`,
+corresponding store flavor. Direct uses version code `10309`, Play uses `10305`,
 and the Fire-tablet candidate uses `10308`. The live Fire TV app remains the
 separate `app.mandaza.tv` package at `1.3.1 (20301)`.
 
