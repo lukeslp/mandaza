@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -52,12 +53,15 @@ fun MandazaCanvas(
         }
     }
     var elapsed by remember(generated) { mutableFloatStateOf(0f) }
+    // The frame loop below outlives recompositions, so it must read the live
+    // music boost rather than the audio level captured when the loop started.
+    val musicBoost by rememberUpdatedState(1f + audioLevel * reactivity * 1.5f)
     LaunchedEffect(generated, config.drawSpeed) {
         var previous = 0L
         while (isActive) {
             withFrameNanos { now ->
                 if (previous != 0L) elapsed += (now - previous) / 1_000_000_000f *
-                    (0.35f + config.drawSpeed.toFloat() * 1.9f) * (1f + audioLevel * reactivity * 1.5f)
+                    (0.35f + config.drawSpeed.toFloat() * 1.9f) * musicBoost
                 previous = now
             }
         }
