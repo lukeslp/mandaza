@@ -28,10 +28,23 @@ struct MandazaProvider: AppIntentTimelineProvider {
         let now = Date.now
         if !configuration.autoRotate {
             let snapshot = await Self.snapshotUsingSharedSettings(at: now, intent: configuration)
-            let entries = (0..<120).map { minute in
-                MandazaEntry(date: now.addingTimeInterval(TimeInterval(minute * 60)),
+            let entries = ClockTimeline.minuteEntries(from: now).map { date in
+                MandazaEntry(date: date,
                              snapshot: snapshot,
                              intent: configuration)
+            }
+            return Timeline(entries: entries, policy: .atEnd)
+        }
+        if configuration.showTime, Self.clockFamilies.contains(context.family) {
+            // `Text(entry.date, style: .time)` shows the entry's own date, so a
+            // widget that displays the time needs an entry every minute. Each
+            // entry still takes its pattern from its rotation bucket, so the
+            // artwork changes on the bucket boundary.
+            var entries: [MandazaEntry] = []
+            entries.reserveCapacity(ClockTimeline.minuteEntryCount)
+            for date in ClockTimeline.minuteEntries(from: now) {
+                let snap = await Self.snapshotUsingSharedSettings(at: date, intent: configuration)
+                entries.append(MandazaEntry(date: date, snapshot: snap, intent: configuration))
             }
             return Timeline(entries: entries, policy: .atEnd)
         }
@@ -46,6 +59,12 @@ struct MandazaProvider: AppIntentTimelineProvider {
         }
         return Timeline(entries: entries, policy: .after(entries.last?.date ?? now))
     }
+
+    /// Families whose views render the time: StandBy (large / extra large)
+    /// and the rectangular Lock Screen widget.
+    private static let clockFamilies: Set<WidgetFamily> = [
+        .systemLarge, .systemExtraLarge, .accessoryRectangular
+    ]
 
     /// Placeholder avoids crossing into App Group / actor-isolated settings reads.
     private static func placeholderSnapshot(at date: Date,

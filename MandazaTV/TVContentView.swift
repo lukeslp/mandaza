@@ -862,7 +862,7 @@ private struct TVZenClockOverlay: View {
     let position: ZenClockPosition
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: showSeconds ? 1 : 30)) { ctx in
+        TimelineView(ZenClockSchedule(showSeconds: showSeconds)) { ctx in
             let now = ctx.date
             GeometryReader { geo in
                 VStack(spacing: 16) {

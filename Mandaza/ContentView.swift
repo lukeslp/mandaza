@@ -1541,7 +1541,7 @@ private struct ZenClockOverlay: View {
     private var scale: CGFloat { CGFloat(min(max(sizeScale, 0.5), 1.8)) }
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: showSeconds ? 1 : 30)) { ctx in
+        TimelineView(ZenClockSchedule(showSeconds: showSeconds)) { ctx in
             let now = ctx.date
             GeometryReader { geo in
                 clockContent(now)
