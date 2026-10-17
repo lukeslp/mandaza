@@ -51,6 +51,17 @@ public final class SpectrumAnalyzer {
     private var fluxHistory: [Float] = []
     private let fluxHistoryLength = 40
 
+    /// Shortest gap between two reported onsets. Each onset drives a
+    /// canvas-wide stroke and glow pulse, so dense percussion (hi-hats,
+    /// drum rolls) must not pulse the screen more than three times a
+    /// second (WCAG 2.3.1 general flash threshold). A 170 BPM beat still
+    /// lands on every hit.
+    public static let minimumOnsetInterval: Double = 1.0 / 3.0
+    /// `minimumOnsetInterval` expressed in analysis windows (one call to
+    /// `isOnset` per consecutive, non-overlapping `fftSize` window).
+    private let refractoryWindows: Int
+    private var windowsSinceOnset = Int.max
+
     public init(sampleRate: Double, fftSize: Int = 1024) {
         precondition(fftSize >= 64 && fftSize & (fftSize - 1) == 0,
                      "fftSize must be a power of two ≥ 64")
@@ -67,6 +78,8 @@ public final class SpectrumAnalyzer {
                                   count: fftSize,
                                   isHalfWindow: false)
         self.referenceMagnitude = Float(fftSize) / 4
+        let windowSeconds = Double(fftSize) / max(sampleRate, 1)
+        self.refractoryWindows = max(1, Int((Self.minimumOnsetInterval / windowSeconds).rounded(.up)))
 
         let half = fftSize / 2
         self.windowed = [Float](repeating: 0, count: fftSize)
@@ -133,14 +146,18 @@ public final class SpectrumAnalyzer {
     }
 
     /// Onset when `flux` exceeds 1.6× the running mean of the last
-    /// ~40 flux values and that mean is non-trivial. The incoming value
-    /// joins the history after the decision so a spike does not dilute
-    /// its own detection.
+    /// ~40 flux values, that mean is non-trivial, and at least
+    /// `minimumOnsetInterval` has passed since the previous onset. The
+    /// incoming value joins the history after the decision so a spike does
+    /// not dilute its own detection.
     public func isOnset(flux: Float) -> Bool {
         let mean = fluxHistory.isEmpty
             ? 0
             : fluxHistory.reduce(0, +) / Float(fluxHistory.count)
+        if windowsSinceOnset < Int.max { windowsSinceOnset += 1 }
         let onset = mean > 0.01 && flux > 1.6 * mean
+            && windowsSinceOnset >= refractoryWindows
+        if onset { windowsSinceOnset = 0 }
 
         fluxHistory.append(flux)
         if fluxHistory.count > fluxHistoryLength {
