@@ -33,6 +33,8 @@ struct ContentView: View {
     @State private var autoRegenTask: Task<Void, Never>? = nil
     @State private var reviewRequestTask: Task<Void, Never>? = nil
     @State private var lastIdle: Bool = false
+    /// Set when Zen's automatic loop changed the look without reloading widgets.
+    @State private var widgetsNeedReload = false
     @State private var reviewTracker = ReviewPromptTracker()
 
     /// The bottom shelf fades after a short idle period. Once faded, the next
@@ -627,7 +629,11 @@ struct ContentView: View {
         }
     }
 
-    private func regenerate() {
+    /// `userInitiated: false` is Zen's automatic loop, which can run for hours
+    /// on a nightstand: it skips the haptic tick and defers the widget reload
+    /// (which wakes the widget extension to rebuild every timeline) until the
+    /// app leaves the foreground.
+    private func regenerate(userInitiated: Bool = true) {
         // Push the current snapshot into the Recents ring buffer BEFORE the
         // seed changes — so the artwork the user is about to overwrite is
         // recoverable.
@@ -635,8 +641,12 @@ struct ContentView: View {
         configOverride = nil
         seed = UUID().uuidString
         settings.randomizePatternLook(includePalette: settings.randomizePaletteOnRegenerate)
-        selectionFeedback()
-        reloadWidgetTimelines()
+        if userInitiated {
+            selectionFeedback()
+            reloadWidgetTimelines()
+        } else {
+            widgetsNeedReload = true
+        }
     }
 
     // MARK: - Recents ring buffer
@@ -693,6 +703,7 @@ struct ContentView: View {
     }
 
     private func reloadWidgetTimelines() {
+        widgetsNeedReload = false
         #if canImport(WidgetKit)
         WidgetCenter.shared.reloadAllTimelines()
         #endif
@@ -707,7 +718,7 @@ struct ContentView: View {
         let wait = settings.zenAutoRegenSeconds
         autoRegenTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(wait))
-            if !Task.isCancelled, !reduceMotion { regenerate() }
+            if !Task.isCancelled, !reduceMotion { regenerate(userInitiated: false) }
         }
     }
 
@@ -729,6 +740,9 @@ struct ContentView: View {
             autoRegenTask?.cancel()
             reactor.stop()
             tilt.stop()
+            if phase == .background, widgetsNeedReload {
+                reloadWidgetTimelines()
+            }
         @unknown default:
             break
         }
