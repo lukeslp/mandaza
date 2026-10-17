@@ -323,10 +323,20 @@ private fun ZenOverlay(state: MandazaAppState, onExit: () -> Unit) {
 private fun currentTime(showSeconds: Boolean): androidx.compose.runtime.State<Long> =
     androidx.compose.runtime.produceState(System.currentTimeMillis(), showSeconds) {
         while (true) {
-            value = System.currentTimeMillis()
-            kotlinx.coroutines.delay(if (showSeconds) 1000 else 15_000)
+            val now = System.currentTimeMillis()
+            value = now
+            kotlinx.coroutines.delay(millisUntilNextClockTick(now, showSeconds))
         }
     }
+
+/**
+ * Wakes just after the displayed second or minute changes. A fixed 15 s
+ * delay could leave the previous minute on screen for up to 15 seconds.
+ */
+internal fun millisUntilNextClockTick(nowMs: Long, showSeconds: Boolean): Long {
+    val step = if (showSeconds) 1_000L else 60_000L
+    return step - Math.floorMod(nowMs, step) + 20L
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
