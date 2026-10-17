@@ -35,7 +35,10 @@ struct MandazaProvider: AppIntentTimelineProvider {
             }
             return Timeline(entries: entries, policy: .atEnd)
         }
-        if configuration.showTime, Self.clockFamilies.contains(context.family) {
+        // The rectangular Lock Screen view always shows the time, whatever
+        // `showTime` says.
+        let showsTime = configuration.showTime || context.family == .accessoryRectangular
+        if showsTime, Self.clockFamilies.contains(context.family) {
             // `Text(entry.date, style: .time)` shows the entry's own date, so a
             // widget that displays the time needs an entry every minute. Each
             // entry still takes its pattern from its rotation bucket, so the
