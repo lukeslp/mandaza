@@ -35,6 +35,19 @@ public struct Palette: Identifiable, Hashable {
         .init(id: "terrain",        name: "Terrain",        hexes: ["#1a0f05", "#7c3810", "#c47830", "#6b7c45", "#c8d4a0"])
     ]
 
+    /// The current id for `id`, resolving the legacy aliases that saved
+    /// widget configurations still use (`arctic` is Canopy, `riso` is
+    /// Risograph). Returns nil for an unknown id.
+    public static func canonicalId(_ id: String) -> String? {
+        let resolved: String
+        switch id {
+        case "arctic": resolved = "canopy"
+        case "riso":   resolved = "risograph"
+        default:       resolved = id
+        }
+        return all.contains(where: { $0.id == resolved }) ? resolved : nil
+    }
+
     public static func by(id: String) -> Palette {
         // Fallback chain: requested id → legacy aliases → first palette.
         all.first(where: { $0.id == id })

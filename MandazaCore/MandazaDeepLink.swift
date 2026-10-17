@@ -35,11 +35,17 @@ public enum MandazaDeepLink {
     }
 
     public static func url(for snapshot: MandazaSnapshot) -> URL? {
+        // Widgets configured with the Canopy palette carry its legacy id
+        // `arctic`; encode the current id so the link still opens the pattern.
         guard snapshot.config.isValidForExternalRendering,
-              Palette.all.contains(where: { $0.id == snapshot.paletteId }),
+              let paletteId = Palette.canonicalId(snapshot.paletteId),
               !snapshot.seed.isEmpty,
               snapshot.seed.count <= 512,
-              let data = try? JSONEncoder().encode(snapshot) else {
+              let data = try? JSONEncoder().encode(
+                MandazaSnapshot(seed: snapshot.seed,
+                                paletteId: paletteId,
+                                config: snapshot.config,
+                                date: snapshot.date)) else {
             return nil
         }
         var components = URLComponents()
