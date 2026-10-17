@@ -183,7 +183,11 @@ public struct MandazaCanvas: View {
             // frames pick up fresh modulation values. The warped `animMs`
             // clock and `beatEnv` are advanced in `advance(now:)` on each
             // timeline tick; drawing them one tick behind is imperceptible.
-            let mod = (modulationSource?.isActive == true) ? modulationSource?.modulation : nil
+            // Reduce Motion freezes the finished pattern, so live audio must
+            // not keep pumping stroke width, glow, or color either (the beat
+            // throb already stops because `advance(now:)` bails out).
+            let mod = (!reduceMotion && modulationSource?.isActive == true)
+                ? modulationSource?.modulation : nil
             Canvas(opaque: true,
                    colorMode: .extendedLinear,
                    rendersAsynchronously: false) { ctx, canvasSize in
