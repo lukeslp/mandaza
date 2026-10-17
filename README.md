@@ -209,9 +209,10 @@ MIT — see [LICENSE](LICENSE).
 
 ## Status
 
-Version **1.2** is live. Version **1.3** is prepared with music responsivity,
-clock forms, tilt parallax, Watch companion, and Home/StandBy widgets. The
-standalone tvOS release remains separate; Fire TV and Samsung TV are active
+Mandaza **1.4** (build 58) for iPhone, iPad, and Apple Watch and the
+standalone MandazaTV **1.3** (build 58) are live on the App Store, as checked
+in App Store Connect on 2026-10-16. The direct Android download is 1.3.4
+(10309); Fire TV and Samsung TV are active
 device-tested release tracks. Fire's lifecycle/long-run gate is complete;
 Samsung's remote/lifecycle/long-run and store-signing gates remain open.
 Amazon MandazaTV `app.mandaza.tv` 1.3.1 (20301) is Live; its final
