@@ -1,8 +1,10 @@
-# Proposed MR !55922 follow-up
+# Posted MR !55922 follow-up
 
-Status: prepared locally, not posted. Luke's confirmation is required before
-posting this comment to the third-party F-Droid repository. It changes no recipe,
-source pin, tag, version, signing key or release asset.
+Status: Luke approved this exact comment, and it was posted November 5, 2026,
+at 14:38:33 Pacific. [View the posted comment](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/55922#note_4173480948).
+Its presence was verified in rendered activity. It changes no recipe, source
+pin, tag, version, signing key or release asset. Maintainer CI and acceptance
+remain pending. Any further third-party write requires separate confirmation.
 
 Target: <https://gitlab.com/fdroid/fdroiddata/-/merge_requests/55922>
 

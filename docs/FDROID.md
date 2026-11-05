@@ -150,9 +150,21 @@ staging script checks the issued-code ledger, including private Amazon 10312;
 new phone bytes need at least 10313. This does not reserve a code or establish
 store signing compatibility. No new version has been issued for these fixes.
 
-Client import checks still need an unlocked device. Physical Fire/fold tests and
-full human TalkBack traversal remain open. A maintainer-CI follow-up for MR
-!55922 is prepared separately and needs Luke's confirmation before posting.
+Physical client checks now pass on both Pixels: Chrome's LocalType download-page
+badge opens F-Droid, which recognizes the existing independent repository and
+its signing fingerprint. Mandaza 1.3.6 appears as Installed and Suggested. A
+repository update check was invoked without an observed error; the unchanged
+index retained its prior download time. No new F-Droid install was attempted.
+The same page imports LocalType into Obtainium and repeat metadata checks retain
+its verified current-APK baseline. These keyboard-driven checks do not establish
+finger-touch, full TalkBack or every-app coverage. Physical Fire/fold tests and
+full human TalkBack traversal remain open.
+
+After Luke approved the exact text, the [maintainer-CI follow-up](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/55922#note_4173480948)
+was posted and verified in rendered activity on November 5 at 14:38:33 Pacific.
+[FDROID_REVIEW_FOLLOWUP.md](FDROID_REVIEW_FOLLOWUP.md) preserves the posted body.
+Private client evidence is in
+`/Volumes/Galactus/android-release-review-fixes-20261105/client-checks/`.
 
 Luke requires confirmation immediately before any submission to a third-party
 repository. Prepare the exact source/tag, recipe diff, validation and submission
