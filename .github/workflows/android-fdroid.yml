@@ -20,7 +20,10 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Install Android build inputs
-        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+          log-accepted-android-sdk-licenses: false
       - name: Prepare disposable F-Droid source
         run: python3 fdroid/prepare-build.py --confirm-build-sandbox
       - name: Build and test without release credentials
