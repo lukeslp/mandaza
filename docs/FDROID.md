@@ -129,6 +129,31 @@ Keep the manual update policy, attribution and exact public pins. Full human
 TalkBack speech/traversal and physical flip/tablet checks are still not claimed.
 Preserve both Pixel test copies and user data.
 
+## November 5 review follow-up
+
+The exact signed 1.3.6 (10311) APK now upgrades production 1.3.5 (10310) in
+place on both Pixel 9a and Pixel 10, API 37. Pulled installed bytes match the
+published APK, and both release activities resume without an observed app
+crash. The app identity, first-install record and credential-data directory
+remain intact. No uninstall, reset or extraction of individual personal items
+was used. These upgrade/launch checks are separate from the earlier seven-case
+debug review tests.
+
+Public [run 42118994931](https://github.com/lukeslp/mandaza-android/actions/runs/42118994931)
+rebuilds the immutable `fdroid-v1.3.6` source and automatically checks its commit,
+tag and unsigned APK against the published receipt. It passed tests, lint, APK
+checks and the byte comparison. Official F-Droid builder acceptance remains
+pending. The tag, signed release and submitted recipe are unchanged.
+
+Future source now refuses a missing or malformed marketing version. The release
+staging script checks the issued-code ledger, including private Amazon 10312;
+new phone bytes need at least 10313. This does not reserve a code or establish
+store signing compatibility. No new version has been issued for these fixes.
+
+Client import checks still need an unlocked device. Physical Fire/fold tests and
+full human TalkBack traversal remain open. A maintainer-CI follow-up for MR
+!55922 is prepared separately and needs Luke's confirmation before posting.
+
 Luke requires confirmation immediately before any submission to a third-party
 repository. Prepare the exact source/tag, recipe diff, validation and submission
 text for review first. GitLab sign-in is not submission approval.

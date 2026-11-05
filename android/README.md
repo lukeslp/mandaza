@@ -24,11 +24,19 @@ and links to the Mandaza download page when a newer version is available. The
 `play` and `amazon` flavors contain no direct updater or network permission and
 rely on their stores for updates. Only `play` links Google Play Review.
 
-The unreleased `fdroid` candidate also has no direct updater, Google Play Review
-dependency or Internet permission. It uses version 1.3.6 (10311), above existing
-phone variants. See [F-Droid preparation](../docs/FDROID.md) for evidence, the
-private-source review gate, build recipe and remaining checks. This is not an
-official F-Droid listing or a published update.
+The published `fdroid` release has no direct updater, Google Play Review
+dependency or Internet permission. Version 1.3.6 (10311) uses the established
+direct signer and has now been installed over 1.3.5 on both Pixels without an
+uninstall or reset. The separate review-app functional tests and the exact-release
+upgrade/launch checks remain distinct evidence. Official F-Droid acceptance is
+still pending.
+
+New phone codes must exceed every issued code across direct, Play, Amazon and
+F-Droid, including private candidates. The release toolkit tracks 10312 as the
+current high-water mark; a new build needs at least 10313. Exact known artifacts
+can be staged again unchanged. `scripts/stage-android-release.sh` checks the APK
+against that ledger before staging. Different store signing keys and lower
+version codes can still prevent switching channels in place.
 
 ## Build and test
 

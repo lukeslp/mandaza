@@ -16,8 +16,8 @@ val signingValues = listOf(
 val hasReleaseSigning = signingValues.values.all { !it.isNullOrBlank() }
 
 val marketingVersion = rootProject.file("../project.yml").readText()
-    .let { Regex("MARKETING_VERSION:\\s*\"?([0-9]+(?:\\.[0-9]+){0,2})").find(it)?.groupValues?.get(1) }
-    ?: "1.0"
+    .let { Regex("""(?m)^[ \t]*MARKETING_VERSION:[ \t]*("?)([0-9]+(?:\.[0-9]+){0,2})\1[ \t]*(?:#.*)?$""").find(it)?.groupValues?.get(2) }
+    ?: error("MARKETING_VERSION is missing or invalid in project.yml; refusing a fallback Android release version")
 val androidPatchVersion = 3
 
 android {
@@ -51,7 +51,7 @@ android {
         }
         create("fdroid") {
             dimension = "distribution"
-            // Unreleased candidate, above every currently published phone variant.
+            // Published F-Droid 1.3.6. Future phone codes must exceed all issued channel codes.
             versionCode = 10311
             versionName = "$marketingVersion.6"
         }
