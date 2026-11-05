@@ -45,23 +45,31 @@ Play Review, Play Services, ML Kit and Firebase namespaces. The official
 fdroidserver scanner is an additional independent check, not replaced by this
 small project-specific verifier.
 
-The Linux workflow `.github/workflows/android-fdroid.yml` is pinned to official
-action revisions and uses read-only repository permissions. It builds without
+The Linux workflow `.github/workflows/android-fdroid.yml` pins its GitHub and
+Android SDK setup actions and uses read-only repository permissions. It builds without
 release credentials, tests, lints and retains the unsigned APK/check evidence.
 Its eventual result is distinct from acceptance by F-Droid's own builder.
 
 ## Evidence and remaining gates
 
-Measured on Napoleon: the initial candidate passed six core tests and six app
-tests, lint with zero errors (22 warnings), release/debug builds, resolved
-runtime and DEX checks with no excluded SDK namespaces, and fdroidserver 2.4.5's
-binary scanner with zero problems. The APK has no Internet permission. Its
+Measured on Napoleon: the candidate passed six core tests and six app tests,
+lint with zero errors (22 warnings), release/debug builds, resolved runtime and
+DEX checks with no excluded SDK namespaces. An independent disposable source
+export at `18b03f4` also passed its clean build, tests and lint. F-Droid's
+fdroidserver 2.4.5 source and final APK scanners each reported zero problems;
+metadata read/rewrite/lint passed with current fdroiddata category configuration.
+The source export's secret scan reported zero findings. The APK's required
+license assets are verified. All 96 resolved runtime coordinates have cached
+POM license metadata, including an inherited Guava license; this is supporting
+evidence, not a finished native-source/asset provenance audit.
+
+The APK has no Internet permission. Its
 storage permissions are limited to API 28 and earlier; microphone is optional.
 AndroidX's `libandroidx.graphics.path.so` is present for four ABIs; do not
 describe the APK as containing no native code.
 
-The final source snapshot, license-asset verification, source scan, clean-copy
-build and Linux CI results are recorded in the preparation handoff. Local
+The exact source snapshot, APK hash, logs and Linux CI results are recorded in
+the private preparation handoff under `artifacts/fdroid-preparation/`. Local
 builds do not prove reproducibility or Google-free physical-device acceptance.
 
 Before official submission:
@@ -72,8 +80,9 @@ Before official submission:
   The seeded Mash notice is restored in `LICENSES/` and the F-Droid APK.
   See `THIRD_PARTY_NOTICES.md`; an app-level MIT file does not cover every import.
 - Confirm the complete runtime dependency/native-library license inventory.
-- Pass the source scanner on the recipe-prepared source, a clean Linux build,
-  and the current fdroiddata metadata/build checks.
+- Repeat official source/metadata/build checks against the final reviewed
+  public tag in F-Droid's own build environment. Local scanner and metadata
+  success does not establish acceptance by the catalog's builder.
 - Decide signing/update continuity, approve the exact source release/tag,
   and replace the disabled draft build's pin with the reviewed public release.
 - Verify core tasks, update/data retention, microphone-off behavior and

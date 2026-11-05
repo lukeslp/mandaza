@@ -10,8 +10,8 @@ Samsung's actual closed-cover App Tray; artwork, footer controls and the
 scrolling Tune sheet worked in the wide frame. No Mandaza source change was
 needed for that check. This does not establish full-panel camera clearance,
 physical folding continuity, TalkBack, or a dedicated cover-clock interaction.
-Evidence: the coordinating Ambient Time report, `docs/reviews/flip-apps-20261104.md`
-in `ambient-time/clocks-app`.
+Evidence: the coordinating Ambient Time report,
+`/Users/luke/workspace/ambient-time/docs/reviews/flip-apps-20261104.md`.
 
 Follow-up: preserve a clock/ambient mode across fold transitions; keep essential
 controls clear of the measured camera area; honor reduced motion and lifecycle
