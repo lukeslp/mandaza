@@ -3,6 +3,7 @@ package com.lukesteuber.mandaza
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -26,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.lukesteuber.mandaza.core.MandazaPalettes
@@ -44,7 +49,11 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 MandazaPalettes.all.forEach { palette ->
                     Column(
-                        Modifier.clickable { state.paletteId = palette.id; state.persist() },
+                        Modifier.selectable(
+                            selected = palette.id == state.paletteId,
+                            role = Role.RadioButton,
+                            onClick = { state.paletteId = palette.id; state.persist() },
+                        ).padding(4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Row {
@@ -52,8 +61,14 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
                                 Box(Modifier.size(width = 13.dp, height = 38.dp).background(Color(color.toInt())))
                             }
                         }
-                        Text(palette.name, style = MaterialTheme.typography.labelSmall,
-                            color = if (palette.id == state.paletteId) Color(0xFF48BFE3) else Color(0xFF9AA5B4))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(palette.name, style = MaterialTheme.typography.labelSmall,
+                                color = if (palette.id == state.paletteId) Color(0xFF48BFE3) else Color(0xFF9AA5B4))
+                            if (palette.id == state.paletteId) {
+                                Icon(Icons.Default.Check, contentDescription = null,
+                                    modifier = Modifier.size(14.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -100,7 +115,7 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
             ToggleRow("Music responsivity", state.musicResponsive) { state.musicResponsive = it }
             if (state.musicResponsive) SliderRow("Reactivity", state.reactivity, 0f..1f) { state.reactivity = it }
             Text("Clock form", style = MaterialTheme.typography.labelMedium, color = Color(0xFF9AA5B4))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("digital", "stacked", "editorial").forEach { form ->
                     FilterChip(selected = state.clockForm == form, onClick = { state.clockForm = form }, label = { Text(form.replaceFirstChar(Char::uppercase)) })
                 }

@@ -1,3 +1,5 @@
+// Loop construction adapted from Dillon (Dillo), Controlled loops on hexagons /
+// Loops on hexagons (MIT). See LICENSES/ and docs/FDROID_PROVENANCE.md.
 package com.lukesteuber.mandaza.core
 
 import kotlin.math.abs
@@ -33,7 +35,8 @@ private val probabilityTable = arrayOf(
     intArrayOf(0, 1, 3, 1),
 )
 
-// Adapted from Johannes Baagøe's 2010 Mash algorithm; see LICENSES/Johannes-Baagoe-MIT.txt.
+// Dillon's wrapper over the GRC/Steve Gibson Mash variant (public domain),
+// based on Johannes Baagøe's Mash (MIT). See THIRD_PARTY_NOTICES.md.
 private class Mash(seed: String) {
     private var n = 0xefc8249dL
 

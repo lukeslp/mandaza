@@ -9,6 +9,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
@@ -43,6 +46,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -170,8 +174,9 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         }
     }
 
-    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(
+    MaterialTheme(colorScheme = darkColorScheme(
         primary = Cyan, background = Void, surface = Deep, onSurface = Paper,
+        onBackground = Paper, onSurfaceVariant = Muted,
     )) {
         Scaffold(
             containerColor = Void,
@@ -236,6 +241,7 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                 onDismissRequest = { state.persist(); sheet = null },
                 containerColor = Deep,
                 contentColor = Paper,
+                dragHandle = { MandazaDragHandle() },
             ) { MandazaSettings(state, onFavorites = { sheet = Sheet.Favorites }) }
             null -> Unit
         }
@@ -336,8 +342,10 @@ private fun SnapshotSheet(
     onDismiss: () -> Unit,
     onSelect: (com.lukesteuber.mandaza.core.MandazaSnapshot) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Deep, contentColor = Paper) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Deep, contentColor = Paper,
+        dragHandle = { MandazaDragHandle() }) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.headlineSmall)
             if (items.isEmpty()) Text("Nothing here yet.", color = Muted)
             items.forEach { snapshot ->
@@ -353,5 +361,16 @@ private fun SnapshotSheet(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun MandazaDragHandle() {
+    // The sheet adds the action semantics; retain a full 48dp container even
+    // when large text expands the sheet to its full-height anchor.
+    Box(Modifier.size(48.dp).semantics { contentDescription = "Sheet handle" },
+        contentAlignment = Alignment.Center) {
+        Box(Modifier.size(width = 32.dp, height = 4.dp)
+            .background(Muted, RoundedCornerShape(2.dp)))
     }
 }

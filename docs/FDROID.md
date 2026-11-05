@@ -1,6 +1,6 @@
 # Official F-Droid preparation — November 4, 2026
 
-Status: **local candidate built and checked; not submitted or published**.
+Status: **provenance reviewed; candidate built and AOSP-tested; not submitted or published**.
 This is preparation for the official catalog, separate from Luke's existing
 independent binary repository. Source remains private.
 
@@ -72,21 +72,38 @@ The exact source snapshot, APK hash, logs and Linux CI results are recorded in
 the private preparation handoff under `artifacts/fdroid-preparation/`. Local
 builds do not prove reproducibility or Google-free physical-device acceptance.
 
+The extended review is recorded in [FDROID_PROVENANCE.md](FDROID_PROVENANCE.md),
+[FDROID_COMPONENTS.json](FDROID_COMPONENTS.json) and
+[FDROID_NATIVE.json](FDROID_NATIVE.json). Dillon's explicit per-Pen MIT grants,
+GRC's public-domain release, Baagøe's MIT, the two kotlinx NOTICEs and Kotlin's
+embedded ThreeTenBP/Boost licenses are preserved. Luke confirmed the supplied
+icon and derivatives may be included under MIT on November 4, 2026.
+
+Six instrumented AOSP/API 36 acceptance cases cover pattern/history/favorite
+restoration, Zen exit, selected palette semantics, PNG export, the oldest
+history entry, and denied optional microphone access. They run with Android's
+Accessibility Test Framework, using an explicit disposable-debug-data opt-in.
+The fixture contains no Play Services, Google Services Framework or Play Store.
+Full TalkBack speech/traversal and physical flip folding remain distinct,
+unperformed checks; automated semantics/ATF must not be described as those.
+The larger-text rerun, exact final source export/build/scans and refreshed
+Linux CI are recorded in the private final handoff when completed.
+
 Before official submission:
 
 - Review the exact public source export; do not expose private history by
   changing repository visibility. The existing repository remains private.
-- Finish the geometry attribution/source mapping and asset rights inventory.
-  The seeded Mash notice is restored in `LICENSES/` and the F-Droid APK.
-  See `THIRD_PARTY_NOTICES.md`; an app-level MIT file does not cover every import.
-- Confirm the complete runtime dependency/native-library license inventory.
+- Preserve the completed attribution, asset grant and runtime/native inventory
+  in the exact exported source and APK; the verifier compares notice bytes
+  and native hashes with the reviewed source.
 - Repeat official source/metadata/build checks against the final reviewed
   public tag in F-Droid's own build environment. Local scanner and metadata
   success does not establish acceptance by the catalog's builder.
 - Decide signing/update continuity, approve the exact source release/tag,
   and replace the disabled draft build's pin with the reviewed public release.
-- Verify core tasks, update/data retention, microphone-off behavior and
-  accessibility without Google services. No such device claim is made yet.
+- Retain final AOSP functional/permission/ATF, larger-text and update-data
+  receipts. Finish a human TalkBack/keyboard acceptance pass for broader release
+  confidence; do not promote automated checks into manual-access claims.
 - Submit an fdroiddata merge request or packaging request and respond to
   maintainers. Submission is not acceptance or publication.
 
@@ -109,3 +126,10 @@ checkout was preserved. Private evidence is under
 `artifacts/fdroid-preparation/` and is not committed or uploaded as source.
 Revert this branch's preparation commits to remove the new flavor, checks,
 metadata and workflow; no live distribution or service needs rollback.
+
+`fdroid/export-source.py --ref <commit> --output <new-directory>` creates a
+reviewable Android-only source tree from committed inputs. It excludes private
+history and non-phone modules, keeps complete phone/core source and notices,
+replaces the Apple build file with its marketing-version input, and records
+file hashes/transforms in `SOURCE_EXPORT.json`. It never publishes. Run the
+exact export through its own build and scans before approving a public tag.

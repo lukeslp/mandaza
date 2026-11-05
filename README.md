@@ -198,10 +198,18 @@ scripts/
 
 ## Attribution
 
-The hexagonal-loop algorithm is adapted from Charlotte Dann's
-[Hexagonal Generative Art](https://codepen.io/pouretrebelle/pen/ZBNJmd) CodePen,
-building on David Siaw's Hexlife. Truchet tile mathematics is public domain
-(Sébastien Truchet, 1704).
+The native hexagonal-loop engine adapts Dillon (Dillo)'s MIT-licensed
+[Controlled loops on hexagons](https://codepen.io/Dillo/pen/NWPWoYO) and
+[Loops on hexagons](https://codepen.io/Dillo/pen/xvXjLZ) source family, extended
+in Swift and Kotlin. Its seeded Mash wrapper follows Dillon, Gibson Research
+Corporation / Steve Gibson, and Johannes Baagøe. Their notices are retained in
+`LICENSES/` and the F-Droid APK; see [third-party notices](THIRD_PARTY_NOTICES.md).
+
+Earlier documentation credited Charlotte Dann's
+[Hexagonal Generative Art](https://codepen.io/pouretrebelle/pen/ZBNJmd) and
+David Siaw's Hexlife. Those are related artistic references; the verified loop
+construction lineage is Dillon's. Truchet tile mathematics dates to Sébastien
+Truchet (1704), which does not place modern implementations in the public domain.
 
 ## License
 
