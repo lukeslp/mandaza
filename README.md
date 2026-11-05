@@ -1,14 +1,14 @@
 # Mandaza
 
-A native iOS, Android, watchOS, Wear OS, and tvOS app that draws animated hexagonal-loop
-mandalas in real time. On iPhone and iPad it ships Home Screen / StandBy
-widgets and exports wallpaper-resolution images. On Apple Watch it runs as
-a live companion face; Pixel Watch has a native round-screen companion powered
-by the same deterministic engine. On Apple TV it runs as a fullscreen ambient
-experience with on-screen quick controls (Apple TV has no third-party
-WidgetKit surface).
+Mandaza is a native app for iOS, Android, watchOS, Wear OS, and tvOS that draws
+animated hexagonal-loop mandalas in real time. The iPhone and iPad app includes Home Screen and
+StandBy widgets and exports wallpaper-resolution images. Apple Watch runs a
+live companion face, and Pixel Watch has a native round-screen companion
+using the same deterministic engine. On Apple TV, Mandaza displays fullscreen
+ambient art with on-screen quick controls. Apple TV has no third-party
+WidgetKit surface.
 
-The creative experience runs on-device with no analytics or account. The
+The art runs on your device, with no analytics or account. The
 Google Play and Amazon builds make no network requests; the direct-download
 build checks the Mandaza release catalog once per day for updates.
 
@@ -18,38 +18,39 @@ build checks the Mandaza release catalog once per day for updates.
   hexagonal-loop pattern on every canvas tap, stroking each loop
   progressively with optional glow (off by default; regenerate may turn on a
   soft bloom less than half the time).
-- **12 palettes** — Aurora, Sunset, Ember, Bioluminescent, Vaporwave,
+- **12 palettes.** Aurora, Sunset, Ember, Bioluminescent, Vaporwave,
   Cyberpunk, Risograph, Oxblood, Canopy, Dichromat, Amber, Terrain.
-- **Zen Mode** — center footer button drops into Zen: large clock over the
-  mandala, optional auto-regenerating patterns. Digital, stacked, and
-  editorial clock forms; opacity, type, size, and eight positions.
-- **Music responsivity** — in Zen, optional microphone-driven beat pump and
-  speed-up (Reactivity slider). Audio is never recorded or stored.
-- **Tilt parallax** — Amount slider, depth-layer contrast, invert depth,
+- **Zen Mode.** The center footer button opens a large clock over the mandala,
+  with optional auto-regenerating patterns. Choose digital, stacked, or
+  editorial clock forms, then adjust opacity, type, size, and one of eight
+  positions.
+- **Music responsivity.** In Zen, optional microphone input makes the pattern
+  pulse and speed up with the beat. Adjust the response with the Reactivity
+  slider. Audio is never recorded or stored.
+- **Tilt parallax.** Amount slider, depth-layer contrast, invert depth,
   and axis lock (both / horizontal / vertical). Brighter strokes sit nearer
   by default; Zen adds a faint long-period sway at rest. Reduce Motion
   disables sampling.
-- **Canvas look** — Void (neon on black) or Paper (warm parchment with soft
-  ink shadows — light-theme experiment).
-- **Footer** — History · Favorites · Zen · Settings · Save.
-- **Favorites** — heart any mandala to keep it; favorites cycle into widget
+- **Canvas look.** Choose Void (neon on black) or Paper (an experimental light
+  theme with warm parchment and soft ink shadows).
+- **Footer.** History, Favorites, Zen, Settings, and Save.
+- **Favorites.** Heart any mandala to keep it; favorites cycle into widget
   rotation automatically. Loading a favorite or **Previous** snapshot also
   restores density, geometry, and stroke look from the saved `EngineConfig`.
-- **Density + geometry controls** — pattern editability without the curated
-  feel slipping.
+- **Density + geometry controls.** Adjust pattern density and geometry.
 - **Widgets**
   - StandBy (`.systemLarge` / `.systemExtraLarge`) with time HUD
   - Home Screen (`.systemSmall` / `.systemMedium`)
   - Each widget instance is configurable via Edit Widget: palette, rotation
     interval, show-time toggle.
-- **Apple Watch companion** — live face, tap to regenerate, Digital Crown
+- **Apple Watch companion.** Live face, tap to regenerate, Digital Crown
   for palettes, long-press settings, auto-mirror from iPhone, Send to Watch.
-- **`mandaza://`** URL scheme — tap a widget to open the app at that exact
+- **`mandaza://`** URL scheme. Tap a widget to open the app at that exact
   seed.
 - **Export** to Photos at iPhone Pro / Standard / iPad / Square 4K presets.
   Rendering is off-main via `UIGraphicsImageRenderer`, so the UI never
   hangs while saving.
-- **Accessibility** — VoiceOver labels on every control, `accessibilityReduceMotion`
+- **Accessibility.** VoiceOver labels on every control, `accessibilityReduceMotion`
   honored (skips animation, disables auto-regen), `isLuminanceReduced`
   pauses the engine during Always-On.
 
@@ -89,7 +90,7 @@ xcodebuild -scheme MandazaTV \
   build
 ```
 
-**TestFlight / App Store (tvOS)** — MandazaTV is a separate Apple TV product,
+**TestFlight / App Store (tvOS).** MandazaTV is a separate Apple TV product,
 [Apple ID 6768536771](https://apps.apple.com/us/app/mandazatv/id6768536771),
 with bundle ID `com.lukesteuber.mandaza.tv`:
 
@@ -130,11 +131,16 @@ feature is explicitly enabled. See
 
 ## Submission Pack
 
-For paste-ready App Store metadata, review notes, privacy/compliance checklist, asset checklist, and iOS/tvOS upload runbooks, use [APP_STORE_PACK.md](APP_STORE_PACK.md).
+[APP_STORE_PACK.md](APP_STORE_PACK.md) contains App Store metadata, review
+notes, privacy/compliance and asset checklists, and iOS/tvOS upload runbooks.
 
-**Remote:** Play/Pause creates a new pattern. **Menu** toggles the dock. When the dock is hidden, **click the touch surface** for a new pattern (same idea as tapping the canvas on iPhone), or **swipe** / Menu to bring the dock back. A focused full-screen control receives remote events so Menu does not exit to the TV home screen. When the dock hides, a small top chip briefly reminds
-you that **Menu** restores controls (the art stays primary). Zen clock type is
-scaled for 10-foot viewing.
+**Remote:** Play/Pause creates a new pattern, and **Menu** toggles the dock.
+When the dock is hidden, **click the touch surface** for a new pattern, just
+as you would tap the canvas on iPhone. **Swipe** or press Menu to restore the
+dock. A focused full-screen control receives remote events so Menu does not
+exit to the TV home screen. A small chip briefly appears at the top when the
+dock hides, reminding you that **Menu** restores the controls. Zen clock type
+is scaled for 10-foot viewing.
 
 The `MandazaTV` target has its own app entry point, bundle ID, signing profile,
 store record, and TV assets while sharing `MandazaCore` with the iOS app.
@@ -213,7 +219,7 @@ Truchet (1704), which does not place modern implementations in the public domain
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
 
 ## Status
 

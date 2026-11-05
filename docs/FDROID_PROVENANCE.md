@@ -1,4 +1,4 @@
-# F-Droid provenance review — November 4, 2026
+# F-Droid provenance review (November 4, 2026)
 
 Source publication and catalog acceptance are separate from this audit.
 First-party code remains MIT, copyright Luke Steuber. The Android port entered
@@ -6,12 +6,13 @@ at `8924c9c`; its Swift precursor entered at `900c8fd` on May 10, 2026.
 
 ## Geometry and Mash source
 
-The concrete source family is Dillon (Dillo)'s
+The identified source family is Dillon (Dillo)'s
 [Controlled loops on hexagons](https://codepen.io/Dillo/details/NWPWoYO), based
 on [Loops on hexagons](https://codepen.io/Dillo/details/xvXjLZ). Both Details
 pages explicitly display full MIT grants with `Copyright (c) 2026 by Dillon`
-and the respective Pen URL. The works were created in 2019; 2026 is the
-currently displayed notice, not a guessed creation date. Full notices are in
+and the respective Pen URL. The works were created in 2019. The notices
+currently display 2026; that year is not a claim about when the works were
+created. Full notices are in
 `LICENSES/` and the F-Droid APK.
 
 | Distinctive operation | Controlled loops JS | Native Kotlin |
@@ -47,12 +48,13 @@ release and Dillon's MIT grants. Native Unicode handling is an adaptation.
 coordinates: 63 binary AAR/JAR artifacts and 33 metadata-only modules. All
 metadata and binary hashes/bytes match official Google Maven/Maven Central
 origins. Published source JARs were fetched and inspected for all 63 binaries.
-Test/compiler-only dependencies are not confused with shipped APK contents.
+The inventory distinguishes test/compiler-only dependencies from shipped APK
+contents.
 
 The audit restored two supplied kotlinx Apache NOTICEs and the BSD-3-Clause
 notice for ThreeTenBP-derived code in Kotlin stdlib's `kotlin.time`. Its Boost
 math license is retained too; the machine-code exception is recorded accurately.
-The POM's principal Apache declaration alone did not reveal those portions.
+The POM's principal Apache declaration did not identify those portions.
 Kotlin's separate Compiler NOTICE is not asserted to be a stdlib-runtime notice.
 
 All four graphics-path 1.0.1 libraries match the official AAR. Release source
@@ -81,5 +83,6 @@ no runtime dependency replacement is proposed.
 
 A public source release must contain complete Android build inputs and these
 notices/inventories. Publishing private Git history is unnecessary and is not
-authorized by this audit itself. Private fetched evidence and comparisons stay
-under ignored `artifacts/fdroid-provenance/`.
+authorized by this audit itself. Fetched evidence and private comparisons
+stay under ignored
+`artifacts/fdroid-provenance/`.

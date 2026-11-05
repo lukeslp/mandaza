@@ -1,9 +1,8 @@
-# Android cover-screen direction — November 4, 2026
+# Android cover-screen direction (November 4, 2026)
 
-The owner clarified that Mandaza's intended outer-screen experience is an
-ambient clock/art surface, following the existing Ambient Time work. Build on
-Mandaza's current Zen mode and clock overlay rather than treating the cover as
-a miniature copy of every editor control.
+Luke wants Mandaza's outer screen to show ambient art and a clock, following
+the existing Ambient Time work. Build on Mandaza's current Zen mode and clock
+overlay. The cover does not need a miniature copy of every editor control.
 
 Current evidence is limited: the public 1.3.5 (10310) build cold-launched from
 Samsung's actual closed-cover App Tray; artwork, footer controls and the
@@ -13,10 +12,10 @@ physical folding continuity, TalkBack, or a dedicated cover-clock interaction.
 Evidence: the coordinating Ambient Time report,
 `/Users/luke/workspace/ambient-time/docs/reviews/flip-apps-20261104.md`.
 
-Follow-up: preserve a clock/ambient mode across fold transitions; keep essential
-controls clear of the measured camera area; honor reduced motion and lifecycle
-pausing; verify the actual cover App Tray launch, wide/tall/full sizes, fold
-continuity and accessible operation on the physical device. Reuse Ambient
+Next, preserve the clock/ambient mode across fold transitions, keep essential
+controls clear of the measured camera area, and honor reduced motion and
+lifecycle pausing. Test the actual cover App Tray launch, wide/tall/full sizes,
+fold continuity and accessible operation on the physical device. Reuse Ambient
 Time's measured policies only where Mandaza's actual window geometry matches.
 No new cover layout is included in this F-Droid packaging change, and the
 listing must not claim full cover support before those checks.

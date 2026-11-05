@@ -1,7 +1,8 @@
-# Official F-Droid preparation — November 4, 2026
+# Official F-Droid preparation (November 4, 2026)
 
-Status: **source and signed release published November 5, 2026; F-Droid MR awaits confirmation**.
-Luke reviewed the separate test app on both Pixels and approved publication.
+**Source and signed release published November 5, 2026. The F-Droid MR awaits
+confirmation.** Luke reviewed the separate test app on both Pixels and approved
+publication.
 This is preparation for the official catalog, separate from the independent
 binary repository. The original multi-platform repository remains private.
 
@@ -13,11 +14,11 @@ binary repository. The original multi-platform repository remains private.
 
 Anonymous source/tag/download checks pass. A fresh fdroidserver 2.4.5 build
 from public source fetched the published Binaries APK, reproduced it and
-verified the allowed upstream signer. GitLab fork CI created zero jobs because
-it requires additional identity verification. That is not a passing CI check;
-maintainer CI and official builder acceptance remain pending.
+verified the allowed upstream signer. GitLab requires additional identity
+verification before fork CI can run, so its pipeline created zero jobs.
+Maintainer CI and official builder acceptance remain pending.
 
-## Candidate and scope
+## Release scope
 
 - Phone/tablet package: `app.mandaza.android`.
 - Published F-Droid candidate: **1.3.6 (10311)**; minimum API 24, target 36.
@@ -48,7 +49,7 @@ In `android/`, with JDK 21 and `ANDROID_HOME` configured:
 
 `fdroid/prepare-build.py --confirm-build-sandbox` runs only on a disposable
 source/build copy. It removes unused store-only source and dependency
-declarations for source scanning, and restricts the builder to phone/core.
+declarations for source scanning and restricts the builder to phone/core.
 It does not alter the development checkout's direct/Play/Amazon functionality.
 
 `fdroid/verify-apk.py` checks the actual release identity, no debug flag,
@@ -59,11 +60,12 @@ fdroidserver scanner is an additional independent check, not replaced by this
 small project-specific verifier.
 
 The Linux workflow `.github/workflows/android-fdroid.yml` pins its GitHub and
-Android SDK setup actions and uses read-only repository permissions. It builds without
-release credentials, tests, lints and retains the unsigned APK/check evidence.
-Its eventual result is distinct from acceptance by F-Droid's own builder.
+Android SDK setup actions and uses read-only repository permissions. It builds
+without release credentials, runs tests and lint, and retains the unsigned APK
+and check results. A passing workflow does not establish acceptance by
+F-Droid's own builder.
 
-## Evidence and remaining gates
+## Validation and remaining checks
 
 Measured on the final candidate: six core and six app JVM tests pass; lint has
 zero errors and 22 warnings. Release/debug/test builds pass, and the actual
@@ -72,10 +74,9 @@ all eleven notice assets pass the project verifier. The 96-coordinate runtime
 graph is unchanged from the reviewed inventory. Linux CI and the independent
 source export/build/scans are recorded by exact revision in the final handoff.
 
-The APK has no Internet permission. Its
-storage permissions are limited to API 28 and earlier; microphone is optional.
-AndroidX's `libandroidx.graphics.path.so` is present for four ABIs; do not
-describe the APK as containing no native code.
+The APK has no Internet permission. Storage permissions apply only to API 28
+and earlier; microphone access is optional. The APK includes native code:
+AndroidX's `libandroidx.graphics.path.so` is present for four ABIs.
 
 The exact source snapshot, APK hash, logs and Linux CI results are recorded in
 the private final handoff under `artifacts/fdroid-provenance/`. Local
@@ -94,8 +95,8 @@ history entry, keyboard canvas activation and ordered footer navigation, and
 denied optional microphone access. They run with Android's
 Accessibility Test Framework, using an explicit disposable-debug-data opt-in.
 The fixture contains no Play Services, Google Services Framework or Play Store.
-Full TalkBack speech/traversal and physical flip folding remain distinct,
-unperformed checks; automated semantics/ATF must not be described as those.
+Full TalkBack speech/traversal and physical flip folding remain untested.
+Automated semantics/ATF results do not establish either.
 All seven cases pass at normal and 200% font size, and in an AOSP tablet-size
 layout fixture (1600×2560, density 240). The latter uses a display override on
 the isolated emulator, not a physical tablet. A same-debug-signer
@@ -119,8 +120,8 @@ text for review first. GitLab sign-in is not submission approval.
 
 The English listing uses Android-specific claims and fresh, uncomposited AOSP
 phone screenshots; `FDROID_SCREENSHOTS.json` records their origin and hashes.
-It makes no full flip-cover claim. The cover direction is
-clock/ambient through Zen, documented in [ANDROID_COVER.md](ANDROID_COVER.md).
+It makes no full flip-cover claim. The planned cover experience is an ambient
+clock using Zen, documented in [ANDROID_COVER.md](ANDROID_COVER.md).
 
 ## References
 
@@ -137,8 +138,9 @@ checkout was preserved. Private evidence is under
 `artifacts/fdroid-preparation/` and `artifacts/fdroid-provenance/` and is not
 committed or uploaded as source.
 Revert this branch's preparation commits to remove the new flavor, checks,
-metadata and workflow; the published source tag and signed APK remain immutable; future fixes need a
-new reviewed release. No production service was changed.
+metadata and workflow. The published source tag and signed APK remain
+immutable; future fixes need a new reviewed release. No production service
+was changed.
 
 `fdroid/export-source.py --ref <commit> --output <new-directory>` creates a
 reviewable Android-only source tree from committed inputs. It excludes private
