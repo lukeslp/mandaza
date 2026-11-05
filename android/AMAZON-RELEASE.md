@@ -19,12 +19,19 @@ Fire TV and Fire tablets. Never attach one binary to the other record.
 | APK SHA-256 | `1dfbfeee87d3a87cee31f68c150d96f58a1a0134b4c9350f799139ed44499023` |
 | Portal app id | `amzn1.devportal.mobileapp.0130d2b1a19447bb9d6367e7741d1e3b` |
 | Portal release id | `amzn1.devportal.apprelease.c42c655564a64765b02f0124762f9c6f` |
-| Console state | Live, reverified 2026-09-04 |
+| Console state | Live, reverified 2026-11-05 in Chrome |
 
 The repository’s signed candidate passed D-pad, lifecycle, offline, and
 30-minute stability gates on Amazon AFTTI43 in August. A final store-delivered
 install and Apps-row banner check remains deliberately open; local ADB evidence
 does not substitute for the Amazon-delivered package.
+
+The November 5 console review found this TV package also selected for 12 tablet
+entries and two automotive entries, alongside 100 TV entries. The touch answer
+is No; the offline-content answer is No. A reviewed correction should exclude
+tablet/automotive targeting for this TV track and reconcile the offline answer
+with exact delivered-build evidence. No console field was changed. The tablet
+packet must use its own `app.mandaza.android` listing.
 
 Build or restage the immutable TV artifact only for independent verification:
 
@@ -72,7 +79,7 @@ before preparing a listing. Tablet copy and asset provenance are tracked in
 - For the live TV record, install the Amazon-delivered version and record its
   version, package, Apps-row banner, signature lineage, and smoke result.
 - For the tablet track, create a separate standard Amazon app only after the
-  signed 10308 device gate passes. Confirm Fire-tablet-only targeting, disclose
+  signed 10312 device gate passes. Confirm Fire-tablet-only targeting, disclose
   the optional microphone behavior, apply the listing pack, and submit.
 
 No repository script logs into or publishes through Amazon.

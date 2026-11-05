@@ -33,6 +33,15 @@ The published F-Droid source tag and signed release remain unchanged.
 - [ ] Current Amazon record, supported-model filtering and listing review
 - [ ] Upload/submission result and Amazon-delivered smoke check
 
+The [Amazon-specific listing packet](amazon-listing/1.3.6/README.md) now has
+title, descriptions, five feature bullets, reviewer notes and a draft privacy
+addendum, checked against current official asset/text requirements. It remains
+local. Chrome confirms the five existing Amazon listings are live; the one
+named Mandaza is `app.mandaza.tv` 1.3.1 (20301), not this tablet package.
+The public privacy page still covers Apple platforms only and needs the
+reviewed Android/Amazon coverage before submission. New Fire screenshots and
+Amazon icon exports remain open.
+
 Build with the existing release toolkit's `with-signing --profile mandaza`
 and `MANDAZA_DISTRIBUTION=amazon scripts/stage-android-release.sh`.
 The build writes signed artifacts and checksums under `dist/android/amazon/v1.3.6/`.
