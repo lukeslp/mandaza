@@ -47,8 +47,8 @@ esac
 
 if [ "$distribution" = amazon ]; then
   case "$badging" in
-    *"versionCode='10308'"*) ;;
-    *) echo "Amazon artifact must use version code 10308" >&2; exit 1 ;;
+    *"versionCode='10312'"*) ;;
+    *) echo "Amazon artifact must use version code 10312" >&2; exit 1 ;;
   esac
   if printf '%s\n' "$badging" | grep -q "uses-permission: name='android.permission.INTERNET'"; then
     echo "Amazon artifact unexpectedly requests network access" >&2

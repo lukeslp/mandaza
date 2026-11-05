@@ -1,9 +1,14 @@
 # Amazon Appstore release tracks
 
+The active tablet preparation is now [1.3.6 (10312)](AMAZON-1.3.6-READINESS.md).
+It carries the reviewed notices into the shared Android assets. The 1.3.3
+candidate and its September device results below remain historical evidence;
+they do not certify the new APK.
+
 Mandaza uses independent Amazon packages, listings, artifacts, and evidence for
 Fire TV and Fire tablets. Never attach one binary to the other record.
 
-## MandazaTV — live Fire TV record
+## MandazaTV: live Fire TV record
 
 | Field | Value |
 |---|---|
@@ -32,7 +37,7 @@ scripts/android-release with-signing --profile mandaza -- \
 Listing copy, art, capture metadata, and exact screenshot roles live under
 `tv/amazon-listing/`.
 
-## Mandaza — Fire tablet candidate
+## Mandaza: historical Fire tablet candidate
 
 | Field | Value |
 |---|---|
