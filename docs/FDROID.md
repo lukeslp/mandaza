@@ -1,13 +1,26 @@
 # Official F-Droid preparation — November 4, 2026
 
-Status: **provenance reviewed; candidate built and AOSP-tested; not submitted or published**.
-This is preparation for the official catalog, separate from Luke's existing
-independent binary repository. Source remains private.
+Status: **source and signed release published November 5, 2026; F-Droid MR awaits confirmation**.
+Luke reviewed the separate test app on both Pixels and approved publication.
+This is preparation for the official catalog, separate from the independent
+binary repository. The original multi-platform repository remains private.
+
+- Public Android source: https://github.com/lukeslp/mandaza-android
+- Published tag: `fdroid-v1.3.6`, commit `f3645dd1fd2a5210eb3e060edbe34c1e3527562d`.
+- Signed release: https://github.com/lukeslp/mandaza-android/releases/tag/fdroid-v1.3.6
+- Public CI: https://github.com/lukeslp/mandaza-android/actions/runs/42004282746 (passed).
+- Proposed one-file diff: https://gitlab.com/lukeslp/fdroiddata/-/compare/master...app.mandaza.android?from_project_id=36528
+
+Anonymous source/tag/download checks pass. A fresh fdroidserver 2.4.5 build
+from public source fetched the published Binaries APK, reproduced it and
+verified the allowed upstream signer. GitLab fork CI created zero jobs because
+it requires additional identity verification. That is not a passing CI check;
+maintainer CI and official builder acceptance remain pending.
 
 ## Candidate and scope
 
 - Phone/tablet package: `app.mandaza.android`.
-- Unreleased F-Droid version: **1.3.6 (10311)**; minimum API 24, target 36.
+- Published F-Droid candidate: **1.3.6 (10311)**; minimum API 24, target 36.
 - Dedicated `fdroid` flavor: no direct updater, Google Play Review dependency
   or Internet permission. Optional microphone responsiveness starts off.
 - Existing direct 1.3.5 (10310), Play (10305), Amazon (10308), TV and Wear
@@ -15,11 +28,11 @@ independent binary repository. Source remains private.
 - Kotlin/JVM 17 bytecode, JDK 21, SDK/build-tools 36, AGP 8.13.0, Kotlin
   2.2.10, checksum-pinned Gradle 8.14.3.
 
-The local release build is deliberately unsigned; F-Droid must not need a
-private signing key. Choose the catalog signing route before the first public
-artifact. The ordinary F-Droid key cannot update an existing differently signed
-installation. Reproducible upstream-signed publication is an alternative that
-must be demonstrated, and does not automatically match Google Play App Signing.
+Source builds remain unsigned and require no private key. Luke chose
+upstream-signed reproducible builds. The published APK uses the established
+direct-download certificate and passes F-Droid signature reproduction. A
+production-key 1.3.5 to 1.3.6 upgrade on disposable AOSP retains favorite/history
+state. Google Play App Signing compatibility has not been established.
 
 ## Build and artifact verification
 
@@ -91,23 +104,14 @@ it does not establish production signer compatibility. Color-space simulation,
 exact final source export/build/scans and refreshed Linux CI receipts belong
 in the private final handoff.
 
-Before official submission:
-
-- Review the exact public source export; do not expose private history by
-  changing repository visibility. The existing repository remains private.
-- Preserve the completed attribution, asset grant and runtime/native inventory
-  in the exact exported source and APK; the verifier compares notice bytes
-  and native hashes with the reviewed source.
-- Repeat official source/metadata/build checks against the final reviewed
-  public tag in F-Droid's own build environment. Local scanner and metadata
-  success does not establish acceptance by the catalog's builder.
-- Decide signing/update continuity, approve the exact source release/tag,
-  and replace the disabled draft build's pin with the reviewed public release.
-- Retain final AOSP functional/permission/ATF, larger-text and update-data
-  receipts. Finish a human TalkBack acceptance pass for broader release
-  confidence; do not promote automated checks into manual-access claims.
-- Submit an fdroiddata merge request or packaging request and respond to
-  maintainers. Submission is not acceptance or publication.
+Before official submission, obtain Luke's confirmation for the exact fork diff
+and `submission/MR_DESCRIPTION.md`. The fork commit is
+`35b53dfaf941d63bd983ec7de39d50dd663371e1`; its raw metadata matches the locally
+validated recipe byte-for-byte. Disclose the GitLab CI identity gate.
+Keep the manual update policy, preserved attribution and exact public pins.
+Respond to maintainers after submission; submission does not establish catalog
+acceptance. Full human TalkBack speech/traversal and physical flip/tablet
+checks are still not claimed. Preserve both Pixel test copies and user data.
 
 Luke requires confirmation immediately before any submission to a third-party
 repository. Prepare the exact source/tag, recipe diff, validation and submission
@@ -133,7 +137,8 @@ checkout was preserved. Private evidence is under
 `artifacts/fdroid-preparation/` and `artifacts/fdroid-provenance/` and is not
 committed or uploaded as source.
 Revert this branch's preparation commits to remove the new flavor, checks,
-metadata and workflow; no live distribution or service needs rollback.
+metadata and workflow; the published source tag and signed APK remain immutable; future fixes need a
+new reviewed release. No production service was changed.
 
 `fdroid/export-source.py --ref <commit> --output <new-directory>` creates a
 reviewable Android-only source tree from committed inputs. It excludes private
