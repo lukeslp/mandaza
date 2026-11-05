@@ -54,11 +54,19 @@ class FdroidAcceptanceTest {
         compose.mainClock.autoAdvance = false
         if (android.os.Build.VERSION.SDK_INT >= 34) compose.enableAccessibilityChecks()
         context.getSharedPreferences("mandaza", 0).edit().clear().commit()
-        compose.activityRule.scenario.recreate()
+        recreateFixture()
         settle()
         compose.waitForIdle()
     }
 
+    private fun recreateFixture() {
+        compose.activityRule.scenario.recreate()
+        // Keep this test window awake during physical-device runs. The flag
+        // ends with the activity; the phone's display settings stay unchanged.
+        compose.activityRule.scenario.onActivity {
+            it.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
     private fun settle() {
         // Let measured sheet anchors settle before advancing their transition.
         repeat(3) { compose.mainClock.advanceTimeBy(500); compose.waitForIdle() }
@@ -92,7 +100,7 @@ class FdroidAcceptanceTest {
         click("Favorite")
         compose.onNodeWithText("Saved", substring = false).assertIsDisplayed()
         capture("01-live-canvas")
-        compose.activityRule.scenario.recreate()
+        recreateFixture()
         settle()
         compose.waitForIdle()
         compose.onNodeWithText("Saved", substring = false).assertIsDisplayed()
@@ -127,7 +135,7 @@ class FdroidAcceptanceTest {
         compose.onNodeWithText("Sunset").assertIsSelected()
         capture("04-selected-palette")
         // Palette selection persists immediately, including when a sheet is open.
-        compose.activityRule.scenario.recreate()
+        recreateFixture()
         settle()
         compose.waitForIdle()
         click("Tune")
