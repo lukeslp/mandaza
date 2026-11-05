@@ -48,6 +48,12 @@ android {
             dimension = "distribution"
             versionCode = 10308
         }
+        create("fdroid") {
+            dimension = "distribution"
+            // Unreleased candidate, above every currently published phone variant.
+            versionCode = 10311
+            versionName = "$marketingVersion.6"
+        }
     }
 
     signingConfigs {

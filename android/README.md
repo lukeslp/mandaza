@@ -24,6 +24,12 @@ and links to the Mandaza download page when a newer version is available. The
 `play` and `amazon` flavors contain no direct updater or network permission and
 rely on their stores for updates. Only `play` links Google Play Review.
 
+The unreleased `fdroid` candidate also has no direct updater, Google Play Review
+dependency or Internet permission. It uses version 1.3.6 (10311), above existing
+phone variants. See [F-Droid preparation](../docs/FDROID.md) for evidence, the
+private-source review gate, build recipe and remaining checks. This is not an
+official F-Droid listing or a published update.
+
 ## Build and test
 
 Use JDK 21 and Android SDK 36:

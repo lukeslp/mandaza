@@ -1,0 +1,1 @@
+Unreleased F-Droid candidate: offline phone/tablet flavor without Google Play Review or the direct-download updater. Existing direct, Play, and Amazon release identities remain separate.

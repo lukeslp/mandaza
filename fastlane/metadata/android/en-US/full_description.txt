@@ -1,0 +1,7 @@
+Mandaza draws animated hexagonal-loop patterns on your phone or tablet.
+
+Tap for a new composition, tune its geometry and palette, keep favorites, and export artwork as a PNG. Zen mode offers an ambient presentation with a customizable clock and date. Optional motion and microphone responsiveness run locally; microphone use starts only when you enable music responsiveness.
+
+The F-Droid build has no account, advertising, analytics, direct updater, Google Play Review dependency, or Internet permission. Designs and settings stay on the device. F-Droid manages application updates.
+
+Requires Android 7.0 or newer. Phone and tablet builds are included; Wear OS and TV are separate products. Full-panel flip-cover behavior is not yet verified.
