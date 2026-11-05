@@ -1,7 +1,8 @@
 # Official F-Droid preparation (November 4, 2026)
 
-**Source and signed release published November 5, 2026. The F-Droid MR awaits
-confirmation.** Luke reviewed the separate test app on both Pixels and approved
+**Official F-Droid MR [!55922](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/55922)
+submitted November 5, 2026. It is open, not merged or accepted.** Luke approved
+submission after reviewing the app on both Pixels and approving source/release
 publication.
 This is preparation for the official catalog, separate from the independent
 binary repository. The original multi-platform repository remains private.
@@ -15,8 +16,12 @@ binary repository. The original multi-platform repository remains private.
 Anonymous source/tag/download checks pass. A fresh fdroidserver 2.4.5 build
 from public source fetched the published Binaries APK, reproduced it and
 verified the allowed upstream signer. GitLab requires additional identity
-verification before fork CI can run, so its pipeline created zero jobs.
-Maintainer CI and official builder acceptance remain pending.
+verification before fork CI can run. Both the original fork pipeline and the
+new merge-request pipeline [3033945595](https://gitlab.com/lukeslp/fdroiddata/-/pipelines/3033945595)
+created zero jobs. The submitted description discloses this and asks maintainers
+to trigger project CI, following F-Droid's template guidance. No phone or payment
+details were submitted. Maintainer review/CI and official builder acceptance
+remain pending.
 
 ## Release scope
 
@@ -105,14 +110,24 @@ it does not establish production signer compatibility. Color-space simulation,
 exact final source export/build/scans and refreshed Linux CI receipts belong
 in the private final handoff.
 
-Before official submission, obtain Luke's confirmation for the exact fork diff
-and `submission/MR_DESCRIPTION.md`. The fork commit is
-`35b53dfaf941d63bd983ec7de39d50dd663371e1`; its raw metadata matches the locally
-validated recipe byte-for-byte. Disclose the GitLab CI identity gate.
-Keep the manual update policy, preserved attribution and exact public pins.
-Respond to maintainers after submission; submission does not establish catalog
-acceptance. Full human TalkBack speech/traversal and physical flip/tablet
-checks are still not claimed. Preserve both Pixel test copies and user data.
+Luke approved the Mandaza submission on November 5. MR !55922 adds only the
+40-line `metadata/app.mandaza.android.yml` from fork commit
+`35b53dfaf941d63bd983ec7de39d50dd663371e1`. Before submission, its raw metadata,
+public source tag and all four release assets were checked against the reviewed
+hashes. Fresh metadata lint passed, and the public Linux source-build job was
+confirmed successful. The final description follows the current F-Droid template;
+its pipeline-pass item remains unchecked. It explains the July 18 Android
+development start, the new Android-only source export, retained lint warnings,
+manual updates, ABI size and current verification limits.
+
+The public API confirms an open, non-draft request against `fdroid/fdroiddata:master`,
+with exactly one changed file and the expected source commit. The description
+matches [FDROID_SUBMISSION.md](FDROID_SUBMISSION.md). Private receipts and
+screenshots are in `artifacts/fdroid-provenance/submission/`, including
+`submission-receipt-55922.json`. No other third-party request was submitted.
+Keep the manual update policy, attribution and exact public pins. Full human
+TalkBack speech/traversal and physical flip/tablet checks are still not claimed.
+Preserve both Pixel test copies and user data.
 
 Luke requires confirmation immediately before any submission to a third-party
 repository. Prepare the exact source/tag, recipe diff, validation and submission
