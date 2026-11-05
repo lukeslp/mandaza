@@ -74,7 +74,7 @@ no runtime dependency replacement is proposed.
 | Asset | Origin | Rights/evidence status |
 | --- | --- | --- |
 | Launcher/listing icon and density derivatives | User-provided art at `243eb9f`; Android icon restoration `c3725e4` | Luke explicitly confirmed redistribution and MIT inclusion on November 4, 2026. |
-| Existing phone/tablet screenshots | Actual captures at `3333b03`; hashes in `play/listing/en-US/graphics/ASSET-MANIFEST.txt`, devices in `play/testing/device-evidence.md` | Capture provenance verified; candidate captures can supersede them. |
+| F-Droid phone screenshots | Fresh, uncomposited captures from the candidate's instrumented AOSP/API 36 acceptance run on November 5, 2026 | `FDROID_SCREENSHOTS.json` records the device, variant and image hashes; they supersede the older Play captures for this listing. |
 | Generated patterns | Reviewed engine and first-party palettes/rendering | No separate stock artwork or remote executable payload bundled. |
 | Fonts | Android system sans; no packaged font file | No bundled font license needed. |
 | Material icons | AndroidX Material Icons dependency | Apache-2.0; runtime matrix and license bundle. |

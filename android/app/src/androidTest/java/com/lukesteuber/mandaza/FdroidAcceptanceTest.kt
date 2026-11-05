@@ -8,6 +8,9 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsOn
+import android.view.KeyEvent
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -19,6 +22,8 @@ import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.hasScrollToIndexAction
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -42,6 +47,9 @@ class FdroidAcceptanceTest {
     @Before fun syntheticFixture() {
         assumeTrue(InstrumentationRegistry.getArguments().getString("allowSyntheticDataReset") == "true")
         check(context.packageName.endsWith(".debug")) { "Never reset a release installation" }
+        // A previous native keyboard test can leave the window in keyboard
+        // mode. Each touch fixture starts as a fresh touchscreen interaction.
+        InstrumentationRegistry.getInstrumentation().setInTouchMode(true)
         // The artwork intentionally animates continuously; advance it explicitly.
         compose.mainClock.autoAdvance = false
         if (android.os.Build.VERSION.SDK_INT >= 34) compose.enableAccessibilityChecks()
@@ -68,7 +76,7 @@ class FdroidAcceptanceTest {
         repeat(12) {
             if (runCatching { compose.onNodeWithText(text).assertIsDisplayed() }.isSuccess) return
             compose.onNode(hasScrollAction() and hasAnyDescendant(hasText(text)))
-                .performTouchInput { swipeUp() }
+                .performTouchInput { swipeUp(durationMillis = 2000) }
             settle()
         }
         compose.onNodeWithText(text).assertIsDisplayed()
@@ -117,12 +125,38 @@ class FdroidAcceptanceTest {
         capture("03-tune")
         click("Sunset")
         compose.onNodeWithText("Sunset").assertIsSelected()
+        capture("04-selected-palette")
         // Palette selection persists immediately, including when a sheet is open.
         compose.activityRule.scenario.recreate()
         settle()
         compose.waitForIdle()
         click("Tune")
         compose.onNodeWithText("Sunset").assertIsSelected()
+    }
+
+    @Test fun keyboardCanGenerateNavigateAndOpenSettings() {
+        fun key(code: Int) { InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(code); settle() }
+        fun tab() = key(KeyEvent.KEYCODE_TAB)
+        var canvasFocused = false
+        for (attempt in 0 until 8) {
+            tab()
+            if (runCatching { compose.onNodeWithContentDescription("Mandaza canvas").assertIsFocused() }.isSuccess) {
+                canvasFocused = true
+                break
+            }
+        }
+        assertTrue("Canvas must be reachable with Tab", canvasFocused)
+        val before = MandazaAppState(context).seed
+        key(KeyEvent.KEYCODE_ENTER)
+        assertNotEquals(before, MandazaAppState(context).seed)
+        val palette = com.lukesteuber.mandaza.core.MandazaPalettes.byId(MandazaAppState(context).paletteId).name
+        for (label in listOf("History", "Favorite", "Zen", "Tune")) {
+            tab()
+            compose.onNodeWithText(label).assertIsFocused()
+        }
+        key(KeyEvent.KEYCODE_ENTER)
+        compose.onNodeWithText(palette).assertIsSelected()
+        capture("05-keyboard-settings")
     }
 
     @Test fun exportProducesPngInMediaStore() {
@@ -153,7 +187,12 @@ class FdroidAcceptanceTest {
         }
         val oldest = MandazaAppState(context).history.last().seed
         click("History")
-        scrollToText(oldest.take(13))
+        // A deliberate drag avoids tapping merely to stop an active fling.
+        compose.onNode(hasScrollToIndexAction()).performTouchInput { swipeUp(durationMillis = 2000) }
+        settle()
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(MandazaAppState(context).history.size)
+        settle()
+        capture("history-after-scroll")
         compose.onNodeWithText(oldest.take(13)).assertIsDisplayed().performClick()
         settle()
         assertEquals(oldest, MandazaAppState(context).seed)
@@ -171,6 +210,7 @@ class FdroidAcceptanceTest {
         scrollToText("Zen mode")
         compose.onNodeWithContentDescription("Zen mode").performClick()
         settle()
+        compose.onNodeWithContentDescription("Zen mode").assertIsOn()
         scrollToText("Music responsivity")
         compose.onNodeWithContentDescription("Music responsivity").performClick()
         settle()

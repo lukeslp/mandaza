@@ -33,6 +33,7 @@ inputs = [
     "THIRD_PARTY_NOTICES.md", "fastlane", "fdroid/prepare-build.py",
     "fdroid/verify-apk.py", "fdroid/metadata", "docs/FDROID_PROVENANCE.md",
     "docs/FDROID_COMPONENTS.json", "docs/FDROID_NATIVE.json",
+    "docs/FDROID_SCREENSHOTS.json", ".github/workflows/android-fdroid.yml",
 ]
 archive = git("archive", "--format=tar", revision, "--", *inputs)
 destination = args.output.resolve()
@@ -94,7 +95,8 @@ Apple/TV/Wear build configurations, signing material or local machine settings.
 Author: [Luke Steuber](https://lukesteuber.com/).
 """)
 metadata = destination / "fdroid/metadata/app.mandaza.android.yml"
-text = metadata.read_text().replace("https://github.com/lukeslp/mandaza", "https://github.com/lukeslp/mandaza-android")
+text = re.sub(r"https://github\.com/lukeslp/mandaza(?=[./\s]|$)",
+              "https://github.com/lukeslp/mandaza-android", metadata.read_text())
 candidate_version = re.search(r"  - versionName: ([^\n]+)", text)
 assert candidate_version, "Candidate version missing"
 text = re.sub(r"    commit: .+", "    commit: fdroid-v" + candidate_version[1].strip(), text)

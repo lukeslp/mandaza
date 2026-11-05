@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "evidenceDate": "2026-11-04",
-  "scope": "Mandaza fdroidReleaseRuntimeClasspath, unsigned clean-copy APK based on runtime source 18b03f4; preparation head cd42e0c",
+  "scope": "Mandaza fdroidReleaseRuntimeClasspath; exact resolved runtime coordinates and official source/artifact provenance",
   "coordinateCount": 96,
   "binaryArtifactCount": 63,
   "metadataOnlyCoordinateCount": 33,

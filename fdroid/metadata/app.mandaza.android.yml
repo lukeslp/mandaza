@@ -17,16 +17,17 @@ Builds:
   - versionName: 1.3.6
     versionCode: 10311
     disable: Private preparation candidate; awaiting reviewed public source release
-    commit: 18b03f454dbb375bad1a3255c62eae7b9250d767
-    subdir: android
+    commit: fdroid-v1.3.6
+    subdir: android/app
     gradle:
       - fdroid
-    prebuild: python3 ../fdroid/prepare-build.py --confirm-build-sandbox
+    prebuild: python3 ../../fdroid/prepare-build.py --confirm-build-sandbox
 
 MaintainerNotes: |-
   Preparation packet only. Upstream source is currently private; no public
-  source release or F-Droid submission has been approved. Resolve the source
-  export, geometry/asset notices and signing strategy before enabling a build.
+  source release or F-Droid submission has been approved. Attribution, assets
+  and dependencies are reviewed in docs/FDROID_PROVENANCE.md. Approve the exact
+  source export and signing strategy before enabling a build.
   The fdroid flavor has no direct updater, Play Review or Internet permission.
   Phone/tablet only. Wear and TV are independent release tracks.
 

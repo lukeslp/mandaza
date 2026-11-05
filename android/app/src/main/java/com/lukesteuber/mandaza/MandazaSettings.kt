@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -90,7 +91,7 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("Auto" to -1, "Sparse" to 1, "Medium" to 3, "Dense" to 5, "Busy" to 6).forEach { (label, value) ->
                     val selected = if (value < 0) state.config.randomPattern else !state.config.randomPattern && state.config.geometry == value
-                    FilterChip(selected = selected, onClick = {
+                    FilterChip(modifier = Modifier.heightIn(min = 52.dp), selected = selected, onClick = {
                         state.config = if (value < 0) state.config.copy(randomPattern = true)
                         else state.config.copy(randomPattern = false, geometry = value)
                     }, label = { Text(label) })
@@ -117,7 +118,7 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
             Text("Clock form", style = MaterialTheme.typography.labelMedium, color = Color(0xFF9AA5B4))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("digital", "stacked", "editorial").forEach { form ->
-                    FilterChip(selected = state.clockForm == form, onClick = { state.clockForm = form }, label = { Text(form.replaceFirstChar(Char::uppercase)) })
+                    FilterChip(modifier = Modifier.heightIn(min = 52.dp), selected = state.clockForm == form, onClick = { state.clockForm = form }, label = { Text(form.replaceFirstChar(Char::uppercase)) })
                 }
             }
             Text(
@@ -127,7 +128,7 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
             )
         }
         if (state.favorites.isNotEmpty()) {
-            TextButton(onClick = { state.persist(); onFavorites() }) {
+            TextButton(modifier = Modifier.heightIn(min = 52.dp), onClick = { state.persist(); onFavorites() }) {
                 Text("All Favorites · ${state.favorites.size}")
             }
         }
