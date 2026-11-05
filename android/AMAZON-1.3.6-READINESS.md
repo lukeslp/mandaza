@@ -42,6 +42,12 @@ The September 1.3.3 sheet is retained at
 [AMAZON-TABLET-EVIDENCE.md](AMAZON-TABLET-EVIDENCE.md). The newer Pixel tests
 cover a separate F-Droid artifact and do not close these Fire-device checks.
 
+The Galaxy Flip media handoff covers the older public 1.3.5 (10310) APK in
+wide-cover mode. It does not validate this Amazon candidate or the F-Droid
+1.3.6 APK. Full-panel camera handling remains unverified; no dual-fold test
+hardware is available. Keep those QA images historical and capture this exact
+Amazon build on the intended Fire tablet before using images in its listing.
+
 ## Local validation
 
 Both signed packages contain all eleven notices with the reviewed source bytes.
