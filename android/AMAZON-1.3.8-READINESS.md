@@ -32,15 +32,16 @@ Private red/green evidence is under
 - [x] Sixteen core/Amazon JVM tests pass; release lint has no errors and
   22 warnings; all nine debug acceptance journeys pass in the isolated
   API 36.1 emulator
-- [ ] Freeze source, verify signed APK/AAB and record 10314's issued hashes
-- [ ] Upgrade on Fire in place; verify installed bytes, identity and retained look
-- [ ] Repeat denial, Home/resume and cold launch without a new prompt
-- [ ] Verify clock boundaries, portrait/landscape, large text and reduced motion
-- [ ] Check offline launch, Back, export and applicable touch/keyboard paths
+- [x] Freeze source, verify signed APK/AAB and record 10314's issued hashes
+- [x] Upgrade on Fire in place; verify installed bytes, identity and retained look
+- [x] Repeat denial, Home/resume and cold launch without a new prompt
+- [x] Verify clock boundaries, portrait/landscape, large text and reduced motion
+- [x] Check offline launch, Back, PNG export and keyboard access to Tune
 - [ ] Check VoiceView names, states, focus and common tasks; retain separate
   human spoken-output acceptance
 - [ ] Complete a fresh one-hour run for these signed bytes
-- [ ] Capture final-build listing scenes and finish transparent icons
+- [x] Capture three final-build Fire scenes with captions and artifact hashes
+- [ ] Finish transparent icon exports and destination review of the media
 - [ ] Review/publish Fire privacy coverage, tablet model selections and metadata
 - [ ] Complete the store checkpoint and Amazon-delivered smoke/upgrade check
 
@@ -49,6 +50,48 @@ no sustained memory growth. 10313's large-text/rotation and live reduced-motion
 checks pass; neither result transfers the full gate to 10314. The Fire has a
 secure lock, so sleep/wake awaits the owner's return rather than locking it
 while unattended. No new Pixel test is claimed.
+
+## Signed candidate and Fire checkpoint
+
+The source pin is `ef7100fd6c117783f1627ed7811e1cfec3ea95b4`.
+The APK SHA-256 is
+`515a62efc20a3161a4ae25ff2cd5c9a42033d80d2f02f5018c470aa88b48e645`;
+the AAB SHA-256 is
+`f2de6bf8f4230b47f352dc0d49e20eadb8d4f2ec41e3f7cedf7d64ff643c66e7`.
+Both retain certificate SHA-256
+`de02c811472ce4808b30cae0abf7a13e72b38013c0bbecfbcfe590523ef8077a`.
+All eleven notices and four native-library hashes match the reviewed baseline.
+The next different phone/tablet artifact needs code 10315 or higher.
+
+The exact APK upgraded the Fire HD 8 from 10313 without uninstalling or
+resetting it. Installed bytes, UID and first-install time match the expected
+upgrade. The existing artwork and clock reopened. Microphone denial now leaves
+Music responsivity Off, including after hot Home/resume and cold launch; the
+existing denied permission and user-fixed flag were preserved.
+
+At system font scale 2, the editor controls and clock remain visible in both
+orientations. The first rotation write reverted before a landscape capture;
+a second write produced the actual landscape check. This was not counted as
+an app failure. With system animation scales at zero, the foreground frame
+counter stayed unchanged over four seconds. All tested settings, including
+Wi-Fi after the offline cold launch, were restored to their starting values.
+
+Tab reaches Tune, Enter opens it, and Back returns to the editor. Save produced
+a readable 1440 × 2560 PNG in Pictures/Mandaza. Only that new test export was
+pulled for inspection. The digital clock matched the device minute in a
+snapshot just after the next boundary; this does not measure subsecond latency.
+
+VoiceView bound successfully with touch exploration enabled, and screenshots
+show focus on the canvas and Exit Zen. Injected gestures and keys did not
+reliably complete accessibility-focused actions, so neither task completion
+nor spoken feedback is marked passed. No app-failure conclusion follows from
+that input limitation. VoiceView and its derived settings are restored.
+
+A fresh Paper Zen observation for 10314 began at 19:20:50 Pacific. It remains
+in progress; the earlier 10312 hour is separate evidence. Private receipts,
+screenshots, settings comparisons and the new export are under
+`/Volumes/Galactus/android-fire-releases/20261105/fire-device-checks/mandaza-10314-interactive/`.
+The one-hour samples are in the adjacent `mandaza-10314-stability/` directory.
 
 The public F-Droid source tag and upstream-signed 10311 APK remain unchanged.
 Carry any later public-source/catalog update through its own signing,

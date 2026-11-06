@@ -25,10 +25,10 @@ The published F-Droid source tag and signed release remain unchanged.
 - [x] Amazon release lint: no errors, 22 warnings
 - [x] Signed APK and AAB verification, package/version and signer checks
 - [x] Exact notice bytes, reviewed native libraries and runtime dependency graph
-- [ ] Fresh signed Fire-device installation and upgrade/data-retention checks
+- [x] In-place Fire upgrade and exact installed bytes; full saved-item review remains open
 - [ ] Touch, rotation, Back, offline, Home/resume and sleep/wake
 - [ ] VoiceView, text scaling, reduced motion and microphone denial
-- [ ] One-hour stability run
+- [x] Bounded one-hour Paper Zen observation (see scope below)
 - [ ] Fresh Fire screenshots, icon exports and listing copy review
 - [ ] Current Amazon record, supported-model filtering and listing review
 - [ ] Upload/submission result and Amazon-delivered smoke check
@@ -83,18 +83,22 @@ not extracted, so this does not close the full saved-state acceptance check.
 The native mirror's pointer did not reliably select intended Fire controls.
 Luke opened the tablet edition and authorized ADB control for the Fire tests,
 including temporary VoiceView/text/animation settings with restoration. The
-mirror was closed. The uninterrupted observation began at 17:02:38 Pacific;
-its 14-minute checkpoint retained awake foreground and the same process, with
-PSS between 148,693 and 177,303 KB. The hour has not yet completed. No
-accessibility/display preference has been changed yet.
+mirror was closed. The uninterrupted Paper Zen observation completed from
+17:02:38 to 18:02:38 Pacific, with 61 samples over 3600.64 seconds. The app
+remained awake in the foreground with the same process. PSS ranged from
+148,693 to 177,303 KB, with no sustained upward trend; graphics memory ranged
+from 88,996 to 122,100 KB. Retained package crash/ANR checks were clear and final
+thermal status was zero. This covers the existing Paper Zen configuration,
+not every palette, glow, density or microphone mode. Raw receipts and the
+bounded summary are in `mandaza-10312-stability/` under the private QA root.
 
 The exact-10312 screenshot also exposes a contrast issue in Paper Zen mode.
 `ZenOverlay` fixes the Exit Zen icon tint at `#F5F0E8` against a `#F1E6CF`
 canvas, about 1.09:1 contrast over blank ground. Its clock text is about 2.84:1
 over the blank ground after the 38% black scrim. Correct the controls before
 release and repeat the visual checks. Do not replace 10312 with different bytes;
-a correction requires a new version code, at least 10313, and fresh device
-evidence. The published F-Droid tag and signed APK remain unchanged.
+the correction was prepared as 10313. Its later denial finding led to
+[1.3.8 (10314)](AMAZON-1.3.8-READINESS.md), with separate signed bytes and checks. The published F-Droid tag and signed APK remain unchanged.
 
 Existing Amazon icon files are correctly sized but opaque. They remain
 references, not completed exports under Amazon's current transparent-PNG

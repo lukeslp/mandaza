@@ -26,7 +26,7 @@ build checks the Mandaza release catalog once per day for updates.
   positions.
 - **Music responsivity.** In Zen, optional microphone input makes the pattern
   pulse and speed up with the beat. Adjust the response with the Reactivity
-  slider. Audio is never recorded or stored.
+  slider. Audio is processed on the device; recordings are not saved or sent.
 - **Tilt parallax.** Amount slider, depth-layer contrast, invert depth,
   and axis lock (both / horizontal / vertical). Brighter strokes sit nearer
   by default; Zen adds a faint long-period sway at rest. Reduce Motion
