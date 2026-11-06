@@ -14,6 +14,9 @@ build checks the Mandaza release catalog once per day for updates.
 
 ## Features
 
+The details below describe the Apple apps. See the
+[Android notes](android/README.md) for the phone and tablet feature set.
+
 - **Animated canvas.** SwiftUI `Canvas` + `TimelineView` renders a fresh
   hexagonal-loop pattern on every canvas tap, stroking each loop
   progressively with optional glow (off by default; regenerate may turn on a

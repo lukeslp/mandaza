@@ -39,8 +39,10 @@ Private red/green evidence is under
 - [x] Check offline launch, Back, PNG export and keyboard access to Tune
 - [ ] Check VoiceView names, states, focus and common tasks; retain separate
   human spoken-output acceptance
-- [ ] Complete a fresh one-hour run for these signed bytes
-- [x] Capture three final-build Fire scenes with captions and artifact hashes
+- [ ] Check optional live sound response and motion pause/resume with owner-
+  approved microphone access; the existing user-fixed denial was preserved
+- [x] Complete a fresh one-hour run for these signed bytes
+- [x] Capture five final-build Fire scenes with captions and artifact hashes
 - [ ] Finish transparent icon exports and destination review of the media
 - [ ] Review/publish Fire privacy coverage, tablet model selections and metadata
 - [ ] Complete the store checkpoint and Amazon-delivered smoke/upgrade check
@@ -87,8 +89,16 @@ reliably complete accessibility-focused actions, so neither task completion
 nor spoken feedback is marked passed. No app-failure conclusion follows from
 that input limitation. VoiceView and its derived settings are restored.
 
-A fresh Paper Zen observation for 10314 began at 19:20:50 Pacific. It remains
-in progress; the earlier 10312 hour is separate evidence. Private receipts,
+The exact-10314 Paper Zen hour completed from 19:20:50 to 20:20:50 Pacific:
+61 samples over 3600.67 seconds, with the same awake foreground process.
+PSS ranged from 171,514 to 205,957 KB. The six full ten-sample means range
+from 178,925 to 179,990 KB, with no sustained upward trend; the final single
+sample is separate. Graphics memory ranged from 104,924 to 134,492 KB.
+The final thermal status was zero. Retained own-process crash and own-package
+crash/ANR buffers had no entries. The final frame shows the advancing clock,
+and the installed APK hash still matches. This covers this Paper Zen configuration
+with glow and sound response Off. The earlier 10312 hour remains separate.
+Private receipts,
 screenshots, settings comparisons and the new export are under
 `/Volumes/Galactus/android-fire-releases/20261105/fire-device-checks/mandaza-10314-interactive/`.
 The one-hour samples are in the adjacent `mandaza-10314-stability/` directory.

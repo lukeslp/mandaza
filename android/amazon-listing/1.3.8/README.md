@@ -15,8 +15,8 @@ Checked November 5, 2026, against Amazon's
 
 - Tablet icons: 114×114 and 512×512 transparent PNG.
 - Screenshots: three to ten PNG/JPEG images from the tablet experience.
-  Allowed sizes include 1280×800 and its portrait orientation. The existing
-  800×1280 captures belong to 10308 and cannot be used for this new candidate.
+  Allowed sizes include 1280×800 and its portrait orientation. Archived 10308
+  captures cannot be used for this new candidate.
 - An optional promotional image is 1024×500. It can wait; it is not a release
   requirement.
 - Short description: at most 2,000 bytes. Long description: at most 4,000
@@ -24,14 +24,14 @@ Checked November 5, 2026, against Amazon's
 
 The canonical icon source is retained. The existing TV 114px and 512px files
 are opaque, and the Play 512px file has the same opaque bytes as the TV file.
-They do not meet the current transparent-PNG requirement. Amazon-sized exports
-and visual review remain open. Capture at least three fresh Fire scenes from
-the final tested candidate before adding them here. Keep capture model, Fire OS
-version, date, APK hash, captions and image hashes together. Check the images
-without relying on hue. The earlier exact-10312 and 10313 captures remain QA evidence only. This
-10314 candidate retains the contrast/reduced-motion corrections and addresses
-the denial/resume and clock-boundary findings. Fresh final-build Fire checks
-and screenshots remain required.
+Amazon-sized transparent exports and visual review remain open. Five original
+10314 Fire captures are now prepared in the private packet's `listing-media/`:
+Void and Paper canvases, the clock, Tune and a landscape clock scene. Its manifest
+keeps the model, Fire OS, date, APK hash, captions and image hashes together.
+Destination and color-independent review remain open; no synthetic screen or
+older-candidate screenshot is substituted. The exact-10314 bounded Paper Zen
+hour and completed interaction checks are in the candidate sheet. Hands-on
+VoiceView, positive sound response and secure-lock sleep/wake remain separate.
 
 ## Privacy and targeting
 
@@ -59,10 +59,10 @@ tablet listing must not reuse or overwrite the TV identity.
 
 ## Remaining work
 
-1. Test exact 10314 on Fire: install/upgrade and saved state, touch, Back,
-   rotation, offline/resume, microphone denial, VoiceView, text scaling,
-   reduced motion and one-hour stability.
-2. Capture the tested build and finish icon exports; review listing images.
+1. Finish hands-on VoiceView, owner-approved live sound response and secure-lock
+   sleep/wake. Retain the existing denied microphone state until the owner
+   chooses otherwise. Complete older-OS paths before selecting those models.
+2. Finish icon exports and review the five proposed listing images.
 3. Publish the reviewed privacy coverage and verify its served text.
 4. Review the separate tablet record, model selections and final metadata.
 5. Complete the human upload/submission checkpoint and retain its receipt.
