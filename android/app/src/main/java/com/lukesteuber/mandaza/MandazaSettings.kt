@@ -122,7 +122,7 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
                 }
             }
             Text(
-                "Microphone input is reduced to a live level value. Audio is never recorded or stored.",
+                "Microphone input measures live sound levels. Audio recordings are not saved or sent.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF9AA5B4),
             )

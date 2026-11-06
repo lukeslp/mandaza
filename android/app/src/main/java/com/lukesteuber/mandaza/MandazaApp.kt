@@ -36,8 +36,9 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
@@ -68,6 +69,7 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -98,6 +100,7 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
     val snackbar = remember { SnackbarHostState() }
     val tilt = remember { TiltMonitor(context) }
     val audio = remember { AudioLevelMonitor() }
+    val reduceMotion = rememberReducedMotion()
     var sheet by remember { mutableStateOf<Sheet?>(null) }
     var canvasWidth by remember { mutableFloatStateOf(1f) }
     var canvasHeight by remember { mutableFloatStateOf(1f) }
@@ -117,7 +120,7 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         )
     }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted && state.zenMode && state.musicResponsive) audio.start()
+        if (granted && !reduceMotion && shouldActivateAudio(appInForeground, state.zenMode, state.musicResponsive)) audio.start()
         else if (!granted) showPermissionExplanation = true
     }
     val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -139,13 +142,14 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    DisposableEffect(state.parallaxEnabled, appInForeground) {
-        if (state.parallaxEnabled && appInForeground) tilt.start() else tilt.stop()
+    DisposableEffect(state.parallaxEnabled, appInForeground, reduceMotion) {
+        if (state.parallaxEnabled && appInForeground && !reduceMotion) tilt.start() else tilt.stop()
         onDispose { tilt.stop() }
     }
-    LaunchedEffect(state.zenMode, state.musicResponsive, micGranted, appInForeground) {
-        if (shouldActivateAudio(appInForeground, state.zenMode, state.musicResponsive)) {
-            if (shouldRequestMicrophone(appInForeground, state.zenMode, state.musicResponsive, micGranted)) {
+    LaunchedEffect(state.zenMode, state.musicResponsive, micGranted, appInForeground, reduceMotion) {
+        val musicMotionEnabled = state.musicResponsive && !reduceMotion
+        if (shouldActivateAudio(appInForeground, state.zenMode, musicMotionEnabled)) {
+            if (shouldRequestMicrophone(appInForeground, state.zenMode, musicMotionEnabled, micGranted)) {
                 micPermission.launch(Manifest.permission.RECORD_AUDIO)
             } else {
                 audio.start()
@@ -221,11 +225,12 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                     config = state.config,
                     canvasWidth = canvasWidth,
                     canvasHeight = canvasHeight,
-                    tilt = if (state.parallaxEnabled) tilt.offset else androidx.compose.ui.geometry.Offset.Zero,
+                    tilt = if (state.parallaxEnabled && !reduceMotion) tilt.offset else androidx.compose.ui.geometry.Offset.Zero,
                     parallaxAmount = state.parallaxAmount,
                     audioLevel = if (state.zenMode) audio.level else 0f,
                     reactivity = state.reactivity,
                     paperTheme = state.paperTheme,
+                    reduceMotion = reduceMotion,
                     modifier = Modifier.fillMaxSize(),
                 )
                 if (state.zenMode) {
@@ -257,7 +262,7 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         if (showPermissionExplanation) AlertDialog(
             onDismissRequest = { showPermissionExplanation = false },
             title = { Text("Microphone unavailable") },
-            text = { Text("Music responsivity only reads the live sound level. Audio is never recorded, stored, or sent anywhere. You can enable access later in Android Settings.") },
+            text = { Text("Music responsivity measures live sound levels. Audio recordings are not saved or sent anywhere. You can enable access later in Android Settings.") },
             confirmButton = { TextButton(onClick = { showPermissionExplanation = false }) { Text("OK") } },
         )
         if (showStoragePermissionExplanation) AlertDialog(
@@ -322,13 +327,19 @@ private fun ZenOverlay(state: MandazaAppState, onExit: () -> Unit) {
                 else -> buildString { append(time); if (state.showDate) append("\n$date") }
             }
             Surface(
-                modifier = Modifier.align(Alignment.Center),
-                color = Color.Black.copy(alpha = 0.38f),
+                modifier = Modifier.align(Alignment.Center).padding(horizontal = 20.dp),
+                color = Color.Black.copy(alpha = 0.65f),
                 shape = MaterialTheme.shapes.large,
             ) { Text(text, color = Paper, fontSize = if (state.clockForm == "stacked") 58.sp else 48.sp,
-                lineHeight = 54.sp, modifier = Modifier.padding(horizontal = 28.dp, vertical = 18.dp)) }
+                lineHeight = if (state.clockForm == "stacked") 66.sp else 54.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 28.dp, vertical = 18.dp)) }
         }
-        IconButton(onClick = onExit, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(52.dp)) {
+        FilledIconButton(
+            onClick = onExit,
+            modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(52.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Deep, contentColor = Paper),
+        ) {
             Icon(Icons.Default.BedtimeOff, contentDescription = "Exit Zen", tint = Paper)
         }
     }
