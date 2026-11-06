@@ -5,6 +5,13 @@ repo_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 android_dir="$repo_root/android"
 distribution=${MANDAZA_DISTRIBUTION:-direct}
 
+# This private preparation branch changes shared app code, while the direct
+# and Play flavors still carry already-issued, lower version codes.
+if [ "$distribution" != amazon ]; then
+  echo "This preparation branch stages only Amazon 1.3.7 (10313). Review and raise other flavor versions before staging them." >&2
+  exit 1
+fi
+
 case "$distribution" in
   direct) variant=Direct ;;
   play) variant=Play ;;

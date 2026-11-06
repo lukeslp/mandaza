@@ -2,8 +2,8 @@ Mandaza draws animated mandalas on your Fire tablet. Tap the canvas for a new de
 
 Choose from 12 palettes and two canvas styles: luminous lines on black or a softer paper look. Keep favorite designs, return to recent patterns, and save artwork as an image.
 
-Zen mode pairs the mandala with a customizable clock. Adjust its appearance and position for a quiet clock or ambient display.
+Zen mode pairs the mandala with a customizable clock. Choose a digital, stacked or editorial clock, with optional seconds. Digital and editorial layouts can also show the date.
 
-Optional Music responsivity lets nearby sound shape the animation. It starts off, and the app asks for microphone access only when you enable it. Sound is processed on your tablet. Audio is never recorded, stored, or uploaded.
+Optional Music responsivity lets nearby sound shape the animation. It starts off, and the app asks for microphone access only when you enable it. Live sound levels are measured on your tablet. Audio recordings are not saved or uploaded.
 
-Mandaza works offline, with no account, advertising, analytics, or tracking.
+Mandaza works offline and needs no account. It contains no advertising or tracking features.

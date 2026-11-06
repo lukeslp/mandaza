@@ -2,4 +2,4 @@ Generate a new animated mandala with a tap
 Explore 12 palettes and dark or paper canvas styles
 Customize a Zen clock over the artwork
 Save images, keep favorites, and revisit recent designs
-Use optional on-device sound response without recording audio
+Use optional on-device sound response without saving audio

@@ -24,11 +24,11 @@ and links to the Mandaza download page when a newer version is available. The
 `play` and `amazon` flavors contain no direct updater or network permission and
 rely on their stores for updates. Only `play` links Google Play Review.
 
-The unreleased `fdroid` candidate also has no direct updater, Google Play Review
-dependency or Internet permission. It uses version 1.3.6 (10311), above existing
-phone variants. See [F-Droid preparation](../docs/FDROID.md) for evidence, the
-private-source review gate, build recipe and remaining checks. This is not an
-official F-Droid listing or a published update.
+The upstream-signed `fdroid` 1.3.6 (10311) release has no direct updater,
+Google Play Review dependency or Internet permission. Its source and signed
+APK are published; official F-Droid catalog review remains pending. See
+[F-Droid preparation](../docs/FDROID.md). Build that release from its immutable
+public tag, not this Amazon preparation branch, which has newer shared changes.
 
 ## Build and test
 
@@ -60,18 +60,21 @@ framebuffer override on its 4K panel. The TV renderer caps logical geometry at
 canvas when its reveal completes. See [FIRE-TV.md](FIRE-TV.md) for current
 device evidence and [AMAZON-RELEASE.md](AMAZON-RELEASE.md) for open gates.
 
-Build and stage a signed direct-distribution release through the shared release
-identity:
+Build and stage this private Amazon candidate through the shared release identity:
 
 ```sh
-cd /Users/luke/workspace/android-release-toolkit
-scripts/android-release with-signing --profile mandaza -- \
-  /Users/luke/workspace/mandaza-ios/scripts/stage-android-release.sh
+cd /Users/luke/workspace/mandaza-amazon-20261105
+MANDAZA_DISTRIBUTION=amazon \
+  /Users/luke/workspace/android-release-toolkit/scripts/android-release \
+  with-signing --profile mandaza -- scripts/stage-android-release.sh
 ```
 
-Set `MANDAZA_DISTRIBUTION=play` or `MANDAZA_DISTRIBUTION=amazon` to stage the
-corresponding store flavor. Direct uses version code `10310` and version name
-`1.3.5`, Play uses `10305`, and the Fire-tablet candidate uses `10308`. Installed
+This private branch stages only `MANDAZA_DISTRIBUTION=amazon`: the signed
+Fire-tablet candidate is 1.3.7 (10313). See its
+[readiness sheet](AMAZON-1.3.7-READINESS.md) for exact-byte checks and remaining
+gates. The retained direct and Play flavor codes are historical and must be
+raised and reviewed before staging those newer shared sources. The staging
+script stops those paths on this branch. Installed
 direct copies compare their version name with `catalog.json`, so every direct
 rebuild must raise the version name as well as the code. The live Fire TV app remains the
 separate `app.mandaza.tv` package at `1.3.1 (20301)`.

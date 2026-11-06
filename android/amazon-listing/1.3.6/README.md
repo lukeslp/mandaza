@@ -4,6 +4,10 @@ This is a local draft for `app.mandaza.android` 1.3.6 (10312). No Amazon draft,
 upload or submission was created. The live listing named Mandaza is the separate
 TV package `app.mandaza.tv`, confirmed in Chrome on November 5, 2026.
 
+The Paper Zen contrast finding blocks this candidate. The
+[1.3.7 (10313) packet](../1.3.7/README.md) follows its private correction; keep
+10312 and its evidence as the baseline rather than replacing the artifact.
+
 The packet contains Amazon-specific title, descriptions, five feature bullets
 and reviewer notes. It excludes Apple widgets, Watch, TV and untested fold claims.
 The [candidate sheet](../../AMAZON-1.3.6-READINESS.md) records signed build checks.

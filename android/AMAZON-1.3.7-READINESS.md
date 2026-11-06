@@ -27,16 +27,42 @@ network capability was added.
 - Existing release signer; no new key or data migration
 - F-Droid's published tag, recipe pin and signed 10311 APK remain unchanged
 - Twelve core/Amazon JVM tests pass, with no failures or skips
-- Amazon debug assembly passes; release lint is being rechecked after removing
-  a newly introduced modifier-order warning
+- Amazon debug assembly passes; release lint has no errors and 22 warnings
+- Signed APK and AAB verify with the existing signer
+- All eleven license/notice files match reviewed 10312 bytes in both packages
+- All four native libraries match 10312; no checked Google DEX namespaces found
 
-The new source requires a new signed APK/AAB and its own exact-byte checks.
+The signed APK SHA-256 is
+`54a373a872045f34045362c25694044599642e9ea38d83c00cd3f592b0787c11`.
+The AAB SHA-256 is
+`76844b82475eb76899c1db5dcec2e767da9b046477b9b6c4990e847c67f66fd4`.
+Both were built from source commit `ea185772b2024cdaed6ef3e2d6b5f12ffd60db3f`.
+The signed files and verification receipt are retained privately in
+`/Volumes/Galactus/android-fire-releases/20261105/staged/mandaza-amazon/1.3.7-10313/`.
+The portfolio's issued-code ledger now reserves these exact 10313 hashes;
+new Mandaza bytes need at least 10314.
+
+The signed APK still needs its own exact-byte device checks.
 The 10312 observation remains baseline evidence for 10312 only.
+
+Nine debug acceptance journeys pass in an isolated API 36.1 tablet emulator:
+the eight-test suite plus a separate 200% text journey across all three Paper
+Zen clock forms. The motion test follows live system changes, compares still
+artwork over 30 seconds, generates a new pattern deliberately and restores
+normal motion. Digital, stacked and editorial QA captures were visually checked;
+Exit Zen and clock text remain clear in this landscape emulator. The temporary
+font and animation settings were restored, and the owned emulator was closed.
+This does not close the Fire, portrait or signed-release-byte gates. Evidence is
+in `mandaza-10313-emulator-checks/` under the dated private release root.
+
+The preparation script stages only Amazon on this branch. The direct and Play
+flavor codes still refer to historical releases and must be raised and reviewed
+before those shared changes can be issued on another channel.
 
 ## Before submission
 
-- [ ] Verify signed APK/AAB, signer, manifest, notices and native-library hashes
-- [ ] Record 10313's issued hashes in the release version ledger
+- [x] Verify signed APK/AAB, signer, manifest, notices and native-library hashes
+- [x] Record 10313's issued hashes in the release version ledger
 - [ ] Upgrade on Fire in place and verify installed bytes and retained state
 - [ ] Check touch, all clock forms, Paper/dark contrast and 200% text
 - [ ] Check live system reduced-motion changes and normal-motion restoration
