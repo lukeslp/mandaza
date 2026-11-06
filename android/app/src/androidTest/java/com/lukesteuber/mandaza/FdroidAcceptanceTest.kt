@@ -16,6 +16,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.captureToImage
 import android.view.KeyEvent
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -359,5 +360,11 @@ class FdroidAcceptanceTest {
         compose.onNodeWithText("Microphone unavailable").assertIsDisplayed()
         click("OK")
         assertNotEquals(PackageManager.PERMISSION_GRANTED, context.checkSelfPermission(Manifest.permission.RECORD_AUDIO))
+        compose.onNodeWithContentDescription("Music responsivity").assertIsOff()
+        assertFalse(MandazaAppState(context).musicResponsive)
+        recreateFixture()
+        settle()
+        compose.onNodeWithText("Microphone unavailable").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Exit Zen").assertIsDisplayed()
     }
 }
