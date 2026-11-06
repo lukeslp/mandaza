@@ -70,8 +70,8 @@ MANDAZA_DISTRIBUTION=amazon \
 ```
 
 This private branch stages only `MANDAZA_DISTRIBUTION=amazon`: the signed
-Fire-tablet candidate is 1.3.7 (10313). See its
-[readiness sheet](AMAZON-1.3.7-READINESS.md) for exact-byte checks and remaining
+Fire-tablet candidate is 1.3.8 (10314). See its
+[readiness sheet](AMAZON-1.3.8-READINESS.md) for exact-byte checks and remaining
 gates. The retained direct and Play flavor codes are historical and must be
 raised and reviewed before staging those newer shared sources. The staging
 script stops those paths on this branch. Installed

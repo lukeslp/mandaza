@@ -3,6 +3,12 @@
 Private follow-up to the [10312 candidate](AMAZON-1.3.6-READINESS.md), prepared
 November 5, 2026. No Amazon upload or public release has occurred.
 
+The later exact-10313 Fire test reproduced a denial/resume problem: the
+microphone explanation returned after a hot Home/resume because the denied
+feature stayed enabled. Keep these signed bytes immutable and private. The
+[1.3.8 (10314) correction](AMAZON-1.3.8-READINESS.md) also aligns clock updates
+with wall-clock boundaries; it needs its own signed/device evidence.
+
 The exact-10312 Fire capture exposed low contrast in Paper Zen mode. The
 Exit Zen icon now has an opaque dark button, and the clock uses a darker
 background. The clock also has room at the screen edges and centers wrapped

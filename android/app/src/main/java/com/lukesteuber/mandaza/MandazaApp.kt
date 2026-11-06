@@ -121,7 +121,12 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
     }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted && !reduceMotion && shouldActivateAudio(appInForeground, state.zenMode, state.musicResponsive)) audio.start()
-        else if (!granted) showPermissionExplanation = true
+        else if (!granted) {
+            audio.stop()
+            state.musicResponsive = false
+            state.persist()
+            showPermissionExplanation = true
+        }
     }
     val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         storageGranted = granted
@@ -349,8 +354,9 @@ private fun ZenOverlay(state: MandazaAppState, onExit: () -> Unit) {
 private fun currentTime(showSeconds: Boolean): androidx.compose.runtime.State<Long> =
     androidx.compose.runtime.produceState(System.currentTimeMillis(), showSeconds) {
         while (true) {
-            value = System.currentTimeMillis()
-            kotlinx.coroutines.delay(if (showSeconds) 1000 else 15_000)
+            val now = System.currentTimeMillis()
+            value = now
+            kotlinx.coroutines.delay(millisUntilNextClockTick(now, showSeconds))
         }
     }
 

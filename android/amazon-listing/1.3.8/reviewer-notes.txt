@@ -1,0 +1,9 @@
+Candidate: app.mandaza.android, version 1.3.8, version code 10314, Amazon flavor. Fire tablets only. This is separate from the live app.mandaza.tv listing; do not upload it to the TV record.
+
+No account, login, purchase, or network connection is required. The app has no Internet permission, direct updater, or Google Play Review dependency.
+
+Music responsivity is optional and initially off. Enable it explicitly in Settings to request microphone access. Declining access must leave the mandala and clock usable. The app measures live sound levels using MediaRecorder with output directed to /dev/null. It does not retain or transmit an audio recording.
+
+On Android API 28 and earlier, saving an image may request legacy storage permission. On newer devices the app uses the system image collection. The microphone and accelerometer are optional hardware features; touch input is required.
+
+These notes are prepared locally. Exact-10314 Fire testing, current screenshots, privacy-page coverage, final device filtering, and listing review remain required before upload or submission.

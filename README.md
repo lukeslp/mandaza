@@ -124,11 +124,12 @@ signing, or release evidence with the standalone Apple TV app.
 
 The Fire-tablet build is a third independent release track: the native Android
 app uses package `app.mandaza.android` and the `amazon` flavor. The private
-1.3.7 (10313) candidate is prepared for Fire testing; it has not been uploaded. It omits
+1.3.8 (10314) candidate corrects the denial/resume finding from Fire testing;
+it has not been uploaded. It omits
 both the direct updater and Google Play Review, and defaults
 music responsiveness off so Zen never prompts for microphone access until that
 feature is explicitly enabled. See
-[android/AMAZON-1.3.7-READINESS.md](android/AMAZON-1.3.7-READINESS.md).
+[android/AMAZON-1.3.8-READINESS.md](android/AMAZON-1.3.8-READINESS.md).
 
 ## Submission Pack
 

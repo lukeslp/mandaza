@@ -8,7 +8,7 @@ distribution=${MANDAZA_DISTRIBUTION:-direct}
 # This private preparation branch changes shared app code, while the direct
 # and Play flavors still carry already-issued, lower version codes.
 if [ "$distribution" != amazon ]; then
-  echo "This preparation branch stages only Amazon 1.3.7 (10313). Review and raise other flavor versions before staging them." >&2
+  echo "This preparation branch stages only Amazon 1.3.8 (10314). Review and raise other flavor versions before staging them." >&2
   exit 1
 fi
 
@@ -54,8 +54,8 @@ esac
 
 if [ "$distribution" = amazon ]; then
   case "$badging" in
-    *"versionCode='10313'"*) ;;
-    *) echo "Amazon artifact must use version code 10313" >&2; exit 1 ;;
+    *"versionCode='10314'"*) ;;
+    *) echo "Amazon artifact must use version code 10314" >&2; exit 1 ;;
   esac
   if printf '%s\n' "$badging" | grep -q "uses-permission: name='android.permission.INTERNET'"; then
     echo "Amazon artifact unexpectedly requests network access" >&2
