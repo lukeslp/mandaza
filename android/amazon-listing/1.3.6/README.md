@@ -22,11 +22,14 @@ Checked November 5, 2026, against Amazon's
 - Short description: at most 2,000 bytes. Long description: at most 4,000
   characters, plain text. Product features: three to five separate lines.
 
-The canonical icon source is retained. Amazon-sized exports and visual review
-remain open; the existing Play graphic is not automatically an approved Amazon
-asset. Capture at least three fresh Fire screenshots from exact 10312 before
-adding them here. Keep capture model, Fire OS version, date, APK hash, captions
-and image hashes together. Check the images without relying on hue.
+The canonical icon source is retained. The existing TV 114px and 512px files
+are opaque, and the Play 512px file has the same opaque bytes as the TV file.
+They do not meet the current transparent-PNG requirement. Amazon-sized exports
+and visual review remain open. Capture at least three fresh Fire scenes from
+the final tested candidate before adding them here. Keep capture model, Fire OS
+version, date, APK hash, captions and image hashes together. Check the images
+without relying on hue. The first exact-10312 Paper Zen capture is QA evidence:
+it exposed a contrast issue that needs a higher-code correction before release.
 
 ## Privacy and targeting
 

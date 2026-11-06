@@ -47,8 +47,8 @@ android {
         }
         create("amazon") {
             dimension = "distribution"
-            versionCode = 10312
-            versionName = "$marketingVersion.6"
+            versionCode = 10313
+            versionName = "$marketingVersion.7"
         }
         create("fdroid") {
             dimension = "distribution"

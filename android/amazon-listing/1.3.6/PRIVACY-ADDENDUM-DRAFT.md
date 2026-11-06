@@ -13,7 +13,7 @@ does not request Internet access or check a direct-download update service.
 
 Music responsivity is optional and starts off. If you enable it, Mandaza asks
 for microphone access and converts incoming sound into live level information
-in memory. It does not record, store, upload or share the audio. Declining
+in memory. It does not save, upload or share audio recordings. Declining
 microphone access leaves the visual artwork and clock available.
 
 When you choose to save artwork, Mandaza writes an image to your device's image
@@ -24,7 +24,8 @@ device's image or file manager.
 Local app data can be removed through the device's app-storage controls or by
 uninstalling the app. Exported images are separate and may remain after an
 uninstall. Device backup and Amazon Appstore services are governed by the
-settings and policies of those services. This description covers Mandaza's
+settings and policies of those services. Amazon may add its own app wrapper
+and process app usage under its policies. This description covers Mandaza's
 app-owned behavior; it does not describe all data handled by the operating
 system or store.
 

@@ -71,3 +71,35 @@ A separate unsigned F-Droid assembly confirms the shared asset move preserves
 its notice bundle. The build, signatures, dependency selection and verification
 receipts are under `/Volumes/Galactus/android-fire-releases/20261105/`.
 These checks establish a local candidate, not Fire-device or store acceptance.
+
+## Fire installation checkpoint, November 5
+
+The exact signed 10312 APK upgrades the Fire HD 8 (`KFRASWI`), Fire OS 8.3.3.8 /
+API 30, from Amazon 10308 in place. The pulled installed APK matches the candidate
+hash. The signer, UID and first-install record are preserved; no uninstall,
+reset, downgrade or bulk permission grant was used. Individual saved items were
+not extracted, so this does not close the full saved-state acceptance check.
+
+The native mirror's pointer did not reliably select intended Fire controls.
+Luke opened the tablet edition and authorized ADB control for the Fire tests,
+including temporary VoiceView/text/animation settings with restoration. The
+mirror was closed. The uninterrupted observation began at 17:02:38 Pacific;
+its 14-minute checkpoint retained awake foreground and the same process, with
+PSS between 148,693 and 177,303 KB. The hour has not yet completed. No
+accessibility/display preference has been changed yet.
+
+The exact-10312 screenshot also exposes a contrast issue in Paper Zen mode.
+`ZenOverlay` fixes the Exit Zen icon tint at `#F5F0E8` against a `#F1E6CF`
+canvas, about 1.09:1 contrast over blank ground. Its clock text is about 2.84:1
+over the blank ground after the 38% black scrim. Correct the controls before
+release and repeat the visual checks. Do not replace 10312 with different bytes;
+a correction requires a new version code, at least 10313, and fresh device
+evidence. The published F-Droid tag and signed APK remain unchanged.
+
+Existing Amazon icon files are correctly sized but opaque. They remain
+references, not completed exports under Amazon's current transparent-PNG
+requirement. Touch, lifecycle, microphone denial, VoiceView, text scaling,
+reduced motion and fresh listing scenes remain open.
+
+Private receipts:
+`/Volumes/Galactus/android-fire-releases/20261105/fire-device-checks/`.
