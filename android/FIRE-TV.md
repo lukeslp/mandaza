@@ -29,9 +29,8 @@ export ANDROID_HOME="$HOME/Library/Android/sdk"
 Signed release (same keystore as phone Mandaza):
 
 ```sh
-cd /Users/luke/workspace/android-release-toolkit
-scripts/android-release with-signing --profile mandaza -- \
-  sh -c 'cd /Users/luke/workspace/mandaza-ios/android && ./gradlew :tv:assembleRelease'
+# with the MANDAZA_ANDROID_STORE_* and MANDAZA_ANDROID_KEY_* variables set
+android/tv/scripts/stage-release.sh
 ```
 
 ## Remote model
@@ -52,8 +51,8 @@ clock over the canvas.
 
 ## Physical Fire TV status (2026-08-09)
 
-- Device: Amazon AFTTI43 (`brandenburg`), Fire OS 7 / Android 9 at the local
-  developer endpoint `192.168.0.120:5555`.
+- Device: Amazon AFTTI43 (`brandenburg`), Fire OS 7 / Android 9, reached over
+  network ADB on the local network.
 - Panel: physical 3840×2160; Amazon framebuffer and Android app override are
   1920×1080 at 60 Hz. Do not run `wm size reset` for this app.
 - Renderer: native Compose/Kotlin engine, glow and idle color pulse disabled.
@@ -92,9 +91,7 @@ not change MandazaTV's identity, artifact, listing evidence, or submission state
 - In-app banner: real Top Shelf–derived PNG
 - Signed release: `tv/dist/release/MandazaTV-1.3.1-release.apk`, version code
   `20301`, SHA-256 `1dfbfeee87d3a87cee31f68c150d96f58a1a0134b4c9350f799139ed44499023`.
-- Amazon record: Live as of 2026-09-04, portal app id
-  `amzn1.devportal.mobileapp.0130d2b1a19447bb9d6367e7741d1e3b`, release id
-  `amzn1.devportal.apprelease.c42c655564a64765b02f0124762f9c6f`.
+- Amazon record: Live as of 2026-09-04.
 - Device smoke: that exact signed APK is installed/launched on the physical
   AFTTI43 and the primary, Zen, Tune, Paper, and hidden-control flows were
   exercised on 2026-08-09. Home/resume, sleep/wake, and the 30-minute

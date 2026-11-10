@@ -3,14 +3,34 @@
 A native iOS, Android, watchOS, Wear OS, and tvOS app that draws animated hexagonal-loop
 mandalas in real time. On iPhone and iPad it ships Home Screen / StandBy
 widgets and exports wallpaper-resolution images. On Apple Watch it runs as
-a live companion face; Pixel Watch has a native round-screen companion powered
-by the same deterministic engine. On Apple TV it runs as a fullscreen ambient
+a live companion face; an experimental Wear OS companion uses the same
+deterministic engine but is not part of the supported release. On Apple TV it runs as a fullscreen ambient
 experience with on-screen quick controls (Apple TV has no third-party
 WidgetKit surface).
 
 The creative experience runs on-device with no analytics or account. The
 Google Play and Amazon builds make no network requests; the direct-download
 build checks the Mandaza release catalog once per day for updates.
+
+## Platforms in this repository
+
+| Platform | Source | Build with |
+|---|---|---|
+| iOS / iPadOS app, widgets | `Mandaza/`, `MandazaWidgets/`, `MandazaCore/` | XcodeGen + Xcode, scheme `Mandaza` |
+| Apple Watch companion | `MandazaWatch/`, `MandazaCore/` | built and embedded with the iOS app |
+| Apple TV (MandazaTV) | `MandazaTV/`, `MandazaCore/` | XcodeGen + Xcode, scheme `MandazaTV` |
+| Android phone / tablet | `android/app`, `android/core` | Gradle, `:app` (flavors `direct`, `play`, `amazon`) |
+| Fire TV / Android TV | `android/tv`, `android/core` | Gradle, `:tv` |
+| Wear OS (experimental) | `android/wear`, `android/core` | Gradle, `:wear` |
+| Samsung TV (Tizen) | `samsung/tizen` | Tizen Studio CLI |
+
+## Where to get it
+
+- Website: [mandaza.app](https://mandaza.app/)
+- iPhone, iPad and Apple Watch: Mandaza on the App Store
+- Apple TV: [MandazaTV on the App Store](https://apps.apple.com/us/app/mandazatv/id6768536771)
+- Android (direct download): [dr.eamer.dev/downloads/apps/mandaza](https://dr.eamer.dev/downloads/apps/mandaza/)
+- Fire TV: MandazaTV on the Amazon Appstore
 
 ## Features
 
@@ -74,6 +94,19 @@ xcodebuild -scheme Mandaza \
   test
 ```
 
+The project file is generated: `project.yml` is the source and
+`Mandaza.xcodeproj` is not committed. `project.yml` carries the owner's
+`DEVELOPMENT_TEAM` and the `com.lukesteuber.mandaza` bundle IDs; to run on a
+device or archive under your own account, change those to your own team and
+identifiers. Simulator builds and tests need no signing.
+
+The shared engine also builds as a Swift package, and its tests run on macOS
+without a simulator:
+
+```sh
+cd MandazaCore && swift test
+```
+
 **Release archives:** `scripts/archive.sh` regenerates the project with XcodeGen,
 runs **unit tests** on the iPhone 17 simulator (override with `SKIP_TESTS=1` to
 skip), then produces `build/Mandaza.xcarchive`. `scripts/archive-tvos.sh` runs a
@@ -104,7 +137,23 @@ scripts/export-ipa-tvos.sh
 scripts/upload-testflight.sh --tvos
 ```
 
-See [TESTFLIGHT.md](TESTFLIGHT.md) (tvOS section) and [PROVISIONING.md](PROVISIONING.md).
+`export-ipa*.sh` reads `scripts/ExportOptions.plist`, which carries the owner's
+team ID; change it to your own to export under your account.
+`upload-testflight.sh` needs your own App Store Connect API key or app-specific
+password; see the comments at the top of the script.
+
+### Android
+
+Use JDK 21 and Android SDK 36:
+
+```sh
+cd android
+./gradlew :core:testDebugUnitTest :app:assembleDebug   # phone / tablet
+./gradlew :tv:assembleDebug                            # Fire TV / Android TV
+```
+
+See [android/README.md](android/README.md) for flavors, version codes and
+signed release staging.
 
 ### Fire TV and Samsung TV
 
@@ -128,9 +177,7 @@ music responsiveness off so Zen never prompts for microphone access until that
 feature is explicitly enabled. See
 [android/AMAZON-RELEASE.md](android/AMAZON-RELEASE.md).
 
-## Submission Pack
-
-For paste-ready App Store metadata, review notes, privacy/compliance checklist, asset checklist, and iOS/tvOS upload runbooks, use [APP_STORE_PACK.md](APP_STORE_PACK.md).
+### Apple TV remote and target notes
 
 **Remote:** Play/Pause creates a new pattern. **Menu** toggles the dock. When the dock is hidden, **click the touch surface** for a new pattern (same idea as tapping the canvas on iPhone), or **swipe** / Menu to bring the dock back. A focused full-screen control receives remote events so Menu does not exit to the TV home screen. When the dock hides, a small top chip briefly reminds
 you that **Menu** restores controls (the art stays primary). Zen clock type is
@@ -142,7 +189,6 @@ store record, and TV assets while sharing `MandazaCore` with the iOS app.
 **Physical Apple TV:** Xcode needs a **registered device** and matching tvOS
 **App ID**. The target retains the live App ID's App Group entitlement, while
 tvOS preferences remain local to MandazaTV.
-Step-by-step: [PROVISIONING.md](PROVISIONING.md).
 
 ## Project layout
 
@@ -173,7 +219,7 @@ MandazaWidgets/               WidgetKit app extension
 
 MandazaWatch/                 watchOS companion face
   WatchRootView.swift         Live canvas + gestures
-  WatchSettingsView.swift     On-wrist settings
+  WatchSettingsSheet.swift    On-wrist settings
 
 MandazaTests/                 Unit tests
   EngineTests.swift           Engine determinism + renderImage + palette
@@ -187,13 +233,20 @@ MandazaTV/                    standalone tvOS app target
   MandazaTV.entitlements      Existing App Group capability for TV App ID
   Info.plist                  Generated by xcodegen
 
+android/core/                 Kotlin engine, palettes, snapshot models
+android/app/                  Android phone/tablet Compose app
 android/tv/                   Fire TV / Android TV Compose app
+android/wear/                 Experimental Wear OS companion
 samsung/tizen/                Samsung Tizen offline widget
 
 project.yml                   xcodegen spec (authoritative project source)
 scripts/
   apply-brand-assets.py       Resize supplied icon + splash into iOS/tvOS catalog slots
   archive.sh / archive-tvos.sh
+  stage-android-release.sh    Signed Android APK/AAB staging
+metadata/, screenshots/, play/, android/*/amazon-listing/, samsung/seller-office-assets/
+                              Store listing copy and images
+docs/                         Privacy policy source
 ```
 
 ## Attribution

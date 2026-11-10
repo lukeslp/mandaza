@@ -5,7 +5,7 @@ The Samsung track is independent from Fire TV and Apple TV. Advance it only when
 - [x] Scaffold: offline widget, `config.xml`, icon, remote controls.
 - [x] Build: signed `.wgt` exists under the ignored `tizen/dist/platforms/tizen/` output root.
 - [x] Validate: widget contents, version, icon, checksum, archive integrity, and signing state inspected.
-- [x] Device install: UN50TU8000FXZA (`192.168.0.123`) — latest development
+- [x] Device install: UN50TU8000FXZA — latest development
   widget installed and launched 2026-08-09 (`c24fec9` Samsung content).
 - [x] Visual QA: clock paints real local time; full-screen weave renders;
   incremental glow-free reveal is visibly smooth on the physical panel.
@@ -18,7 +18,7 @@ The Samsung track is independent from Fire TV and Apple TV. Advance it only when
 
 ```sh
 samsung/scripts/package.sh
-samsung/scripts/install.sh 192.168.0.123
+samsung/scripts/install.sh <tv-ip>
 ```
 
 The package currently uses Tizen's default development certificate. The physical TV accepts it for local sideloading; Seller Office submission requires a Samsung author/distributor profile and a newly signed package.
