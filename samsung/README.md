@@ -16,10 +16,11 @@ The renderer is adapted from the MIT-licensed Mandaza web artwork. Samsung-speci
 
 ## Build and install
 
-`package.sh` needs Tizen Studio with the Samsung TV extensions (`TIZEN_ROOT`,
-default `$HOME/tizen-studio`) and a checkout of the `platforms` packaging tool
-with its virtual environment (`PLATFORMS_ROOT`). That tool is not part of this
-repository; without it, package `samsung/tizen` with `tizen package -t wgt`.
+`package.sh` needs Tizen Studio with the Samsung TV extensions (`TIZEN_ROOT`;
+the scripts look in `$HOME/tizen-studio` first) and a checkout of the
+`platforms` packaging tool with its virtual environment (`PLATFORMS_ROOT`,
+default `$HOME/workspace/platforms`). That tool is not part of this
+repository; without it, package `samsung/tizen` with the Tizen CLI.
 `install.sh` takes the TV's address on your network; the TV must be in
 Developer Mode with your computer's address allowed.
 

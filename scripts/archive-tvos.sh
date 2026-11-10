@@ -64,6 +64,7 @@ xcodebuild \
         echo "    • App ID 'com.lukesteuber.mandaza.tv' is missing or App Groups is not enabled"
         echo "    • App Group 'group.com.lukesteuber.mandaza' is not enabled on the tvOS App ID"
         echo "    • No matching App Store distribution profile is installed"
+        echo "  See PROVISIONING.md and TESTFLIGHT.md." >&2
         exit 1
     }
 

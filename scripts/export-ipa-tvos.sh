@@ -16,14 +16,7 @@ export PATH="/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
 
 ARCHIVE="build/MandazaTV.xcarchive"
 EXPORT_DIR="build/export-tvos"
-OPTIONS="${EXPORT_OPTIONS:-scripts/ExportOptions.plist}"
-
-if [ ! -f "${OPTIONS}" ]; then
-    echo "✗ No export options at ${OPTIONS}." >&2
-    echo "  Copy scripts/ExportOptions.example.plist to scripts/ExportOptions.plist" >&2
-    echo "  and set your Apple Developer team ID, or point EXPORT_OPTIONS at your own file." >&2
-    exit 1
-fi
+OPTIONS="scripts/ExportOptions.plist"
 
 if [ ! -d "${ARCHIVE}" ]; then
     echo "✗ No archive at ${ARCHIVE}. Run scripts/archive-tvos.sh first." >&2
@@ -39,7 +32,7 @@ xcodebuild \
     -exportPath "${EXPORT_DIR}" \
     -exportOptionsPlist "${OPTIONS}" \
     2>&1 | (which xcbeautify >/dev/null 2>&1 && xcbeautify --quiet || tail -40) || {
-        echo "✗ tvOS export failed. Check signing: team ID, tvOS App ID, and distribution profile." >&2
+        echo "✗ tvOS export failed. See TESTFLIGHT.md (tvOS)." >&2
         exit 1
     }
 

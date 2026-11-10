@@ -137,8 +137,8 @@ scripts/export-ipa-tvos.sh
 scripts/upload-testflight.sh --tvos
 ```
 
-`export-ipa*.sh` reads `scripts/ExportOptions.plist`, which is not committed.
-Copy `scripts/ExportOptions.example.plist` to that name and set your team ID.
+`export-ipa*.sh` reads `scripts/ExportOptions.plist`, which carries the owner's
+team ID; change it to your own to export under your account.
 `upload-testflight.sh` needs your own App Store Connect API key or app-specific
 password; see the comments at the top of the script.
 

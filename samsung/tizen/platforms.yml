@@ -2,5 +2,5 @@ project: mandazatv-samsung
 version: "1.3.0"
 platforms: [tizen]
 notes: |
-  Offline Samsung TV package derived from the Mandaza web renderer.
+  Offline Samsung TV package derived from Luke Steuber's Mandaza web renderer.
   Physical-device signing remains distinct from Amazon Fire TV and Apple TV.
