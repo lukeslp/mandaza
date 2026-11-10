@@ -5,7 +5,7 @@
     <key>method</key>
     <string>app-store-connect</string>
     <key>teamID</key>
-    <string>596T7J7FB6</string>
+    <string>YOUR_TEAM_ID</string>
     <key>signingStyle</key>
     <string>automatic</string>
     <key>stripSwiftSymbols</key>

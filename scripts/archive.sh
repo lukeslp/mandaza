@@ -69,7 +69,6 @@ xcodebuild \
         echo "    • Bundle ID 'com.lukesteuber.mandaza' not registered as an App ID with App Groups capability enabled"
         echo "    • No matching distribution provisioning profile installed"
         echo "    • Automatic signing disabled and no profile selected"
-        echo "  See TESTFLIGHT.md for the user-side setup checklist."
         exit 1
     }
 

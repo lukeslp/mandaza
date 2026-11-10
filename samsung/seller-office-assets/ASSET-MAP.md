@@ -46,7 +46,7 @@ MandazaTV icon, reformatted to Samsung's required safe compositions.
 The four screenshots were rendered at an exact 1920×1080 browser viewport from
 the Tizen package's `samsung/tizen/index.html`, with a fixed palette and a
 faster capture-only reveal so the same final procedural geometry could settle
-inside the capture window. The Samsung TV at `192.168.0.123` was offline during
+inside the capture window. The Samsung test TV was offline during
 asset preparation, so these are not represented as physical-panel captures.
 They show the shipped Tizen renderer and its remote-first controls; replace
 them with an equivalent physical capture only if later Samsung review requests

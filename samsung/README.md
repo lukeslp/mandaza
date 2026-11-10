@@ -12,26 +12,35 @@ This directory contains the offline Samsung Tizen TV edition of MandazaTV.
   glow disabled for smooth physical-device motion.
 - No account, tracking, network dependency, or touch-only primary flow.
 
-The renderer is adapted from Luke Steuber's MIT-licensed Mandaza web artwork. Samsung-specific packaging and release state are documented in `INTAKE.md` and `RELEASE.md`.
+The renderer is adapted from the MIT-licensed Mandaza web artwork. Samsung-specific packaging and release state are documented in `INTAKE.md` and `RELEASE.md`.
 
 ## Build and install
 
+`package.sh` needs Tizen Studio with the Samsung TV extensions (`TIZEN_ROOT`,
+default `$HOME/tizen-studio`) and a checkout of the `platforms` packaging tool
+with its virtual environment (`PLATFORMS_ROOT`). That tool is not part of this
+repository; without it, package `samsung/tizen` with `tizen package -t wgt`.
+`install.sh` takes the TV's address on your network; the TV must be in
+Developer Mode with your computer's address allowed.
+
 ```sh
+export TIZEN_ROOT="$HOME/tizen-studio"
+export PLATFORMS_ROOT=/path/to/platforms
 samsung/scripts/package.sh
-samsung/scripts/install.sh 192.168.0.123
+samsung/scripts/install.sh <tv-ip>
 ```
 
 Launch after installation:
 
 ```sh
-/Volumes/Galactus/tizen-studio/tools/ide/bin/tizen run \
+"$TIZEN_ROOT/tools/ide/bin/tizen" run \
   -p MandazaTV1.MandazaTV \
-  -s 192.168.0.123:26101
+  -s <tv-ip>:26101
 ```
 
 ## Device status
 
-The development widget is installed and running on the UN50TU8000FXZA at
-`192.168.0.123`. The 2026-08-09 physical pass confirmed clock paint, full-canvas
+The development widget is installed and running on a physical
+UN50TU8000FXZA. The 2026-08-09 physical pass confirmed clock paint, full-canvas
 geometry, incremental reveal, and smooth glow-free animation. Sleep/wake and
 long-run checks remain release gates; see [RELEASE.md](RELEASE.md).

@@ -59,7 +59,7 @@ Fire-specific checkbox below.
 ## Signed Fire-device gate
 
 Test device: Amazon KFRASWI, Fire OS 8.0 / Android 11, build
-`0030132734852`, serial `GVW3T505623706SG`, 2026-09-04. The APK pulled back
+`0030132734852`, 2026-09-04. The APK pulled back
 from the fresh install matched the candidate SHA-256 byte for byte and retained
 the certificate above.
 

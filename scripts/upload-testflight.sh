@@ -5,7 +5,8 @@
 #   scripts/upload-testflight.sh --tvos   # tvOS MandazaTV (build/export-tvos/*.ipa)
 #
 # Reads the selected App Store Connect API key from ~/.appstoreconnect/env.sh.
-# See TESTFLIGHT.md for one-time key setup.
+# That file should export APP_STORE_CONNECT_API_KEY_KEY_ID and
+# APP_STORE_CONNECT_API_KEY_ISSUER_ID for a key altool can find.
 #
 # Alternative (without API key): export ASC_APPLE_ID and APP_SPECIFIC_PASSWORD
 # environment variables before running.
@@ -90,7 +91,6 @@ else
     • Configure the active API key in ~/.appstoreconnect/env.sh
   Or:
     • Set ASC_APPLE_ID=<your-apple-id> and APP_SPECIFIC_PASSWORD=<app-specific-password>
-  See TESTFLIGHT.md for the one-time setup.
 EOF
     exit 1
 fi

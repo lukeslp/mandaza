@@ -8,7 +8,7 @@ fi
 
 tv_ip="$1"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-tizen_root="${TIZEN_ROOT:-/Volumes/Galactus/tizen-studio}"
+tizen_root="${TIZEN_ROOT:-$HOME/tizen-studio}"
 sdb="$tizen_root/tools/sdb"
 tizen="$tizen_root/tools/ide/bin/tizen"
 widget="$(find "$repo_root/samsung/tizen/dist" -type f -name '*.wgt' -print -quit)"

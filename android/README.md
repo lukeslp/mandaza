@@ -19,7 +19,8 @@ Android parallax is available in both standard and Zen presentation. There are
 no Android lock-screen widgets. The supported Android release focuses on the
 phone/tablet app; Home Screen widgets remain follow-up work.
 
-The `direct` flavor checks the public Drummer downloads catalog once per day
+The `direct` flavor checks the public downloads catalog at
+`dr.eamer.dev/downloads/catalog.json` once per day
 and links to the Mandaza download page when a newer version is available. The
 `play` and `amazon` flavors contain no direct updater or network permission and
 rely on their stores for updates. Only `play` links Google Play Review.
@@ -54,13 +55,13 @@ framebuffer override on its 4K panel. The TV renderer caps logical geometry at
 canvas when its reveal completes. See [FIRE-TV.md](FIRE-TV.md) for current
 device evidence and [AMAZON-RELEASE.md](AMAZON-RELEASE.md) for open gates.
 
-Build and stage a signed direct-distribution release through the shared release
-identity:
+Signed release builds read the keystore from four environment variables:
+`MANDAZA_ANDROID_STORE_FILE`, `MANDAZA_ANDROID_STORE_PASSWORD`,
+`MANDAZA_ANDROID_KEY_ALIAS` and `MANDAZA_ANDROID_KEY_PASSWORD`. Supply them
+from your own secret store, then run the stage script from the repository root:
 
 ```sh
-cd /Users/luke/workspace/android-release-toolkit
-scripts/android-release with-signing --profile mandaza -- \
-  /Users/luke/workspace/mandaza-ios/scripts/stage-android-release.sh
+scripts/stage-android-release.sh
 ```
 
 Set `MANDAZA_DISTRIBUTION=play` or `MANDAZA_DISTRIBUTION=amazon` to stage the
@@ -70,5 +71,5 @@ direct copies compare their version name with `catalog.json`, so every direct
 rebuild must raise the version name as well as the code. The live Fire TV app remains the
 separate `app.mandaza.tv` package at `1.3.1 (20301)`.
 
-Release signing material remains outside the repository and its password stays
-in macOS Keychain. Google Play login, upload, and submission remain manual.
+Release signing material and its passwords remain outside the repository.
+Google Play login, upload, and submission remain manual.

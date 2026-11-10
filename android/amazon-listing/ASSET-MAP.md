@@ -7,8 +7,9 @@ Target binary: `app.mandaza.android` 1.3.3 (10308), Fire tablets only.
 - Title: `Mandaza`
 - Short description source: `play/listing/en-US/short-description.txt`
 - Long description source: `play/listing/en-US/full-description.txt`
-- Support and privacy URLs: verify the current values in `APP_STORE_PACK.md`
-  before entering them in the console.
+- Support and privacy URLs: `https://mandaza.app/` and
+  `https://mandaza.app/privacy.html`; verify both before entering them in the
+  console.
 - Reviewer note: no account is required; microphone access is optional, used
   only for local music responsiveness, and audio is never stored or sent.
 

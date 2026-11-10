@@ -1,0 +1,13 @@
+# Allowlist for gitleaks false positives in this tree.
+# UserDefaults key names such as "MandazaTV.appliedAmbientDefaults.v1" read as
+# generic API keys but are preference names, not credentials.
+title = "mandaza"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "UserDefaults preference key names"
+regexes = [
+  '''MandazaTV\.[A-Za-z]+\.v[0-9]+''',
+]

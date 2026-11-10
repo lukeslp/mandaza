@@ -16,5 +16,5 @@ Before running the ship pipeline for real:
    `../../screenshots/en-US/` (see `NOTES.md` there — currently ASC-ready).
 2. Confirm the four 3840×2160 MandazaTV images in
    `../../screenshots/tvOS/en-US/` remain attached to the standalone TV record.
-3. Confirm with Luke whether this is a stage-only pass or a submit-for-review
+3. Confirm with the owner whether this is a stage-only pass or a submit-for-review
    pass; that boundary must be explicit before touching App Store Connect.

@@ -7,7 +7,6 @@ and launch smoke test on both devices.
 ## Phone
 
 - Device: Google Pixel 9a
-- adb serial: `54051JEBF00576`
 - Screenshot size: 1080 × 2424
 - Install: passed
 - Launch: passed

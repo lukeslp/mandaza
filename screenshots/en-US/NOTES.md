@@ -22,6 +22,4 @@ Hero cards and Watch face variants staged 2026-07-09 for Mandaza 1.3
 
 ## Capture hooks
 DEBUG env vars (`MANDAZA_MUSIC_DEMO`, palette / clock-form hooks) live in
-`MandazaCore/ScreenshotSupport.swift`. See
-`~/.claude/skills/app-store-ship/reference/screenshots.md` for the capture loop
-and `asc_ship.py screenshots` upload step.
+`MandazaCore/ScreenshotSupport.swift`.

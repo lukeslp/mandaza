@@ -12,8 +12,6 @@ Fire TV and Fire tablets. Never attach one binary to the other record.
 | Version | `1.3.1 (20301)` |
 | Artifact | `tv/dist/release/MandazaTV-1.3.1-release.apk` |
 | APK SHA-256 | `1dfbfeee87d3a87cee31f68c150d96f58a1a0134b4c9350f799139ed44499023` |
-| Portal app id | `amzn1.devportal.mobileapp.0130d2b1a19447bb9d6367e7741d1e3b` |
-| Portal release id | `amzn1.devportal.apprelease.c42c655564a64765b02f0124762f9c6f` |
 | Console state | Live, reverified 2026-09-04 |
 
 The repository’s signed candidate passed D-pad, lifecycle, offline, and
@@ -24,9 +22,8 @@ does not substitute for the Amazon-delivered package.
 Build or restage the immutable TV artifact only for independent verification:
 
 ```sh
-cd /Users/luke/workspace/android-release-toolkit
-scripts/android-release with-signing --profile mandaza -- \
-  /Users/luke/workspace/mandaza-ios/android/tv/scripts/stage-release.sh
+# with the MANDAZA_ANDROID_STORE_* and MANDAZA_ANDROID_KEY_* variables set
+android/tv/scripts/stage-release.sh
 ```
 
 Listing copy, art, capture metadata, and exact screenshot roles live under
@@ -49,9 +46,8 @@ Play Review dependency. Its native renderer remains representative of the
 public Mandaza experience.
 
 ```sh
-cd /Users/luke/workspace/android-release-toolkit
-MANDAZA_DISTRIBUTION=amazon scripts/android-release with-signing \
-  --profile mandaza -- /Users/luke/workspace/mandaza-ios/scripts/stage-android-release.sh
+# with the MANDAZA_ANDROID_STORE_* and MANDAZA_ANDROID_KEY_* variables set
+MANDAZA_DISTRIBUTION=amazon scripts/stage-android-release.sh
 ```
 
 The stage script runs unit tests and release lint, verifies APK/AAB signatures,

@@ -3,7 +3,8 @@
 #
 #   scripts/export-ipa.sh
 #
-# Requires: scripts/archive.sh to have run first.
+# Requires: scripts/archive.sh to have run first, and an export options
+# plist (see scripts/ExportOptions.example.plist).
 # Output: build/export/Mandaza.ipa
 
 set -euo pipefail
@@ -16,7 +17,14 @@ export PATH="/usr/bin:/bin:/usr/sbin:/sbin:${PATH}"
 
 ARCHIVE="build/Mandaza.xcarchive"
 EXPORT_DIR="build/export"
-OPTIONS="scripts/ExportOptions.plist"
+OPTIONS="${EXPORT_OPTIONS:-scripts/ExportOptions.plist}"
+
+if [ ! -f "${OPTIONS}" ]; then
+    echo "✗ No export options at ${OPTIONS}." >&2
+    echo "  Copy scripts/ExportOptions.example.plist to scripts/ExportOptions.plist" >&2
+    echo "  and set your Apple Developer team ID, or point EXPORT_OPTIONS at your own file." >&2
+    exit 1
+fi
 
 if [ ! -d "${ARCHIVE}" ]; then
     echo "✗ No archive at ${ARCHIVE}. Run scripts/archive.sh first." >&2
@@ -32,7 +40,7 @@ xcodebuild \
     -exportPath "${EXPORT_DIR}" \
     -exportOptionsPlist "${OPTIONS}" \
     2>&1 | (which xcbeautify >/dev/null 2>&1 && xcbeautify --quiet || tail -40) || {
-        echo "✗ Export failed. See TESTFLIGHT.md for signing setup." >&2
+        echo "✗ Export failed. Check signing: team ID, App IDs, and distribution profiles." >&2
         exit 1
     }
 

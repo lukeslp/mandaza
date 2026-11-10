@@ -1,6 +1,6 @@
 #!/bin/sh
 # Stage a signed MandazaTV (:tv) release APK.
-# Expects MANDAZA_ANDROID_STORE_* env vars (or android-release with-signing).
+# Expects the MANDAZA_ANDROID_STORE_* and MANDAZA_ANDROID_KEY_* env vars.
 set -eu
 
 android_dir=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
@@ -10,7 +10,6 @@ for variable in MANDAZA_ANDROID_STORE_FILE MANDAZA_ANDROID_STORE_PASSWORD MANDAZ
   value=$(printenv "$variable" || true)
   if [ -z "$value" ]; then
     echo "Missing required signing environment variable: $variable" >&2
-    echo "Use: android-release with-signing --profile mandaza -- $0" >&2
     exit 1
   fi
 done

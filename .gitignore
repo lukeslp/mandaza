@@ -53,6 +53,9 @@ dist/android/
 # Plist user data
 *.plist.user
 
+# Local export options carry a team ID; start from ExportOptions.example.plist
+scripts/ExportOptions.plist
+
 # Python bytecode / caches (e.g. scripts/apply-brand-assets.py)
 __pycache__/
 *.pyc
