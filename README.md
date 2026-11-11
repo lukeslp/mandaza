@@ -1,5 +1,6 @@
 # Mandaza
 
+[![Web](https://img.shields.io/badge/web-mandaza.app-4ad7d1?style=flat-square)](https://mandaza.app/)
 [![App Store](https://img.shields.io/badge/App_Store-iPhone_and_iPad-blue?style=flat-square)](https://apps.apple.com/us/app/mandaza/id6768237815)
 [![Apple TV](https://img.shields.io/badge/App_Store-Apple_TV-blue?style=flat-square)](https://apps.apple.com/us/app/mandazatv/id6768536771)
 [![Android download](https://img.shields.io/badge/Android-direct_download-34A853?style=flat-square)](https://dr.eamer.dev/downloads/apps/mandaza/)
