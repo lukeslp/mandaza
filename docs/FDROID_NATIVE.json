@@ -1,0 +1,52 @@
+{
+  "coordinate": "androidx.graphics:graphics-path:1.0.1",
+  "aarSha256": "8ca4032b6d79b351f0b59ad4b580eddbb9423e1652f7c958830687f1eee2ec03",
+  "sourceCommit": "8a05a22af450d589ef911d772a001a49dcb05b71",
+  "sourceReleaseUrl": "https://developer.android.com/jetpack/androidx/releases/graphics#1.0.1",
+  "libraries": [
+    {
+      "aarEntry": "jni/x86_64/libandroidx.graphics.path.so",
+      "apkEntry": "lib/x86_64/libandroidx.graphics.path.so",
+      "sameBytes": true,
+      "sha256": "4e56c996f13670e70082658de7880c4020eabf4f25e43387f88ed78a713fc9f0",
+      "dynamicDependencies": [
+        "libm.so",
+        "libdl.so",
+        "libc.so"
+      ]
+    },
+    {
+      "aarEntry": "jni/arm64-v8a/libandroidx.graphics.path.so",
+      "apkEntry": "lib/arm64-v8a/libandroidx.graphics.path.so",
+      "sameBytes": true,
+      "sha256": "41e9a793c43a0f4fddb19e33f346bace464f30f888ba7b9eaf96294ea115bfb6",
+      "dynamicDependencies": [
+        "libm.so",
+        "libdl.so",
+        "libc.so"
+      ]
+    },
+    {
+      "aarEntry": "jni/armeabi-v7a/libandroidx.graphics.path.so",
+      "apkEntry": "lib/armeabi-v7a/libandroidx.graphics.path.so",
+      "sameBytes": true,
+      "sha256": "41399eba6fc2a60f6f14642375c1824f3cf25eb8fec7397d753730a3ceda3e2b",
+      "dynamicDependencies": [
+        "libm.so",
+        "libdl.so",
+        "libc.so"
+      ]
+    },
+    {
+      "aarEntry": "jni/x86/libandroidx.graphics.path.so",
+      "apkEntry": "lib/x86/libandroidx.graphics.path.so",
+      "sameBytes": true,
+      "sha256": "eb0570b41fd3bff25d8204a967c03bd7550719e768b791f680cc40cbe35f29af",
+      "dynamicDependencies": [
+        "libm.so",
+        "libdl.so",
+        "libc.so"
+      ]
+    }
+  ]
+}

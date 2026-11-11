@@ -45,6 +45,11 @@ case "$version" in
   *[!0-9A-Za-z._-]*|"") echo "Invalid Android version: $version" >&2; exit 1 ;;
 esac
 
+# All phone distribution flavors share an Android package and a signing lineage.
+# Reject new bytes at a code already issued to any channel, including candidates.
+release_toolkit=${ANDROID_RELEASE_TOOLKIT:-"$repo_root/../android-release-toolkit"}
+"$release_toolkit/scripts/android-release" check-version --artifact "$apk" --apksigner "$build_tools/apksigner"
+
 if [ "$distribution" = amazon ]; then
   case "$badging" in
     *"versionCode='10308'"*) ;;

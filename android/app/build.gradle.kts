@@ -16,8 +16,8 @@ val signingValues = listOf(
 val hasReleaseSigning = signingValues.values.all { !it.isNullOrBlank() }
 
 val marketingVersion = rootProject.file("../project.yml").readText()
-    .let { Regex("MARKETING_VERSION:\\s*\"?([0-9]+(?:\\.[0-9]+){0,2})").find(it)?.groupValues?.get(1) }
-    ?: "1.0"
+    .let { Regex("""(?m)^[ \t]*MARKETING_VERSION:[ \t]*("?)([0-9]+(?:\.[0-9]+){0,2})\1[ \t]*(?:#.*)?$""").find(it)?.groupValues?.get(2) }
+    ?: error("MARKETING_VERSION is missing or invalid in project.yml; refusing a fallback Android release version")
 val androidPatchVersion = 3
 
 android {
@@ -28,6 +28,7 @@ android {
         applicationId = "app.mandaza.android"
         minSdk = 24
         targetSdk = 36
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         versionCode = 10303
         versionName = "$marketingVersion.$androidPatchVersion"
     }
@@ -47,6 +48,12 @@ android {
         create("amazon") {
             dimension = "distribution"
             versionCode = 10308
+        }
+        create("fdroid") {
+            dimension = "distribution"
+            // Published F-Droid 1.3.6. Future phone codes must exceed all issued channel codes.
+            versionCode = 10311
+            versionName = "$marketingVersion.6"
         }
     }
 
@@ -103,4 +110,11 @@ dependencies {
     add("playImplementation", "com.google.android.play:review-ktx:2.0.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
+    androidTestImplementation(composeBom)
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4-accessibility")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    // Compose otherwise selects Espresso 3.5, whose input reflection fails on Android 17.
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
 }

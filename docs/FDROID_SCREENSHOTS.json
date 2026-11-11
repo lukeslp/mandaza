@@ -1,0 +1,16 @@
+{
+  "capturedAt": "2026-11-05",
+  "source": "FdroidAcceptanceTest real UIAutomation screenshots, no compositing",
+  "application": "app.mandaza.android.debug",
+  "versionCode": 10311,
+  "buildFlavor": "fdroidDebug",
+  "device": "isolated AOSP API 36 arm64 emulator; 1080x2400, density 420, font scale 1.0",
+  "googleServices": "No Play Store, GMS or GSF installed",
+  "scope": "Phone screenshots only; not physical flip-cover or tablet proof",
+  "files": {
+    "01-live-canvas.png": "f8ca58541270056a73e7323f46411360d8cc039ff5629b1abb3c066f6571db7a",
+    "02-zen-clock.png": "0496a7b7aacf88c67134b4721fa1083f90100da361e4d3181830aa22fc9b6828",
+    "03-tune.png": "1fe633f3a61d6487567881cafe97bf0f0c087574edefe9695847245e9e6049a4"
+  },
+  "candidateDebugApkSha256": "ca65f8dc8f34eda304bfeaeb28ee9fecf1b7e9f1c95c6debd2f25dfa8f7abd87"
+}

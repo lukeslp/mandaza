@@ -1,0 +1,7 @@
+Gibson Research Corporation / Steve Gibson
+Mash variant ancestry; the full UHEPRNG is not included.
+Source: https://www.grc.com/js/uheprng.js
+
+LICENSE AND COPYRIGHT:  THIS CODE IS HEREBY RELEASED INTO THE PUBLIC DOMAIN
+Gibson Research Corporation releases and disclaims ALL RIGHTS AND TITLE IN
+THIS CODE OR ANY DERIVATIVES. Anyone may be freely use it for any purpose.
