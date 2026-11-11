@@ -1,5 +1,12 @@
 # Mandaza
 
+[![Web](https://img.shields.io/badge/Web-mandaza.app-4ad7d1?style=flat-square)](https://mandaza.app/)
+[![App Store](https://img.shields.io/badge/App_Store-iPhone_and_iPad-blue?style=flat-square)](https://apps.apple.com/us/app/mandaza/id6768237815)
+[![App Store: Apple TV](https://img.shields.io/badge/App_Store-Apple_TV-blue?style=flat-square)](https://apps.apple.com/us/app/mandazatv/id6768536771)
+[![Android download](https://img.shields.io/badge/Android-direct_download-34A853?style=flat-square)](https://dr.eamer.dev/downloads/apps/mandaza/)
+[![F-Droid repository](https://img.shields.io/badge/F--Droid-LocalType_releases_repo-1976D2?style=flat-square)](https://dr.eamer.dev/downloads/fdroid/)
+[![Amazon Appstore](https://img.shields.io/badge/Amazon_Appstore-Fire_TV-FF9900?style=flat-square)](https://www.amazon.com/dp/B0HDQ5BWB6)
+
 A native iOS, Android, watchOS, Wear OS, and tvOS app that draws animated hexagonal-loop
 mandalas in real time. On iPhone and iPad it ships Home Screen / StandBy
 widgets and exports wallpaper-resolution images. On Apple Watch it runs as
