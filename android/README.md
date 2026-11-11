@@ -10,10 +10,10 @@ OS application keeps its independent `com.lukesteuber.mandaza.wear` identity.
 
 ## Modules
 
-- `core` — deterministic geometry engine, all twelve palettes, snapshot and collection models
-- `app` — Android phone/tablet canvas, collections, Zen, parallax, music responsivity, settings, deep links, and PNG export
-- `tv` — **MandazaTV for Fire TV / Android TV** (`app.mandaza.tv`, Leanback). See [FIRE-TV.md](FIRE-TV.md).
-- `wear` — experimental Wear OS source; not built or distributed as part of the supported release
+- `core`: deterministic geometry engine, all twelve palettes, snapshot and collection models
+- `app`: Android phone/tablet canvas, collections, Zen, parallax, music responsivity, settings, deep links, and PNG export
+- `tv`: **MandazaTV for Fire TV / Android TV** (`app.mandaza.tv`, Leanback). See [FIRE-TV.md](FIRE-TV.md).
+- `wear`: experimental Wear OS source; not built or distributed as part of the supported release
 
 Android parallax is available in both standard and Zen presentation. There are
 no Android lock-screen widgets. The supported Android release focuses on the
@@ -24,6 +24,20 @@ The `direct` flavor checks the public downloads catalog at
 and links to the Mandaza download page when a newer version is available. The
 `play` and `amazon` flavors contain no direct updater or network permission and
 rely on their stores for updates. Only `play` links Google Play Review.
+
+The published `fdroid` release has no direct updater, Google Play Review
+dependency or Internet permission. Version 1.3.6 (10311) uses the established
+direct signer and has now been installed over 1.3.5 on both Pixels without an
+uninstall or reset. The separate review-app functional tests and the exact-release
+upgrade/launch checks remain distinct evidence. Official F-Droid acceptance is
+still pending.
+
+New phone codes must exceed every issued code across direct, Play, Amazon and
+F-Droid, including private candidates. The release toolkit tracks 10312 as the
+current high-water mark; a new build needs at least 10313. Exact known artifacts
+can be staged again unchanged. `scripts/stage-android-release.sh` checks the APK
+against that ledger before staging. Different store signing keys and lower
+version codes can still prevent switching channels in place.
 
 ## Build and test
 

@@ -1,0 +1,51 @@
+name: Android F-Droid candidate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Android build inputs
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+          log-accepted-android-sdk-licenses: false
+      - name: Prepare disposable F-Droid source
+        run: python3 fdroid/prepare-build.py --confirm-build-sandbox
+      - name: Build and test without release credentials
+        working-directory: android
+        run: |
+          ./gradlew --no-daemon --console=plain :core:testDebugUnitTest :app:testFdroidDebugUnitTest :app:lintFdroidRelease :app:assembleFdroidRelease
+          ./gradlew --no-daemon --console=plain :app:dependencies --configuration fdroidReleaseRuntimeClasspath > fdroid-dependencies.txt
+      - name: Verify packaged permissions and dependencies
+        run: |
+          APK=android/app/build/outputs/apk/fdroid/release/app-fdroid-release-unsigned.apk
+          "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" dex packages --defined-only "$APK" > android/fdroid-classes.txt
+          python3 fdroid/verify-apk.py "$APK" --dependencies android/fdroid-dependencies.txt --classes android/fdroid-classes.txt --build-tools "$ANDROID_HOME/build-tools/36.0.0" > android/fdroid-verification.json
+      - name: Retain candidate and check results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mandaza-fdroid-candidate
+          path: |
+            android/app/build/outputs/apk/fdroid/release/*.apk
+            android/app/build/reports/lint-results-fdroidRelease.*
+            android/app/build/test-results/testFdroidDebugUnitTest/
+            android/core/build/test-results/testDebugUnitTest/
+            android/fdroid-dependencies.txt
+            android/fdroid-verification.json
+          if-no-files-found: warn

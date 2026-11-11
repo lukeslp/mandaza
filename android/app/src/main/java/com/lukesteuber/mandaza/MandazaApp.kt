@@ -9,10 +9,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
@@ -43,6 +48,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -170,8 +178,9 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         }
     }
 
-    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(
+    MaterialTheme(colorScheme = darkColorScheme(
         primary = Cyan, background = Void, surface = Deep, onSurface = Paper,
+        onBackground = Paper, onSurfaceVariant = Muted,
     )) {
         Scaffold(
             containerColor = Void,
@@ -233,10 +242,16 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                 state.load(it); sheet = null
             }
             Sheet.Settings -> ModalBottomSheet(
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                contentWindowInsets = { WindowInsets.safeDrawing },
                 onDismissRequest = { state.persist(); sheet = null },
                 containerColor = Deep,
                 contentColor = Paper,
-            ) { MandazaSettings(state, onFavorites = { sheet = Sheet.Favorites }) }
+                dragHandle = { MandazaDragHandle() },
+            ) {
+                Spacer(Modifier.height(LocalViewConfiguration.current.minimumTouchTargetSize.height / 2))
+                MandazaSettings(state, onFavorites = { sheet = Sheet.Favorites })
+            }
             null -> Unit
         }
         if (showPermissionExplanation) AlertDialog(
@@ -336,22 +351,45 @@ private fun SnapshotSheet(
     onDismiss: () -> Unit,
     onSelect: (com.lukesteuber.mandaza.core.MandazaSnapshot) -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Deep, contentColor = Paper) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.headlineSmall)
-            if (items.isEmpty()) Text("Nothing here yet.", color = Muted)
-            items.forEach { snapshot ->
+    ModalBottomSheet(sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        contentWindowInsets = { WindowInsets.safeDrawing },
+        onDismissRequest = onDismiss, containerColor = Deep, contentColor = Paper,
+        dragHandle = { MandazaDragHandle() }) {
+        // Clipped scrolling children retain half a minimum touch target above
+        // their viewport. Keep that overhang clear of the sheet handle.
+        Spacer(Modifier.height(LocalViewConfiguration.current.minimumTouchTargetSize.height / 2))
+        LazyColumn(Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            item { Text(title, style = MaterialTheme.typography.headlineSmall) }
+            if (items.isEmpty()) item { Text("Nothing here yet.", color = Muted) }
+            items(items, key = { it.seed }) { snapshot ->
+                val palette = com.lukesteuber.mandaza.core.MandazaPalettes.byId(snapshot.paletteId)
                 Row(
-                    Modifier.fillMaxWidth().clickable { onSelect(snapshot) }.padding(vertical = 12.dp),
+                    Modifier.fillMaxWidth()
+                        .clickable(role = Role.Button) { onSelect(snapshot) }
+                        .semantics { contentDescription = "Load ${palette.name} pattern ${snapshot.seed.take(13)}" }
+                        .padding(vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(Modifier.size(42.dp).background(Color(com.lukesteuber.mandaza.core.MandazaPalettes.byId(snapshot.paletteId).colors.last().toInt()), MaterialTheme.shapes.medium))
+                    Box(Modifier.size(42.dp).background(Color(palette.colors.last().toInt()), MaterialTheme.shapes.medium))
                     Column(Modifier.padding(start = 12.dp)) {
-                        Text(com.lukesteuber.mandaza.core.MandazaPalettes.byId(snapshot.paletteId).name)
+                        Text(palette.name)
                         Text(snapshot.seed.take(13), color = Muted, fontSize = 12.sp)
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun MandazaDragHandle() {
+    // A little above 48dp also avoids fractional-density bounds rounding
+    // below the minimum accessible touch size.
+    Box(Modifier.size(52.dp).semantics { contentDescription = "Sheet handle" },
+        contentAlignment = Alignment.Center) {
+        Box(Modifier.size(width = 32.dp, height = 4.dp)
+            .background(Muted, RoundedCornerShape(2.dp)))
     }
 }

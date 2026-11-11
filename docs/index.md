@@ -2,7 +2,7 @@
 title: Mandaza — Privacy Policy
 ---
 
-# Mandaza — Privacy Policy
+# Mandaza: Privacy Policy
 
 _Last updated: 2026-07-22_
 
