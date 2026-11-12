@@ -20,3 +20,15 @@ class ClockTickPolicyTest {
         assertEquals(1_000L, millisUntilNextClockTick(120_000L, true))
     }
 }
+
+class ClockPatternTest {
+    @Test fun twelveHourSettingKeepsTheOriginalForm() {
+        assertEquals("h:mm", clockPattern(is24Hour = false, showSeconds = false))
+        assertEquals("h:mm:ss", clockPattern(is24Hour = false, showSeconds = true))
+    }
+
+    @Test fun twentyFourHourSettingIsHonored() {
+        assertEquals("H:mm", clockPattern(is24Hour = true, showSeconds = false))
+        assertEquals("H:mm:ss", clockPattern(is24Hour = true, showSeconds = true))
+    }
+}

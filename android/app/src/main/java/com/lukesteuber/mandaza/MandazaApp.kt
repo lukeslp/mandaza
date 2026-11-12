@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -89,7 +90,7 @@ private val Paper = Color(0xFFF5F0E8)
 private val Muted = Color(0xFF9AA5B4)
 private val Cyan = Color(0xFF48BFE3)
 
-private enum class Sheet { History, Favorites, Settings }
+private enum class Sheet { History, Favorites, Settings, Notices }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -140,7 +141,11 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> appInForeground = true
-                Lifecycle.Event.ON_STOP -> appInForeground = false
+                Lifecycle.Event.ON_STOP -> {
+                    appInForeground = false
+                    // Tune changes are otherwise saved only when the sheet closes.
+                    state.persist()
+                }
                 else -> Unit
             }
         }
@@ -162,6 +167,8 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         } else audio.stop()
     }
     DisposableEffect(Unit) { onDispose { audio.stop() } }
+    // Back leaves Zen first; a second Back leaves the app. Sheets are their own windows.
+    BackHandler(enabled = state.zenMode) { state.zenMode = false; state.persist() }
     LaunchedEffect(Unit) { availableUpdate = UpdateChecker.checkIfNeeded(context) }
     LaunchedEffect(saveRequested, storageGranted) {
         if (!saveRequested || !storageGranted || saving) return@LaunchedEffect
@@ -260,8 +267,13 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                 dragHandle = { MandazaDragHandle() },
             ) {
                 Spacer(Modifier.height(LocalViewConfiguration.current.minimumTouchTargetSize.height / 2))
-                MandazaSettings(state, onFavorites = { sheet = Sheet.Favorites })
+                MandazaSettings(
+                    state,
+                    onFavorites = { sheet = Sheet.Favorites },
+                    onNotices = { sheet = Sheet.Notices },
+                )
             }
+            Sheet.Notices -> NoticesSheet(onDismiss = { sheet = null })
             null -> Unit
         }
         if (showPermissionExplanation) AlertDialog(
@@ -324,7 +336,10 @@ private fun ZenOverlay(state: MandazaAppState, onExit: () -> Unit) {
     Box(Modifier.fillMaxSize().statusBarsPadding()) {
         if (state.showClock) {
             val now by currentTime(state.showSeconds)
-            val time = SimpleDateFormat(if (state.showSeconds) "h:mm:ss" else "h:mm", Locale.getDefault()).format(Date(now))
+            val time = SimpleDateFormat(
+                clockPattern(android.text.format.DateFormat.is24HourFormat(LocalContext.current), state.showSeconds),
+                Locale.getDefault(),
+            ).format(Date(now))
             val date = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(now))
             val text = when (state.clockForm) {
                 "stacked" -> time.replace(":", "\n")
@@ -401,7 +416,7 @@ private fun SnapshotSheet(
 }
 
 @Composable
-private fun MandazaDragHandle() {
+internal fun MandazaDragHandle() {
     // A little above 48dp also avoids fractional-density bounds rounding
     // below the minimum accessible touch size.
     Box(Modifier.size(52.dp).semantics { contentDescription = "Sheet handle" },
