@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
@@ -63,6 +64,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -72,6 +74,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
@@ -227,6 +230,8 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    // Tilt parallax shifts the artwork; keep it out of the system bar areas.
+                    .clipToBounds()
                     .onSizeChanged { canvasWidth = it.width.toFloat(); canvasHeight = it.height.toFloat() }
                     .semantics { contentDescription = "Mandaza canvas" }
                     .clickable(role = Role.Button, onClickLabel = "Generate a new Mandaza") { state.newPattern() },
@@ -350,10 +355,20 @@ private fun ZenOverlay(state: MandazaAppState, onExit: () -> Unit) {
                 modifier = Modifier.align(Alignment.Center).padding(horizontal = 20.dp),
                 color = Color.Black.copy(alpha = 0.65f),
                 shape = MaterialTheme.shapes.large,
-            ) { Text(text, color = Paper, fontSize = if (state.clockForm == "stacked") 58.sp else 48.sp,
-                lineHeight = if (state.clockForm == "stacked") 66.sp else 54.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 28.dp, vertical = 18.dp)) }
+            ) {
+                // Same sizes as before when the text fits. A long date, a narrow screen or large
+                // system text used to break a line mid-date or run off the plate; shrink instead.
+                val stacked = state.clockForm == "stacked"
+                Text(text, color = Paper,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 18.sp, maxFontSize = if (stacked) 58.sp else 48.sp, stepSize = 2.sp,
+                    ),
+                    lineHeight = if (stacked) 1.14.em else 1.125.em,
+                    maxLines = text.count { it == '\n' } + 1,
+                    softWrap = false,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 18.dp))
+            }
         }
         FilledIconButton(
             onClick = onExit,
