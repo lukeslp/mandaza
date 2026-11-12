@@ -13,16 +13,31 @@ class NoticesTest {
         )
     }
 
-    @Test fun noticeIsSplitIntoAHeadingAndParagraphs() {
-        val blocks = noticeBlocks("Example.txt", "First line\nsame paragraph\n\n\r\nSecond paragraph\n")
+    @Test fun noticeIsSplitIntoHeadingsAndUnwrappedParagraphs() {
+        val blocks = noticeBlocks(
+            "Example.md",
+            "# Title\n\nFirst line\nsame paragraph\n\n\r\n## Section\n\nIntro:\n- one\n  continued\n- two\n   (a) clause\n",
+        )
         assertEquals(
             listOf(
-                NoticeBlock("Example.txt", isHeading = true),
-                NoticeBlock("First line\nsame paragraph", isHeading = false),
-                NoticeBlock("Second paragraph", isHeading = false),
+                NoticeBlock("Example.md", isHeading = true),
+                NoticeBlock("Title", isHeading = true),
+                NoticeBlock("First line same paragraph", isHeading = false),
+                NoticeBlock("Section", isHeading = true),
+                NoticeBlock("Intro:\n- one continued\n- two\n(a) clause", isHeading = false),
             ),
             blocks,
         )
+    }
+
+    @Test fun unwrappingKeepsEveryWordOfTheApacheLicense() {
+        val file = sequenceOf("src/main/assets/licenses", "app/src/main/assets/licenses")
+            .map(::File).first { it.isDirectory }.resolve("Apache-2.0.txt")
+        val words = Regex("\\S+")
+        val original = words.findAll(file.readText()).map { it.value }.toList()
+        val shown = noticeBlocks(file.name, file.readText()).drop(1)
+            .flatMap { block -> words.findAll(block.text).map { it.value } }
+        assertEquals(original, shown)
     }
 
     /** Every flavor reads its notices from the shared assets; none may be flavor-only again. */

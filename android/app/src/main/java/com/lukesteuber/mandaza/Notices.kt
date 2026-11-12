@@ -37,13 +37,30 @@ internal data class NoticeBlock(val text: String, val isHeading: Boolean)
 internal fun orderNoticeFiles(names: List<String>): List<String> =
     names.filter { it == NOTICES_SUMMARY_FILE } + names.filter { it != NOTICES_SUMMARY_FILE }.sortedBy { it.lowercase() }
 
-/** Split a notice into paragraphs so a long license scrolls as a lazy list, not one huge text node. */
+private val listItemStart = Regex("""^(-|\*|\([0-9a-zA-Z]+\)|[0-9]+\.)\s.*""")
+
+/**
+ * Split a notice into paragraphs so a long license scrolls as a lazy list, not one huge text node.
+ * The files are hard-wrapped for an 80-column page; rejoin those lines so they wrap to the screen.
+ * List items keep their own lines. Markdown section marks become headings. No words are dropped.
+ */
 internal fun noticeBlocks(fileName: String, content: String): List<NoticeBlock> =
     listOf(NoticeBlock(fileName, isHeading = true)) + content.replace("\r\n", "\n")
         .split(Regex("\n[ \t]*\n"))
-        .map { it.trim('\n') }
         .filter { it.isNotBlank() }
-        .map { NoticeBlock(it, isHeading = false) }
+        .map { paragraph ->
+            val lines = paragraph.lines().map { it.trim() }.filter { it.isNotEmpty() }
+            if (lines.size == 1 && lines[0].startsWith("#")) {
+                NoticeBlock(lines[0].trimStart('#').trim(), isHeading = true)
+            } else {
+                val text = StringBuilder()
+                lines.forEachIndexed { index, line ->
+                    if (index > 0) text.append(if (listItemStart.matches(line)) '\n' else ' ')
+                    text.append(line)
+                }
+                NoticeBlock(text.toString(), isHeading = false)
+            }
+        }
 
 private fun loadNotices(context: Context): List<NoticeBlock> {
     val assets = context.assets
