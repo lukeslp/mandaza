@@ -43,7 +43,9 @@ android {
         }
         create("play") {
             dimension = "distribution"
-            versionCode = 10305
+            // Same source as F-Droid 1.3.6; code is above every issued phone code (ledger high-water 10314).
+            versionCode = 10315
+            versionName = "$marketingVersion.6"
         }
         create("amazon") {
             dimension = "distribution"
