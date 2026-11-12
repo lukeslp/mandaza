@@ -70,7 +70,10 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -146,8 +149,10 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                 Lifecycle.Event.ON_START -> appInForeground = true
                 Lifecycle.Event.ON_STOP -> {
                     appInForeground = false
-                    // Tune changes are otherwise saved only when the sheet closes.
-                    state.persist()
+                    // Tune changes are otherwise saved only when the sheet closes. Only then:
+                    // saving on every stop would write stale state over a newer save made
+                    // elsewhere (a deep link handled by a new activity, a test fixture).
+                    if (sheet == Sheet.Settings) state.persist()
                 }
                 else -> Unit
             }
@@ -233,7 +238,13 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                     // Tilt parallax shifts the artwork; keep it out of the system bar areas.
                     .clipToBounds()
                     .onSizeChanged { canvasWidth = it.width.toFloat(); canvasHeight = it.height.toFloat() }
-                    .semantics { contentDescription = "Mandaza canvas" }
+                    // A screen reader hears which palette the new pattern uses after a tap;
+                    // without this a new pattern was silent.
+                    .semantics {
+                        contentDescription = "Mandaza canvas"
+                        stateDescription = "${com.lukesteuber.mandaza.core.MandazaPalettes.byId(state.paletteId).name} pattern"
+                        liveRegion = LiveRegionMode.Polite
+                    }
                     .clickable(role = Role.Button, onClickLabel = "Generate a new Mandaza") { state.newPattern() },
             ) {
                 MandazaCanvas(
