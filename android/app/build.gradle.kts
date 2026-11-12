@@ -43,9 +43,11 @@ android {
         }
         create("play") {
             dimension = "distribution"
-            // Same source as F-Droid 1.3.6; code is above every issued phone code (ledger high-water 10314).
-            versionCode = 10315
-            versionName = "$marketingVersion.6"
+            // First Play build with the Zen, microphone, reduced-motion and notices fixes.
+            // 1.3.7 and 1.3.8 name private Amazon candidates (10312 to 10314); 10315 was the
+            // unreleased 1.3.6 Play bundle. New phone codes must exceed every issued code.
+            versionCode = 10316
+            versionName = "$marketingVersion.9"
         }
         create("amazon") {
             dimension = "distribution"
