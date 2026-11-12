@@ -1,7 +1,7 @@
 # Mandaza Google Play handoff
 
 > The listing, compliance answers and evidence in this directory were written for
-> 1.3.3 (10305). The Play flavor is now 1.3.9 (10316) and has changed since: Back
+> 1.3.3 (10305). The Play flavor is now 1.3.10 (10317) and has changed since: Back
 > leaves Zen, a denied microphone request turns Music responsivity off, the system
 > Remove animations setting is honored, and Tune has an Open-source notices sheet.
 > Re-check every file here against that build before using it.

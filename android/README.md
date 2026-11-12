@@ -36,9 +36,9 @@ upgrade/launch checks remain distinct evidence. Official F-Droid acceptance is
 still pending.
 
 New phone codes must exceed every issued code across direct, Play, Amazon and
-F-Droid, including private candidates. The Play flavor is 1.3.9 (10316): 10312 to
-10314 are private Amazon candidates and 10315 was an unreleased 1.3.6 Play bundle,
-so a new build needs at least 10317. Check the release toolkit ledger first. Exact known artifacts
+F-Droid, including private candidates. The Play flavor is 1.3.10 (10317): 10312 to
+10314 are private Amazon candidates and 10315 and 10316 were unreleased Play bundles,
+so a new build needs at least 10318. Check the release toolkit ledger first. Exact known artifacts
 can be staged again unchanged. `scripts/stage-android-release.sh` checks the APK
 against that ledger before staging. Different store signing keys and lower
 version codes can still prevent switching channels in place.
@@ -84,7 +84,7 @@ scripts/stage-android-release.sh
 
 Set `MANDAZA_DISTRIBUTION=play` or `MANDAZA_DISTRIBUTION=amazon` to stage the
 corresponding store flavor. Direct uses version code `10310` and version name
-`1.3.5`, Play uses `10316` (`1.3.9`), and the Fire-tablet candidate uses `10308`. Installed
+`1.3.5`, Play uses `10317` (`1.3.10`), and the Fire-tablet candidate uses `10308`. Installed
 direct copies compare their version name with `catalog.json`, so every direct
 rebuild must raise the version name as well as the code. The live Fire TV app remains the
 separate `app.mandaza.tv` package at `1.3.1 (20301)`.

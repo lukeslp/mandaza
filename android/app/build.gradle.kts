@@ -46,8 +46,9 @@ android {
             // First Play build with the Zen, microphone, reduced-motion and notices fixes.
             // 1.3.7 and 1.3.8 name private Amazon candidates (10312 to 10314); 10315 was the
             // unreleased 1.3.6 Play bundle. New phone codes must exceed every issued code.
-            versionCode = 10316
-            versionName = "$marketingVersion.9"
+            // 10316 (1.3.9) was built but never signed or uploaded; 1.3.10 adds the screen reader changes.
+            versionCode = 10317
+            versionName = "$marketingVersion.10"
         }
         create("amazon") {
             dimension = "distribution"
