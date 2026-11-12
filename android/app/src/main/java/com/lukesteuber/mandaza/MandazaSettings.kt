@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import com.lukesteuber.mandaza.core.MandazaPalettes
 
 @Composable
-fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
+fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit, onNotices: () -> Unit = {}) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -137,6 +137,9 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
             color = Color(0xFF9AA5B4),
             style = MaterialTheme.typography.bodySmall,
         )
+        TextButton(modifier = Modifier.heightIn(min = 52.dp), onClick = { state.persist(); onNotices() }) {
+            Text("Open-source notices")
+        }
         Spacer(Modifier.height(36.dp))
     }
 }
