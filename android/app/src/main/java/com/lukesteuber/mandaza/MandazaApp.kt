@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bedtime
@@ -36,8 +38,9 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
@@ -61,14 +64,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
@@ -87,7 +96,7 @@ private val Paper = Color(0xFFF5F0E8)
 private val Muted = Color(0xFF9AA5B4)
 private val Cyan = Color(0xFF48BFE3)
 
-private enum class Sheet { History, Favorites, Settings }
+private enum class Sheet { History, Favorites, Settings, Notices }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,6 +107,7 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
     val snackbar = remember { SnackbarHostState() }
     val tilt = remember { TiltMonitor(context) }
     val audio = remember { AudioLevelMonitor() }
+    val reduceMotion = rememberReducedMotion()
     var sheet by remember { mutableStateOf<Sheet?>(null) }
     var canvasWidth by remember { mutableFloatStateOf(1f) }
     var canvasHeight by remember { mutableFloatStateOf(1f) }
@@ -117,8 +127,13 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         )
     }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted && state.zenMode && state.musicResponsive) audio.start()
-        else if (!granted) showPermissionExplanation = true
+        if (granted && !reduceMotion && shouldActivateAudio(appInForeground, state.zenMode, state.musicResponsive)) audio.start()
+        else if (!granted) {
+            audio.stop()
+            state.musicResponsive = false
+            state.persist()
+            showPermissionExplanation = true
+        }
     }
     val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         storageGranted = granted
@@ -132,20 +147,27 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> appInForeground = true
-                Lifecycle.Event.ON_STOP -> appInForeground = false
+                Lifecycle.Event.ON_STOP -> {
+                    appInForeground = false
+                    // Tune changes are otherwise saved only when the sheet closes. Only then:
+                    // saving on every stop would write stale state over a newer save made
+                    // elsewhere (a deep link handled by a new activity, a test fixture).
+                    if (sheet == Sheet.Settings) state.persist()
+                }
                 else -> Unit
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-    DisposableEffect(state.parallaxEnabled, appInForeground) {
-        if (state.parallaxEnabled && appInForeground) tilt.start() else tilt.stop()
+    DisposableEffect(state.parallaxEnabled, appInForeground, reduceMotion) {
+        if (state.parallaxEnabled && appInForeground && !reduceMotion) tilt.start() else tilt.stop()
         onDispose { tilt.stop() }
     }
-    LaunchedEffect(state.zenMode, state.musicResponsive, micGranted, appInForeground) {
-        if (shouldActivateAudio(appInForeground, state.zenMode, state.musicResponsive)) {
-            if (shouldRequestMicrophone(appInForeground, state.zenMode, state.musicResponsive, micGranted)) {
+    LaunchedEffect(state.zenMode, state.musicResponsive, micGranted, appInForeground, reduceMotion) {
+        val musicMotionEnabled = state.musicResponsive && !reduceMotion
+        if (shouldActivateAudio(appInForeground, state.zenMode, musicMotionEnabled)) {
+            if (shouldRequestMicrophone(appInForeground, state.zenMode, musicMotionEnabled, micGranted)) {
                 micPermission.launch(Manifest.permission.RECORD_AUDIO)
             } else {
                 audio.start()
@@ -153,6 +175,8 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
         } else audio.stop()
     }
     DisposableEffect(Unit) { onDispose { audio.stop() } }
+    // Back leaves Zen first; a second Back leaves the app. Sheets are their own windows.
+    BackHandler(enabled = state.zenMode) { state.zenMode = false; state.persist() }
     LaunchedEffect(Unit) { availableUpdate = UpdateChecker.checkIfNeeded(context) }
     LaunchedEffect(saveRequested, storageGranted) {
         if (!saveRequested || !storageGranted || saving) return@LaunchedEffect
@@ -211,8 +235,16 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                 Modifier
                     .fillMaxSize()
                     .padding(padding)
+                    // Tilt parallax shifts the artwork; keep it out of the system bar areas.
+                    .clipToBounds()
                     .onSizeChanged { canvasWidth = it.width.toFloat(); canvasHeight = it.height.toFloat() }
-                    .semantics { contentDescription = "Mandaza canvas" }
+                    // A screen reader hears which palette the new pattern uses after a tap;
+                    // without this a new pattern was silent.
+                    .semantics {
+                        contentDescription = "Mandaza canvas"
+                        stateDescription = "${com.lukesteuber.mandaza.core.MandazaPalettes.byId(state.paletteId).name} pattern"
+                        liveRegion = LiveRegionMode.Polite
+                    }
                     .clickable(role = Role.Button, onClickLabel = "Generate a new Mandaza") { state.newPattern() },
             ) {
                 MandazaCanvas(
@@ -221,11 +253,12 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                     config = state.config,
                     canvasWidth = canvasWidth,
                     canvasHeight = canvasHeight,
-                    tilt = if (state.parallaxEnabled) tilt.offset else androidx.compose.ui.geometry.Offset.Zero,
+                    tilt = if (state.parallaxEnabled && !reduceMotion) tilt.offset else androidx.compose.ui.geometry.Offset.Zero,
                     parallaxAmount = state.parallaxAmount,
                     audioLevel = if (state.zenMode) audio.level else 0f,
                     reactivity = state.reactivity,
                     paperTheme = state.paperTheme,
+                    reduceMotion = reduceMotion,
                     modifier = Modifier.fillMaxSize(),
                 )
                 if (state.zenMode) {
@@ -250,14 +283,19 @@ fun MandazaApp(state: MandazaAppState, activity: ComponentActivity) {
                 dragHandle = { MandazaDragHandle() },
             ) {
                 Spacer(Modifier.height(LocalViewConfiguration.current.minimumTouchTargetSize.height / 2))
-                MandazaSettings(state, onFavorites = { sheet = Sheet.Favorites })
+                MandazaSettings(
+                    state,
+                    onFavorites = { sheet = Sheet.Favorites },
+                    onNotices = { sheet = Sheet.Notices },
+                )
             }
+            Sheet.Notices -> NoticesSheet(onDismiss = { sheet = null })
             null -> Unit
         }
         if (showPermissionExplanation) AlertDialog(
             onDismissRequest = { showPermissionExplanation = false },
             title = { Text("Microphone unavailable") },
-            text = { Text("Music responsivity only reads the live sound level. Audio is never recorded, stored, or sent anywhere. You can enable access later in Android Settings.") },
+            text = { Text("Music responsivity measures live sound levels. Audio recordings are not saved or sent anywhere. You can enable access later in Android Settings.") },
             confirmButton = { TextButton(onClick = { showPermissionExplanation = false }) { Text("OK") } },
         )
         if (showStoragePermissionExplanation) AlertDialog(
@@ -314,7 +352,10 @@ private fun ZenOverlay(state: MandazaAppState, onExit: () -> Unit) {
     Box(Modifier.fillMaxSize().statusBarsPadding()) {
         if (state.showClock) {
             val now by currentTime(state.showSeconds)
-            val time = SimpleDateFormat(if (state.showSeconds) "h:mm:ss" else "h:mm", Locale.getDefault()).format(Date(now))
+            val time = SimpleDateFormat(
+                clockPattern(android.text.format.DateFormat.is24HourFormat(LocalContext.current), state.showSeconds),
+                Locale.getDefault(),
+            ).format(Date(now))
             val date = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(now))
             val text = when (state.clockForm) {
                 "stacked" -> time.replace(":", "\n")
@@ -322,13 +363,29 @@ private fun ZenOverlay(state: MandazaAppState, onExit: () -> Unit) {
                 else -> buildString { append(time); if (state.showDate) append("\n$date") }
             }
             Surface(
-                modifier = Modifier.align(Alignment.Center),
-                color = Color.Black.copy(alpha = 0.38f),
+                modifier = Modifier.align(Alignment.Center).padding(horizontal = 20.dp),
+                color = Color.Black.copy(alpha = 0.65f),
                 shape = MaterialTheme.shapes.large,
-            ) { Text(text, color = Paper, fontSize = if (state.clockForm == "stacked") 58.sp else 48.sp,
-                lineHeight = 54.sp, modifier = Modifier.padding(horizontal = 28.dp, vertical = 18.dp)) }
+            ) {
+                // Same sizes as before when the text fits. A long date, a narrow screen or large
+                // system text used to break a line mid-date or run off the plate; shrink instead.
+                val stacked = state.clockForm == "stacked"
+                Text(text, color = Paper,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 18.sp, maxFontSize = if (stacked) 58.sp else 48.sp, stepSize = 2.sp,
+                    ),
+                    lineHeight = if (stacked) 1.14.em else 1.125.em,
+                    maxLines = text.count { it == '\n' } + 1,
+                    softWrap = false,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 28.dp, vertical = 18.dp))
+            }
         }
-        IconButton(onClick = onExit, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(52.dp)) {
+        FilledIconButton(
+            onClick = onExit,
+            modifier = Modifier.align(Alignment.TopEnd).padding(12.dp).size(52.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Deep, contentColor = Paper),
+        ) {
             Icon(Icons.Default.BedtimeOff, contentDescription = "Exit Zen", tint = Paper)
         }
     }
@@ -338,8 +395,9 @@ private fun ZenOverlay(state: MandazaAppState, onExit: () -> Unit) {
 private fun currentTime(showSeconds: Boolean): androidx.compose.runtime.State<Long> =
     androidx.compose.runtime.produceState(System.currentTimeMillis(), showSeconds) {
         while (true) {
-            value = System.currentTimeMillis()
-            kotlinx.coroutines.delay(if (showSeconds) 1000 else 15_000)
+            val now = System.currentTimeMillis()
+            value = now
+            kotlinx.coroutines.delay(millisUntilNextClockTick(now, showSeconds))
         }
     }
 
@@ -384,7 +442,7 @@ private fun SnapshotSheet(
 }
 
 @Composable
-private fun MandazaDragHandle() {
+internal fun MandazaDragHandle() {
     // A little above 48dp also avoids fractional-density bounds rounding
     // below the minimum accessible touch size.
     Box(Modifier.size(52.dp).semantics { contentDescription = "Sheet handle" },

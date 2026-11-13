@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,14 +31,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.lukesteuber.mandaza.core.MandazaPalettes
 
 @Composable
-fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
+fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit, onNotices: () -> Unit = {}) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -122,7 +125,7 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
                 }
             }
             Text(
-                "Microphone input is reduced to a live level value. Audio is never recorded or stored.",
+                "Microphone input measures live sound levels. Audio recordings are not saved or sent.",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF9AA5B4),
             )
@@ -137,6 +140,9 @@ fun MandazaSettings(state: MandazaAppState, onFavorites: () -> Unit) {
             color = Color(0xFF9AA5B4),
             style = MaterialTheme.typography.bodySmall,
         )
+        TextButton(modifier = Modifier.heightIn(min = 52.dp), onClick = { state.persist(); onNotices() }) {
+            Text("Open-source notices")
+        }
         Spacer(Modifier.height(36.dp))
     }
 }
@@ -152,28 +158,35 @@ private fun SettingSection(title: String, content: @Composable () -> Unit) {
 
 @Composable
 private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    // One stop for a screen reader: "Glow, switch, off". The label and the switch used to be
+    // two stops that both said the label. The whole row toggles, as in Android Settings.
+    Row(
+        Modifier.fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .semantics { contentDescription = label },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(label, modifier = Modifier.weight(1f))
-        Switch(
-            checked = checked,
-            onCheckedChange = onChange,
-            modifier = Modifier.semantics { contentDescription = label },
-        )
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 
 @Composable
 private fun SliderRow(label: String, value: Float, range: ClosedFloatingPointRange<Float>, onChange: (Float) -> Unit) {
+    val shown = "${(value * if (range.endInclusive <= 1f) 100 else 10).toInt()}${if (range.endInclusive <= 1f) "%" else ""}"
     Column {
-        Row(Modifier.fillMaxWidth()) {
+        // The slider itself carries the label and the shown value for a screen reader,
+        // so the visible texts are not separate stops with a different number.
+        Row(Modifier.fillMaxWidth().clearAndSetSemantics { }) {
             Text(label, modifier = Modifier.weight(1f))
-            Text("${(value * if (range.endInclusive <= 1f) 100 else 10).toInt()}${if (range.endInclusive <= 1f) "%" else ""}", color = Color(0xFF9AA5B4))
+            Text(shown, color = Color(0xFF9AA5B4))
         }
         Slider(
             value = value,
             onValueChange = onChange,
             valueRange = range,
-            modifier = Modifier.semantics { contentDescription = label },
+            modifier = Modifier.semantics { contentDescription = label; stateDescription = shown },
         )
     }
 }
