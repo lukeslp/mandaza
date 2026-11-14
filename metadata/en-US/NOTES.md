@@ -1,6 +1,6 @@
 # Apple metadata staging
 
-The iOS app, widgets, and Watch companion are prepared as Mandaza 1.4. The
+The iOS app, widgets, and Watch companion are prepared as Mandaza 1.4.1. The
 standalone Apple TV product remains MandazaTV 1.3.
 
 The files in this directory are the iOS metadata source of truth for
