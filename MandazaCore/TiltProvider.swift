@@ -115,6 +115,29 @@ public func tiltOffset(gravityX: Double,
                viewSize: viewSize)
 }
 
+/// The interface orientation the parallax layer is drawn in. Cases match
+/// `UIInterfaceOrientation` (`.landscapeLeft` = home button on the left, so the
+/// device's top points to the screen's right).
+public enum ParallaxOrientation: Sendable, Equatable {
+    case portrait, portraitUpsideDown, landscapeLeft, landscapeRight
+}
+
+/// Device gravity (x toward the right edge and y toward the top, in portrait)
+/// turned into the screen's axes: x toward the screen's right, y toward its top.
+/// CoreMotion reports in the device's own frame whatever the interface does, so
+/// without this a landscape layer read the screen's vertical axis as its
+/// horizontal one and rolling the device barely moved it. z (out of the screen)
+/// is the same in every orientation.
+public func screenGravity(x: Double, y: Double,
+                          orientation: ParallaxOrientation) -> (x: Double, y: Double) {
+    switch orientation {
+    case .portrait:           return (x, y)
+    case .portraitUpsideDown: return (-x, -y)
+    case .landscapeLeft:      return (y, -x)
+    case .landscapeRight:     return (-y, x)
+    }
+}
+
 /// Relative luminance in 0…1 for an sRGB (or convertible) `CGColor`.
 /// Used to scale per-stroke parallax: brighter → nearer → more travel.
 public func relativeLuminance(_ color: CGColor) -> Double {
@@ -158,6 +181,7 @@ public final class TiltProvider {
     /// When true (Zen + parallax), a faint long-period sway is mixed into
     /// `offset` so depth layers keep drifting while the device is still.
     public var ambientSway: Bool = false
+    public var orientation: ParallaxOrientation = .portrait
 
     public init() {}
     public func start(intensity: ZenTiltIntensity) {}
@@ -200,6 +224,14 @@ public final class TiltProvider {
     /// When true (Zen + parallax), mix a faint long-period sway into `offset`
     /// so luminance depth keeps drifting while the device is still.
     public var ambientSway: Bool = false
+
+    /// The interface orientation the layer is drawn in; the host updates it as
+    /// the scene rotates (watchOS stays portrait). Gravity is turned into the
+    /// screen's axes with it, and a change re-centers on the next sample so the
+    /// layer doesn't jump.
+    public var orientation: ParallaxOrientation = .portrait {
+        didSet { if orientation != oldValue { needsRecenter = true } }
+    }
 
     private let motion = CMMotionManager()
     private var amount: Double = 0
@@ -273,8 +305,10 @@ public final class TiltProvider {
         publish(.zero)
     }
 
-    private func consume(x: Double, y: Double, z: Double) {
+    private func consume(x deviceX: Double, y deviceY: Double, z: Double) {
         guard amount > 0.001 else { return }
+        let screen = screenGravity(x: deviceX, y: deviceY, orientation: orientation)
+        let x = screen.x, y = screen.y
 
         // On (re)start, snap smoothing + baseline to the first real pose so
         // the layer begins dead-centered wherever the phone is held.

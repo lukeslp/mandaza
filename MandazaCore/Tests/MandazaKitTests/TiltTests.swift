@@ -202,4 +202,51 @@ final class TiltTests: XCTestCase {
         XCTAssertEqual(seen[0], .zero)
         provider.removeListener(id)
     }
+
+    // MARK: - Interface orientation (landscape, including iPhone Duo's inner screen)
+
+    func testPortraitGravityIsUnchanged() {
+        let g = screenGravity(x: 0.3, y: -0.9, orientation: .portrait)
+        XCTAssertEqual(g.x, 0.3, accuracy: 1e-12)
+        XCTAssertEqual(g.y, -0.9, accuracy: 1e-12)
+    }
+
+    func testUprightInEveryOrientationReadsAsScreenDown() {
+        // Held upright, gravity points to the bottom of the screen: screen y ≈ −1.
+        let cases: [(ParallaxOrientation, Double, Double)] = [
+            (.portrait, 0, -1),           // device bottom down
+            (.portraitUpsideDown, 0, 1),  // device top down
+            (.landscapeLeft, 1, 0),       // home button left: device right edge down
+            (.landscapeRight, -1, 0),     // home button right: device left edge down
+        ]
+        for (orientation, x, y) in cases {
+            let g = screenGravity(x: x, y: y, orientation: orientation)
+            XCTAssertEqual(g.x, 0, accuracy: 1e-12, "\(orientation)")
+            XCTAssertEqual(g.y, -1, accuracy: 1e-12, "\(orientation)")
+        }
+    }
+
+    func testRollingRightMovesArtRightInLandscape() {
+        // Held sideways (home button left) and rolled so the screen's right edge
+        // dips: gravity gains device +Y. The raw device X barely changes, so the
+        // old mapping left the art nearly still (and nudged it the wrong way).
+        let rest = (x: 1.0, y: 0.0)
+        let rolled = (x: 0.954, y: 0.3)
+        let before = tiltOffset(gravityX: rolled.x - rest.x, gravityY: rolled.y, gravityZ: 0,
+                                amount: 1, axes: .both, viewSize: size)
+        XCTAssertLessThan(abs(before.width), 0.15 * abs(tiltMaxTravelFraction * 400))
+
+        let restScreen = screenGravity(x: rest.x, y: rest.y, orientation: .landscapeLeft)
+        let rolledScreen = screenGravity(x: rolled.x, y: rolled.y, orientation: .landscapeLeft)
+        let after = tiltOffset(gravityX: rolledScreen.x - restScreen.x, gravityY: rolledScreen.y,
+                               gravityZ: 0, amount: 1, axes: .both, viewSize: size)
+        XCTAssertGreaterThan(after.width, 0.5 * tiltMaxTravelFraction * 400)
+    }
+
+    func testLandscapeRightMirrorsLandscapeLeft() {
+        let left = screenGravity(x: 0.2, y: 0.3, orientation: .landscapeLeft)
+        let right = screenGravity(x: -0.2, y: -0.3, orientation: .landscapeRight)
+        XCTAssertEqual(left.x, right.x, accuracy: 1e-12)
+        XCTAssertEqual(left.y, right.y, accuracy: 1e-12)
+    }
 }

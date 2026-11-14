@@ -1755,6 +1755,29 @@ private extension View {
     }
 }
 
+/// A hosting controller that reports layout passes, so the parallax host can
+/// follow the scene's interface orientation.
+private final class ParallaxHostingController<Content: View>: UIHostingController<Content> {
+    var onLayout: (() -> Void)?
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        onLayout?()
+    }
+}
+
+private extension ParallaxOrientation {
+    init?(_ orientation: UIInterfaceOrientation) {
+        switch orientation {
+        case .portrait:           self = .portrait
+        case .portraitUpsideDown: self = .portraitUpsideDown
+        case .landscapeLeft:      self = .landscapeLeft
+        case .landscapeRight:     self = .landscapeRight
+        default:                  return nil
+        }
+    }
+}
+
 /// Applies tilt as a UIKit `CGAffineTransform` so motion samples never
 /// invalidate SwiftUI bodies (which was freezing the canvas TimelineView).
 private struct ParallaxHost<Content: View>: UIViewControllerRepresentable {
@@ -1772,20 +1795,26 @@ private struct ParallaxHost<Content: View>: UIViewControllerRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
-    func makeUIViewController(context: Context) -> UIHostingController<Content> {
-        let host = UIHostingController(rootView: content)
+    func makeUIViewController(context: Context) -> ParallaxHostingController<Content> {
+        let host = ParallaxHostingController(rootView: content)
         host.view.backgroundColor = .clear
         host.safeAreaRegions = []
-        context.coordinator.bind(provider: provider, view: host.view, multiplier: multiplier)
+        let coordinator = context.coordinator
+        // Rotation and iPhone Duo fold changes relayout the host; that is when
+        // the scene's interface orientation can change.
+        host.onLayout = { [weak coordinator, weak host] in
+            coordinator?.updateOrientation(from: host?.view)
+        }
+        coordinator.bind(provider: provider, view: host.view, multiplier: multiplier)
         return host
     }
 
-    func updateUIViewController(_ host: UIHostingController<Content>, context: Context) {
+    func updateUIViewController(_ host: ParallaxHostingController<Content>, context: Context) {
         host.rootView = content
         context.coordinator.bind(provider: provider, view: host.view, multiplier: multiplier)
     }
 
-    static func dismantleUIViewController(_ host: UIHostingController<Content>,
+    static func dismantleUIViewController(_ host: ParallaxHostingController<Content>,
                                           coordinator: Coordinator) {
         coordinator.unbind()
     }
@@ -1809,6 +1838,22 @@ private struct ParallaxHost<Content: View>: UIViewControllerRepresentable {
             } else {
                 apply(provider.offset)
             }
+        }
+
+        /// Tells the provider which way the scene is turned, so it reads device
+        /// gravity in the screen's axes (landscape included). Interface
+        /// orientation, not the window's shape: left and right turn gravity in
+        /// opposite directions.
+        func updateOrientation(from view: UIView?) {
+            guard let scene = view?.window?.windowScene else { return }
+            let current: UIInterfaceOrientation
+            if #available(iOS 26.0, *) {
+                current = scene.effectiveGeometry.interfaceOrientation
+            } else {
+                current = scene.interfaceOrientation
+            }
+            guard let orientation = ParallaxOrientation(current) else { return }
+            provider?.orientation = orientation
         }
 
         func unbind() {
