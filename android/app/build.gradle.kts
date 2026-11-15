@@ -37,9 +37,11 @@ android {
     productFlavors {
         create("direct") {
             dimension = "distribution"
-            versionCode = 10310
+            // 1.3.11: first direct build with the Play fixes (Zen, microphone, reduced motion, notices,
+            // screen reader). 10318 is above every issued phone code (Play 10317).
+            versionCode = 10318
             // Installed direct copies compare versionName with catalog.json, so a rebuild must raise it.
-            versionName = "$marketingVersion.5"
+            versionName = "$marketingVersion.11"
         }
         create("play") {
             dimension = "distribution"
@@ -56,9 +58,10 @@ android {
         }
         create("fdroid") {
             dimension = "distribution"
-            // Published F-Droid 1.3.6. Future phone codes must exceed all issued channel codes.
-            versionCode = 10311
-            versionName = "$marketingVersion.6"
+            // 1.3.12 follows F-Droid 1.3.6 (10311) and direct 1.3.11 (10318).
+            // Future phone codes must exceed all issued channel codes.
+            versionCode = 10319
+            versionName = "$marketingVersion.12"
         }
     }
 
