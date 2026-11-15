@@ -23,3 +23,7 @@ Hero cards and Watch face variants staged 2026-07-09 for Mandaza 1.3
 ## Capture hooks
 DEBUG env vars (`MANDAZA_MUSIC_DEMO`, palette / clock-form hooks) live in
 `MandazaCore/ScreenshotSupport.swift`.
+
+## iPhone Duo (outer screen)
+`iphone-duo-outer/` holds three 1398×2034 captures of the folded Duo (mandalas,
+Zen with the music signal, stacked clock), made with `scripts/capture-duo.sh`.
