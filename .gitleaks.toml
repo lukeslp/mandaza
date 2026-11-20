@@ -1,13 +1,16 @@
 # Allowlist for gitleaks false positives in this tree.
 # UserDefaults key names such as "MandazaTV.appliedAmbientDefaults.v1" read as
 # generic API keys but are preference names, not credentials.
+# AllowedAPKSigningKeys in the F-Droid recipe is the public SHA-256 of the
+# upstream signing certificate (published in every signed APK), not a secret.
 title = "mandaza"
 
 [extend]
 useDefault = true
 
 [allowlist]
-description = "UserDefaults preference key names"
+description = "UserDefaults preference key names and the public signer fingerprint"
 regexes = [
   '''MandazaTV\.[A-Za-z]+\.v[0-9]+''',
+  '''de02c811472ce4808b30cae0abf7a13e72b38013c0bbecfbcfe590523ef8077a''',
 ]
