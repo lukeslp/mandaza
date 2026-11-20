@@ -70,5 +70,8 @@ stage_dir="$repo_root/dist/android/$distribution/v$version"
 mkdir -p "$stage_dir"
 cp "$apk" "$stage_dir/Mandaza-$version-$distribution.apk"
 cp "$aab" "$stage_dir/Mandaza-$version-$distribution.aab"
+# R8 obfuscates release code; the mapping turns crash stack traces back into source names.
+cp "$android_dir/app/build/outputs/mapping/${lower_distribution}Release/mapping.txt" \
+  "$stage_dir/Mandaza-$version-$distribution-mapping.txt"
 (cd "$stage_dir" && shasum -a 256 "Mandaza-$version-$distribution.apk" "Mandaza-$version-$distribution.aab" > SHA256SUMS.txt)
 echo "Staged signed Android $distribution artifact in $stage_dir"
