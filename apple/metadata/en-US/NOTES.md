@@ -9,12 +9,24 @@ repository state does not prove whether metadata has already been uploaded.
 
 MandazaTV uses its existing separate record, bundle ID
 `com.lukesteuber.mandaza.tv`, and Apple ID `6768536771`. Its metadata lives in
-`../tvOS/en-US/`, with screenshots in `../../screenshots/tvOS/en-US/`.
+`../tvOS/en-US/`, with screenshots in `../../../screenshots/tvOS/en-US/`.
 
 Before running the ship pipeline for real:
 1. Confirm iPhone 1320×2868 heroes + Watch Ultra faces in
-   `../../screenshots/en-US/` (see `NOTES.md` there — currently ASC-ready).
+   `../../../screenshots/en-US/` (see `NOTES.md` there — currently ASC-ready).
 2. Confirm the four 3840×2160 MandazaTV images in
-   `../../screenshots/tvOS/en-US/` remain attached to the standalone TV record.
+   `../../../screenshots/tvOS/en-US/` remain attached to the standalone TV record.
 3. Confirm with the owner whether this is a stage-only pass or a submit-for-review
    pass; that boundary must be explicit before touching App Store Connect.
+
+## Why this folder is under `apple/`
+
+F-Droid reads listing text from `metadata/<locale>/` at the repository root,
+after `fastlane/metadata/android/`, and the folder it reads last wins. When
+this text was in a root `metadata/` folder, F-Droid would have used the Apple
+TV description for the Android app. Keep Apple listing text here and leave no
+`metadata/` folder at the root.
+
+The App Store Connect upload tool takes the folder as an argument: pass
+`apple/metadata/en-US` for iOS and `apple/metadata/tvOS/en-US` for MandazaTV,
+from the repository root.
