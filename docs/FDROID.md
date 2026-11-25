@@ -63,19 +63,27 @@ In `android/`, with JDK 21 and `ANDROID_HOME` configured:
 ```
 
 Until November 24, 2026 the recipe ran `fdroid/prepare-build.py` before the
-build. The script deleted the Play, Amazon, TV and Wear sources and the two
-Play review dependency lines. It was never needed: F-Droid's scanner passes on
-the untouched source, and the build reproduces the published APK without it.
+build. The script deleted the Play, direct, Amazon, TV and Wear sources and the
+two Play review dependency lines. It was never needed: F-Droid's scanner passes
+on the untouched source, and the build reproduces the published APK without it.
 The script, its recipe line and its workflow step are removed.
 
-`fdroid/metadata/app.mandaza.android.yml` is the recipe in MR !55922 as of
-November 24, 2026 (fork commit `3d2485ea1018de9bfebfb8aaaf493037741c1bac`). It
-turns on automatic updates from `fdroid-v<x.y.z>` tags. Once the request is
-merged, F-Droid builds every new tag of that form, so the signed
-`mandaza-fdroid-<x.y.z>.apk` has to be on the GitHub release when the tag is
-pushed. The tag name has to match the `fdroid` flavor's version name, and the
-flavor's `versionCode = N` has to stay inside its `create("fdroid") { … }`
-block, because the update check reads the code from there.
+`fdroid/metadata/app.mandaza.android.yml` was synced with the recipe in MR
+!55922 on November 24, 2026 (fork commit
+`3d2485ea1018de9bfebfb8aaaf493037741c1bac`). The recipe turns on automatic
+updates from `fdroid-v<x.y.z>` tags, which replaces the manual update policy
+recorded further down. Once the request is merged, F-Droid's update check looks
+at new tags of that form and builds the one with the highest version code, if
+that code is higher than the recipe's current one. The signed
+`mandaza-fdroid-<x.y.z>.apk` has to be on the GitHub release by the time
+F-Droid builds the tag, so publish it together with the tag. It has to be
+signed with the same certificate as 1.3.12, because the recipe's
+`AllowedAPKSigningKeys` accepts no other signer. Do not move the tag or replace
+the APK afterwards. The tag has to be `fdroid-v` followed by the `fdroid`
+flavor's version name, such as `fdroid-v1.3.12` for `1.3.12`. The flavor's
+`versionCode = N` has to stay inside its `create("fdroid") { … }` block, in
+plain digits and before any closing brace, because the update check reads the
+code from there with a regular expression.
 
 For 1.3.13 (10320) the build entry in this copy names the `fdroid-v1.3.13` tag,
 so the CI verifier matches the build. The recipe in fdroiddata needs the full

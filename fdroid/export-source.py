@@ -35,6 +35,9 @@ inputs = [
     "docs/FDROID_COMPONENTS.json", "docs/FDROID_NATIVE.json",
     "docs/FDROID_SCREENSHOTS.json", ".github/workflows/android-fdroid.yml",
 ]
+# Revisions from before November 24, 2026 still call this script.
+if "fdroid/prepare-build.py" in git("ls-tree", "--name-only", revision, "fdroid/").decode().split():
+    inputs.append("fdroid/prepare-build.py")
 archive = git("archive", "--format=tar", revision, "--", *inputs)
 destination = args.output.resolve()
 assert not destination.exists(), "Choose a new output directory"
