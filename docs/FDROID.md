@@ -62,10 +62,20 @@ In `android/`, with JDK 21 and `ANDROID_HOME` configured:
   --configuration fdroidReleaseRuntimeClasspath > fdroid-dependencies.txt
 ```
 
-`fdroid/prepare-build.py --confirm-build-sandbox` runs only on a disposable
-source/build copy. It removes unused store-only source and dependency
-declarations for source scanning and restricts the builder to phone/core.
-It does not alter the development checkout's direct/Play/Amazon functionality.
+Until November 24, 2026 the recipe ran `fdroid/prepare-build.py` before the
+build. The script deleted the Play, Amazon, TV and Wear sources and the two
+Play review dependency lines. It was never needed: F-Droid's scanner passes on
+the untouched source, and the build reproduces the published APK without it.
+The script, its recipe line and its workflow step are removed.
+
+`fdroid/metadata/app.mandaza.android.yml` is the recipe in MR !55922 as of
+November 24, 2026 (fork commit `3d2485ea1018de9bfebfb8aaaf493037741c1bac`). It
+turns on automatic updates from `fdroid-v<x.y.z>` tags. Once the request is
+merged, F-Droid builds every new tag of that form, so the signed
+`mandaza-fdroid-<x.y.z>.apk` has to be on the GitHub release when the tag is
+pushed. The tag name has to match the `fdroid` flavor's version name, and the
+flavor's `versionCode = N` has to stay inside its `create("fdroid") { … }`
+block, because the update check reads the code from there.
 
 `fdroid/verify-apk.py` checks the actual release identity, no debug flag,
 permission allowlist, SDK-bounded legacy storage, packaged license material,
