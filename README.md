@@ -256,7 +256,7 @@ scripts/
   apply-brand-assets.py       Resize supplied icon + splash into iOS/tvOS catalog slots
   archive.sh / archive-tvos.sh
   stage-android-release.sh    Signed Android APK/AAB staging
-metadata/, screenshots/, play/, android/*/amazon-listing/, samsung/seller-office-assets/
+apple/metadata/, screenshots/, play/, android/*/amazon-listing/, samsung/seller-office-assets/
                               Store listing copy and images
 docs/                         Privacy policy source
 ```

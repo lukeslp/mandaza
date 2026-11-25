@@ -184,6 +184,13 @@ phone screenshots; `FDROID_SCREENSHOTS.json` records their origin and hashes.
 It makes no full flip-cover claim. The planned cover experience is an ambient
 clock using Zen, documented in [ANDROID_COVER.md](ANDROID_COVER.md).
 
+F-Droid takes the listing text from `fastlane/metadata/android/en-US/` in the
+commit of the latest build in its recipe. It also reads any `metadata/<locale>/`
+folder at the repository root, and reads it last, so text there replaces the
+Android text. The Apple App Store text was in a root `metadata/` folder until
+November 24, 2026 and is now in `apple/metadata/`. Do not add a root
+`metadata/` folder. The `fdroid-v1.3.12` tag still has the old layout.
+
 ## References
 
 - https://f-droid.org/en/docs/Inclusion_Policy/
