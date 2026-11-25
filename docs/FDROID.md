@@ -77,6 +77,10 @@ pushed. The tag name has to match the `fdroid` flavor's version name, and the
 flavor's `versionCode = N` has to stay inside its `create("fdroid") { … }`
 block, because the update check reads the code from there.
 
+For 1.3.13 (10320) the build entry in this copy names the `fdroid-v1.3.13` tag,
+so the CI verifier matches the build. The recipe in fdroiddata needs the full
+hash of the tagged commit instead.
+
 `fdroid/verify-apk.py` checks the actual release identity, no debug flag,
 permission allowlist, SDK-bounded legacy storage, packaged license material,
 unsigned output, and the resolved dependency/DEX reports. Runtime checks reject
@@ -199,7 +203,9 @@ commit of the latest build in its recipe. It also reads any `metadata/<locale>/`
 folder at the repository root, and reads it last, so text there replaces the
 Android text. The Apple App Store text was in a root `metadata/` folder until
 November 24, 2026 and is now in `apple/metadata/`. Do not add a root
-`metadata/` folder. The `fdroid-v1.3.12` tag still has the old layout.
+`metadata/` folder. The `fdroid-v1.3.12` tag still has the old layout, and
+`fdroid-v1.3.13` is the first tag with the new one. 1.3.13 is the same app as
+1.3.12, released so F-Droid reads the Android text.
 
 ## References
 

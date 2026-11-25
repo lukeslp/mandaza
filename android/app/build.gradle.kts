@@ -58,10 +58,11 @@ android {
         }
         create("fdroid") {
             dimension = "distribution"
-            // 1.3.12 follows F-Droid 1.3.6 (10311) and direct 1.3.11 (10318).
+            // 1.3.13 follows F-Droid 1.3.12 (10319) with the same app. It exists so the tag F-Droid
+            // reads has no Apple listing text in a root metadata folder (see docs/FDROID.md).
             // Future phone codes must exceed all issued channel codes.
-            versionCode = 10319
-            versionName = "$marketingVersion.12"
+            versionCode = 10320
+            versionName = "$marketingVersion.13"
         }
     }
 
