@@ -30,11 +30,14 @@ inputs = [
     "android/app", "android/core", "android/build.gradle.kts",
     "android/settings.gradle.kts", "android/gradle.properties", "android/gradle",
     "android/gradlew", "android/gradlew.bat", "LICENSE", "LICENSES",
-    "THIRD_PARTY_NOTICES.md", "fastlane", "fdroid/prepare-build.py",
+    "THIRD_PARTY_NOTICES.md", "fastlane",
     "fdroid/verify-apk.py", "fdroid/metadata", "docs/FDROID_PROVENANCE.md",
     "docs/FDROID_COMPONENTS.json", "docs/FDROID_NATIVE.json",
     "docs/FDROID_SCREENSHOTS.json", ".github/workflows/android-fdroid.yml",
 ]
+# Revisions from before November 24, 2026 still call this script.
+if "fdroid/prepare-build.py" in git("ls-tree", "--name-only", revision, "fdroid/").decode().split():
+    inputs.append("fdroid/prepare-build.py")
 archive = git("archive", "--format=tar", revision, "--", *inputs)
 destination = args.output.resolve()
 assert not destination.exists(), "Choose a new output directory"
@@ -68,17 +71,16 @@ optional and starts off. Full-panel flip-cover behavior is not yet verified.
 ## Build
 
 Use JDK 21, Android SDK 36/build-tools 36.0.0 and the checksum-pinned wrapper.
-In a disposable clone, prepare and build the F-Droid flavor:
+Build the F-Droid flavor:
 
 ```sh
-python3 fdroid/prepare-build.py --confirm-build-sandbox
 cd android
 ./gradlew :core:testDebugUnitTest :app:testFdroidDebugUnitTest :app:lintFdroidRelease :app:assembleFdroidRelease
 ```
 
-The preparation removes unused store-only sources/declarations. The release is
-unsigned without private signing variables. F-Droid's own signing route and
-cross-channel update compatibility must be documented before publication.
+The release is unsigned without private signing variables. F-Droid's own
+signing route and cross-channel update compatibility must be documented before
+publication.
 
 ## License and source
 

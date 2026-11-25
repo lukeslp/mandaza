@@ -12,20 +12,22 @@ AutoName: Mandaza
 
 RepoType: git
 Repo: https://github.com/lukeslp/mandaza.git
-Binaries: https://github.com/lukeslp/mandaza/releases/download/fdroid-v%v/mandaza-fdroid-%v.apk
+Binaries: 
+  https://github.com/lukeslp/mandaza/releases/download/fdroid-v%v/mandaza-fdroid-%v.apk
 
 Builds:
-  - versionName: 1.3.12
-    versionCode: 10319
-    commit: fdroid-v1.3.12
+  - versionName: 1.3.13
+    versionCode: 10320
+    commit: fdroid-v1.3.13
     subdir: android/app
     gradle:
       - fdroid
-    prebuild: python3 ../../fdroid/prepare-build.py --confirm-build-sandbox
 
 AllowedAPKSigningKeys: de02c811472ce4808b30cae0abf7a13e72b38013c0bbecfbcfe590523ef8077a
 
-AutoUpdateMode: None
-UpdateCheckMode: None
-CurrentVersion: 1.3.12
-CurrentVersionCode: 10319
+AutoUpdateMode: Version
+UpdateCheckMode: Tags ^fdroid-v[0-9]+\.[0-9]+\.[0-9]+$
+UpdateCheckData: 
+  android/app/build.gradle.kts|create\("fdroid"\)[^}]*versionCode\s=\s(\d+)||fdroid-v([\d.]+)
+CurrentVersion: 1.3.13
+CurrentVersionCode: 10320

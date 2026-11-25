@@ -62,10 +62,32 @@ In `android/`, with JDK 21 and `ANDROID_HOME` configured:
   --configuration fdroidReleaseRuntimeClasspath > fdroid-dependencies.txt
 ```
 
-`fdroid/prepare-build.py --confirm-build-sandbox` runs only on a disposable
-source/build copy. It removes unused store-only source and dependency
-declarations for source scanning and restricts the builder to phone/core.
-It does not alter the development checkout's direct/Play/Amazon functionality.
+Until November 24, 2026 the recipe ran `fdroid/prepare-build.py` before the
+build. The script deleted the Play, direct, Amazon, TV and Wear sources and the
+two Play review dependency lines. It was never needed: F-Droid's scanner passes
+on the untouched source, and the build reproduces the published APK without it.
+The script, its recipe line and its workflow step are removed.
+
+`fdroid/metadata/app.mandaza.android.yml` was synced with the recipe in MR
+!55922 on November 24, 2026 (fork commit
+`3d2485ea1018de9bfebfb8aaaf493037741c1bac`). The recipe turns on automatic
+updates from `fdroid-v<x.y.z>` tags, which replaces the manual update policy
+recorded further down. Once the request is merged, F-Droid's update check looks
+at new tags of that form and builds the one with the highest version code, if
+that code is higher than the recipe's current one. The signed
+`mandaza-fdroid-<x.y.z>.apk` has to be on the GitHub release by the time
+F-Droid builds the tag, so publish it together with the tag. It has to be
+signed with the same certificate as 1.3.12, because the recipe's
+`AllowedAPKSigningKeys` accepts no other signer. Do not move the tag or replace
+the APK afterwards. The tag has to be `fdroid-v` followed by the `fdroid`
+flavor's version name, such as `fdroid-v1.3.12` for `1.3.12`. The flavor's
+`versionCode = N` has to stay inside its `create("fdroid") { … }` block, in
+plain digits and before any closing brace, because the update check reads the
+code from there with a regular expression.
+
+For 1.3.13 (10320) the build entry in this copy names the `fdroid-v1.3.13` tag,
+so the CI verifier matches the build. The recipe in fdroiddata needs the full
+hash of the tagged commit instead.
 
 `fdroid/verify-apk.py` checks the actual release identity, no debug flag,
 permission allowlist, SDK-bounded legacy storage, packaged license material,
@@ -189,7 +211,9 @@ commit of the latest build in its recipe. It also reads any `metadata/<locale>/`
 folder at the repository root, and reads it last, so text there replaces the
 Android text. The Apple App Store text was in a root `metadata/` folder until
 November 24, 2026 and is now in `apple/metadata/`. Do not add a root
-`metadata/` folder. The `fdroid-v1.3.12` tag still has the old layout.
+`metadata/` folder. The `fdroid-v1.3.12` tag still has the old layout, and
+`fdroid-v1.3.13` is the first tag with the new one. 1.3.13 is the same app as
+1.3.12, released so F-Droid reads the Android text.
 
 ## References
 
