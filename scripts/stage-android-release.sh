@@ -52,8 +52,8 @@ release_toolkit=${ANDROID_RELEASE_TOOLKIT:-"$repo_root/../android-release-toolki
 
 if [ "$distribution" = amazon ]; then
   case "$badging" in
-    *"versionCode='10308'"*) ;;
-    *) echo "Amazon artifact must use version code 10308" >&2; exit 1 ;;
+    *"versionCode='10321'"*) ;;
+    *) echo "Amazon artifact must use version code 10321" >&2; exit 1 ;;
   esac
   if printf '%s\n' "$badging" | grep -q "uses-permission: name='android.permission.INTERNET'"; then
     echo "Amazon artifact unexpectedly requests network access" >&2

@@ -86,7 +86,7 @@ scripts/stage-android-release.sh
 Set `MANDAZA_DISTRIBUTION=play` or `MANDAZA_DISTRIBUTION=amazon` to stage the
 corresponding store flavor. Direct uses version code `10318` and version name
 `1.3.11`, F-Droid uses `10320` (`1.3.13`), Play uses `10317` (`1.3.10`), and the
-Fire-tablet candidate uses `10308`. Installed direct copies compare their version name with `catalog.json`, so every direct
+Fire-tablet candidate uses `10321` (`1.3.14`). Installed direct copies compare their version name with `catalog.json`, so every direct
 rebuild must raise the version name as well as the code. The live Fire TV app remains the
 separate `app.mandaza.tv` package at `1.3.1 (20301)`.
 
