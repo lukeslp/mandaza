@@ -54,7 +54,10 @@ android {
         }
         create("amazon") {
             dimension = "distribution"
-            versionCode = 10308
+            // 1.3.14: first Amazon tablet build since the private 1.3.8 (10314) candidate, with the
+            // Play/F-Droid fixes and R8. 10321 is above every issued phone code (F-Droid 10320).
+            versionCode = 10321
+            versionName = "$marketingVersion.14"
         }
         create("fdroid") {
             dimension = "distribution"
